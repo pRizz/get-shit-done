@@ -180,18 +180,7 @@ function cmdStateUpdate(cwd, field, value) {
 }
 
 // ─── State Progression Engine ────────────────────────────────────────────────
-
-function stateExtractField(content, fieldName) {
-  const escaped = fieldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  // Try **Field:** bold format first
-  const boldPattern = new RegExp(`\\*\\*${escaped}:\\*\\*\\s*(.+)`, 'i');
-  const boldMatch = content.match(boldPattern);
-  if (boldMatch) return boldMatch[1].trim();
-  // Fall back to plain Field: format
-  const plainPattern = new RegExp(`^${escaped}:\\s*(.+)`, 'im');
-  const plainMatch = content.match(plainPattern);
-  return plainMatch ? plainMatch[1].trim() : null;
-}
+// stateExtractField is defined above (shared helper) — do not duplicate.
 
 function stateReplaceField(content, fieldName, newValue) {
   const escaped = fieldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -677,10 +666,54 @@ function syncStateFrontmatter(content, cwd) {
 /**
  * Write STATE.md with synchronized YAML frontmatter.
  * All STATE.md writes should use this instead of raw writeFileSync.
+ * Uses a simple lockfile to prevent parallel agents from overwriting
+ * each other's changes (race condition with read-modify-write cycle).
  */
 function writeStateMd(statePath, content, cwd) {
   const synced = syncStateFrontmatter(content, cwd);
-  fs.writeFileSync(statePath, normalizeMd(synced), 'utf-8');
+  const lockPath = statePath + '.lock';
+  const maxRetries = 10;
+  const retryDelay = 200; // ms
+
+  // Acquire lock (spin with backoff)
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      // O_EXCL fails if file already exists — atomic lock
+      const fd = fs.openSync(lockPath, fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_WRONLY);
+      fs.writeSync(fd, String(process.pid));
+      fs.closeSync(fd);
+      break;
+    } catch (err) {
+      if (err.code === 'EEXIST') {
+        // Check for stale lock (> 10s old)
+        try {
+          const stat = fs.statSync(lockPath);
+          if (Date.now() - stat.mtimeMs > 10000) {
+            fs.unlinkSync(lockPath);
+            continue; // retry immediately after clearing stale lock
+          }
+        } catch { /* lock was released between check — retry */ }
+
+        if (i === maxRetries - 1) {
+          // Last resort: write anyway rather than losing data
+          try { fs.unlinkSync(lockPath); } catch {}
+          break;
+        }
+        // Spin-wait with small jitter
+        const jitter = Math.floor(Math.random() * 50);
+        const start = Date.now();
+        while (Date.now() - start < retryDelay + jitter) { /* busy wait */ }
+        continue;
+      }
+      break; // non-EEXIST error — proceed without lock
+    }
+  }
+
+  try {
+    fs.writeFileSync(statePath, normalizeMd(synced), 'utf-8');
+  } finally {
+    try { fs.unlinkSync(lockPath); } catch { /* lock already gone */ }
+  }
 }
 
 function cmdStateJson(cwd, raw) {

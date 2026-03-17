@@ -167,17 +167,26 @@ function cmdInitNewProject(cwd, raw) {
   const braveKeyFile = path.join(homedir, '.gsd', 'brave_api_key');
   const hasBraveSearch = !!(process.env.BRAVE_API_KEY || fs.existsSync(braveKeyFile));
 
-  // Detect existing code
+  // Detect existing code (cross-platform — no Unix `find` dependency)
   let hasCode = false;
   let hasPackageFile = false;
   try {
-    const files = execSync('find . -maxdepth 3 \\( -name "*.ts" -o -name "*.js" -o -name "*.py" -o -name "*.go" -o -name "*.rs" -o -name "*.swift" -o -name "*.java" \\) 2>/dev/null | grep -v node_modules | grep -v .git | head -5', {
-      cwd,
-      encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
-    hasCode = files.trim().length > 0;
-  } catch {}
+    const codeExtensions = new Set(['.ts', '.js', '.py', '.go', '.rs', '.swift', '.java']);
+    const skipDirs = new Set(['node_modules', '.git', '.planning', '.claude', '__pycache__', 'target', 'dist', 'build']);
+    function findCodeFiles(dir, depth) {
+      if (depth > 3) return false;
+      let entries;
+      try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return false; }
+      for (const entry of entries) {
+        if (entry.isFile() && codeExtensions.has(path.extname(entry.name))) return true;
+        if (entry.isDirectory() && !skipDirs.has(entry.name)) {
+          if (findCodeFiles(path.join(dir, entry.name), depth + 1)) return true;
+        }
+      }
+      return false;
+    }
+    hasCode = findCodeFiles(cwd, 0);
+  } catch { /* intentionally empty — best-effort detection */ }
 
   hasPackageFile = pathExistsInternal(cwd, 'package.json') ||
                    pathExistsInternal(cwd, 'requirements.txt') ||
