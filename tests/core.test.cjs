@@ -1489,6 +1489,33 @@ describe('findProjectRoot', () => {
 
     assert.strictEqual(findProjectRoot(projectRoot), projectRoot);
   });
+
+  test('does not walk past child with own .planning/ to workspace parent (#1362)', () => {
+    // Workspace layout: parent has .planning/, child git repo also has .planning/
+    // findProjectRoot should return the child (startDir), not the parent
+    fs.mkdirSync(path.join(projectRoot, '.planning'), { recursive: true });
+
+    const childRepo = path.join(projectRoot, 'authenticator');
+    fs.mkdirSync(path.join(childRepo, '.planning'), { recursive: true });
+    fs.mkdirSync(path.join(childRepo, '.git'), { recursive: true });
+
+    assert.strictEqual(findProjectRoot(childRepo), childRepo);
+  });
+
+  test('does not walk past nested dir whose git root has .planning/ (#1362)', () => {
+    // Workspace layout: parent has .planning/, child git repo also has .planning/
+    // cwd is deep inside child — should resolve to child root, not workspace root
+    fs.mkdirSync(path.join(projectRoot, '.planning'), { recursive: true });
+
+    const childRepo = path.join(projectRoot, 'authenticator');
+    fs.mkdirSync(path.join(childRepo, '.planning'), { recursive: true });
+    fs.mkdirSync(path.join(childRepo, '.git'), { recursive: true });
+
+    const deepDir = path.join(childRepo, 'src', 'lib');
+    fs.mkdirSync(deepDir, { recursive: true });
+
+    assert.strictEqual(findProjectRoot(deepDir), childRepo);
+  });
 });
 
 // ─── reapStaleTempFiles ─────────────────────────────────────────────────────
