@@ -140,6 +140,8 @@ Run discuss-phase in recommended-review mode for a single phase.
 
 Run discuss-phase in yolo mode for a single phase.
 
+Prints a short preview of the target phase and planned step before delegating.
+
 | Argument | Required | Description |
 |----------|----------|-------------|
 | `phase` | Yes | Phase number to discuss |
@@ -151,6 +153,8 @@ Run discuss-phase in yolo mode for a single phase.
 ### `/gsd-yolo-discuss-plan-and-execute`
 
 Run yolo discuss plus plan and execute.
+
+Prints a short preview of the covered phases and planned steps before delegating.
 
 | Argument | Required | Description |
 |----------|----------|-------------|
@@ -171,6 +175,8 @@ Run yolo discuss plus plan and execute.
 ### `/gsd-yolo-discuss-plan-execute-commit-and-push`
 
 Run yolo discuss plus plan and execute, then finalize git only after clean verification.
+
+Prints a short preview of the covered phases and planned steps before delegating.
 
 | Argument | Required | Description |
 |----------|----------|-------------|
@@ -194,6 +200,8 @@ Run yolo discuss plus plan, execute, commit, and push for all remaining phases i
 
 This is a strict no-argument convenience alias for:
 `/gsd-autonomous --yolo --push-after-phase`
+
+Prints a short preview of the remaining phases and planned steps before delegating.
 
 ```bash
 /gsd-yolo-discuss-plan-execute-commit-and-push-all

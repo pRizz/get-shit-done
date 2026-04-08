@@ -84,10 +84,14 @@ Usage: `/gsd-recommended-discuss 2`
 **`/gsd-yolo-discuss <number>`**
 Single-phase wrapper for `gsd-discuss-phase --yolo`.
 
+- Prints a short preview of the target phase and planned step before it runs
+
 Usage: `/gsd-yolo-discuss 2`
 
 **`/gsd-yolo-discuss-plan-and-execute <phase | --from N | --to N | --only N>`**
 Run yolo discuss plus plan and execute with minimal intervention.
+
+- Prints a short preview of the phases and high-level steps before it runs
 
 Usage: `/gsd-yolo-discuss-plan-and-execute 2`
 Usage: `/gsd-yolo-discuss-plan-and-execute --from 2 --to 4`
@@ -95,11 +99,15 @@ Usage: `/gsd-yolo-discuss-plan-and-execute --from 2 --to 4`
 **`/gsd-yolo-discuss-plan-execute-commit-and-push <phase | --from N | --to N | --only N>`**
 Run yolo discuss plus plan and execute, then commit/push only after clean verification.
 
+- Prints a short preview of the phases and high-level steps before it runs
+
 Usage: `/gsd-yolo-discuss-plan-execute-commit-and-push 2`
 Usage: `/gsd-yolo-discuss-plan-execute-commit-and-push --only 2`
 
 **`/gsd-yolo-discuss-plan-execute-commit-and-push-all`**
 Run autonomous yolo strict-push mode for all remaining phases in the current milestone.
+
+- Prints a short preview of the remaining phases and high-level steps before it runs
 
 Usage: `/gsd-yolo-discuss-plan-execute-commit-and-push-all`
 

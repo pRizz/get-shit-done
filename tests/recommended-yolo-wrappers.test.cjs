@@ -114,6 +114,52 @@ describe('recommended and yolo wrapper commands', () => {
       'all alias should include explicit no-arg usage'
     );
   });
+
+  test('yolo-discuss previews the target phase and steps before delegation', () => {
+    const content = fs.readFileSync(
+      path.join(WORKFLOWS_DIR, 'yolo-discuss.md'),
+      'utf8'
+    );
+    assert.ok(content.includes('GSD ► YOLO DISCUSS'), 'yolo-discuss should have a preview banner');
+    assert.ok(content.includes('Steps: discuss'), 'yolo-discuss should preview the discuss step');
+    assert.ok(
+      content.indexOf('Steps: discuss') < content.indexOf('Skill(skill="gsd-discuss-phase", args="${ARGUMENTS} --yolo")'),
+      'yolo-discuss preview should appear before delegation'
+    );
+  });
+
+  test('yolo chain wrapper previews single-phase and range runs', () => {
+    const content = fs.readFileSync(
+      path.join(WORKFLOWS_DIR, 'yolo-discuss-plan-and-execute.md'),
+      'utf8'
+    );
+    assert.ok(content.includes('GSD ► YOLO PLAN EXECUTE'), 'yolo chain wrapper should have a preview banner');
+    assert.ok(content.includes('Steps: discuss → plan → execute'), 'yolo chain wrapper should preview discuss → plan → execute');
+    assert.ok(content.includes('This run will cover phases ${FIRST_PHASE} through ${LAST_PHASE}.'), 'yolo chain wrapper should preview covered phase range');
+    assert.ok(content.includes('No remaining incomplete phases match this run.'), 'yolo chain wrapper should document the early no-op case');
+  });
+
+  test('strict push wrapper previews steps and strict push note', () => {
+    const content = fs.readFileSync(
+      path.join(WORKFLOWS_DIR, 'yolo-discuss-plan-execute-commit-and-push.md'),
+      'utf8'
+    );
+    assert.ok(content.includes('GSD ► YOLO PLAN EXECUTE PUSH'), 'strict push wrapper should have a preview banner');
+    assert.ok(content.includes('Steps: discuss → plan → execute → commit/push'), 'strict push wrapper should preview commit/push steps');
+    assert.ok(content.includes('commit/push only happens after clean verification'), 'strict push wrapper should mention strict push gating in the preview');
+    assert.ok(content.includes('No remaining incomplete phases match this run.'), 'strict push wrapper should document the early no-op case');
+  });
+
+  test('all alias previews remaining phases and no-op behavior', () => {
+    const content = fs.readFileSync(
+      path.join(WORKFLOWS_DIR, 'yolo-discuss-plan-execute-commit-and-push-all.md'),
+      'utf8'
+    );
+    assert.ok(content.includes('GSD ► YOLO ALL PUSH'), 'all alias should have a preview banner');
+    assert.ok(content.includes('This run will cover phases ${FIRST_PHASE} through ${LAST_PHASE}.'), 'all alias should preview remaining phases');
+    assert.ok(content.includes('Steps: discuss → plan → execute → commit/push'), 'all alias should preview full step sequence');
+    assert.ok(content.includes('No remaining incomplete phases are left in the current milestone.'), 'all alias should document the early no-op case');
+  });
 });
 
 describe('discuss-phase: recommended and yolo modes', () => {
@@ -238,9 +284,11 @@ describe('docs reference recommended and yolo wrappers', () => {
   test('README and help mention the new commands', () => {
     assert.ok(readme.includes('/gsd-recommended-discuss <N>'), 'README should mention gsd-recommended-discuss');
     assert.ok(readme.includes('/gsd-yolo-discuss-plan-execute-commit-and-push-all'), 'README should mention strict push all alias');
+    assert.ok(readme.includes('Preview the covered phases'), 'README should mention wrapper previews');
     assert.ok(readme.includes('/gsd-autonomous [--yolo] [--push-after-phase]'), 'README should mention autonomous new flags');
     assert.ok(help.includes('/gsd-recommended-discuss 2'), 'help should include gsd-recommended-discuss usage');
     assert.ok(help.includes('/gsd-yolo-discuss-plan-execute-commit-and-push-all'), 'help should include strict push all alias usage');
+    assert.ok(help.includes('Prints a short preview of the phases and high-level steps before it runs'), 'help should mention wrapper previews');
     assert.ok(help.includes('/gsd-autonomous --from 3 --to 5 --yolo --push-after-phase'), 'help should include autonomous strict push usage');
   });
 });

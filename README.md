@@ -54,10 +54,10 @@ This fork currently adds skill-level workflow changes on top of upstream GSD. Th
 ### New Skills In This Fork
 
 - `/gsd-recommended-discuss` — Generates recommended discuss answers for a single phase, lets you review them once, then writes context.
-- `/gsd-yolo-discuss` — Generates recommended discuss answers for a single phase and accepts them without an approval prompt.
-- `/gsd-yolo-discuss-plan-and-execute` — Chains yolo discuss into plan and execute for one phase, or runs the same pattern across a phase range.
-- `/gsd-yolo-discuss-plan-execute-commit-and-push` — Chains yolo discuss into plan and execute, then commits and pushes only after clean verification.
-- `/gsd-yolo-discuss-plan-execute-commit-and-push-all` — Runs the same yolo discuss, plan, execute, commit, and push flow for all remaining phases in the current milestone.
+- `/gsd-yolo-discuss` — Generates recommended discuss answers for a single phase, previews the target phase and steps, and accepts the answers without an approval prompt.
+- `/gsd-yolo-discuss-plan-and-execute` — Previews the phases and steps it will run, then chains yolo discuss into plan and execute for one phase or a phase range.
+- `/gsd-yolo-discuss-plan-execute-commit-and-push` — Previews the phases and steps it will run, then chains yolo discuss into plan and execute with commit/push only after clean verification.
+- `/gsd-yolo-discuss-plan-execute-commit-and-push-all` — Previews all remaining phases in the current milestone, then runs the same yolo discuss, plan, execute, commit, and push flow end-to-end.
 
 ### Changes To Existing Skills
 
@@ -583,10 +583,10 @@ You're never locked in. The system adapts.
 | `/gsd-new-project [--auto]` | Full initialization: questions → research → requirements → roadmap |
 | `/gsd-discuss-phase [N] [--auto] [--recommended] [--yolo] [--analyze] [--chain]` | Capture implementation decisions before planning (`--recommended` adds one final review, `--yolo` writes recommended picks without prompts, `--chain` auto-chains into plan+execute) |
 | `/gsd-recommended-discuss <N>` | Synthesize recommended discuss answers, review them once, then write context |
-| `/gsd-yolo-discuss <N>` | Synthesize recommended discuss answers and write context without approval prompts |
-| `/gsd-yolo-discuss-plan-and-execute <N \| --from N \| --to N \| --only N>` | Run yolo discuss plus plan+execute for one phase or a range |
-| `/gsd-yolo-discuss-plan-execute-commit-and-push <N \| --from N \| --to N \| --only N>` | Run yolo discuss plus plan+execute, then commit/push only after clean verification |
-| `/gsd-yolo-discuss-plan-execute-commit-and-push-all` | Run autonomous yolo strict-push mode for all remaining phases in the current milestone |
+| `/gsd-yolo-discuss <N>` | Preview the target phase, then synthesize recommended discuss answers and write context without approval prompts |
+| `/gsd-yolo-discuss-plan-and-execute <N \| --from N \| --to N \| --only N>` | Preview the covered phases, then run yolo discuss plus plan+execute for one phase or a range |
+| `/gsd-yolo-discuss-plan-execute-commit-and-push <N \| --from N \| --to N \| --only N>` | Preview the covered phases, then run yolo discuss plus plan+execute with commit/push after clean verification |
+| `/gsd-yolo-discuss-plan-execute-commit-and-push-all` | Preview all remaining phases, then run autonomous yolo strict-push mode for the current milestone |
 | `/gsd-plan-phase [N] [--auto] [--reviews]` | Research + plan + verify for a phase (`--reviews` loads codebase review findings) |
 | `/gsd-execute-phase <N>` | Execute all plans in parallel waves, verify when complete |
 | `/gsd-verify-work [N]` | Manual user acceptance testing ¹ |

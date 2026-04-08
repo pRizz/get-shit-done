@@ -14,6 +14,37 @@ Usage: /gsd-yolo-discuss <phase>
 ```
 </step>
 
+<step name="preview">
+Resolve the requested phase before delegating:
+
+```bash
+PHASE=$(echo "$ARGUMENTS" | awk '{print $1}')
+PHASE_STATE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init phase-op "${PHASE}")
+if [[ "$PHASE_STATE" == @file:* ]]; then PHASE_STATE=$(cat "${PHASE_STATE#@file:}"); fi
+```
+
+Parse from JSON: `phase_found`, `phase_number`, `phase_name`.
+
+**If `phase_found` is false:** stop with the same phase-not-found semantics used elsewhere:
+
+```
+Phase ${PHASE} not found in roadmap.
+
+Use /gsd-progress to see available phases.
+```
+
+**If `phase_found` is true:** display a compact preview before delegation:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ GSD ► YOLO DISCUSS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ Phase: ${phase_number} — ${phase_name}
+ Steps: discuss
+```
+</step>
+
 <step name="delegate">
 Delegate to the shared discuss workflow:
 
@@ -28,6 +59,7 @@ This wrapper adds no custom context logic — all behavior comes from the shared
 
 <success_criteria>
 - Single-phase usage enforced
+- Wrapper previews the phase and high-level steps before delegation
 - Wrapper delegates to `/gsd-discuss-phase --yolo`
 - Yolo behavior comes from the shared discuss workflow
 </success_criteria>

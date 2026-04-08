@@ -2225,6 +2225,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 - REQ-WRAPDISC-01: `/gsd-recommended-discuss` MUST delegate to `/gsd-discuss-phase --recommended`
 - REQ-WRAPDISC-02: `/gsd-yolo-discuss` MUST delegate to `/gsd-discuss-phase --yolo`
 - REQ-WRAPDISC-03: Both wrappers MUST remain single-phase only
+- REQ-WRAPDISC-04: `/gsd-yolo-discuss` MUST preview the target phase and high-level step before delegation
 
 ---
 
@@ -2238,6 +2239,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 - REQ-YOLOCHAIN-01: Single-phase mode MUST delegate to `/gsd-discuss-phase --yolo --chain`
 - REQ-YOLOCHAIN-02: Multi-phase or range mode MUST delegate to `/gsd-autonomous --yolo`
 - REQ-YOLOCHAIN-03: Existing planning and execution gates MUST remain intact
+- REQ-YOLOCHAIN-04: The wrapper MUST preview the covered phase set and `discuss → plan → execute` steps before delegation
 
 ---
 
@@ -2252,6 +2254,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 - REQ-PUSHWRAP-02: Single-phase mode MUST inspect the worktree, create a deterministic final commit when dirty, and push the current branch
 - REQ-PUSHWRAP-03: Multi-phase mode MUST delegate to `/gsd-autonomous --yolo --push-after-phase`
 - REQ-PUSHWRAP-04: No commit or push MUST happen on `human_needed`, `gaps_found`, blockers, or inconclusive execution
+- REQ-PUSHWRAP-05: The wrapper MUST preview the covered phase set and `discuss → plan → execute → commit/push` steps before delegation
 
 ---
 
@@ -2279,3 +2282,4 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 - REQ-PUSHALL-01: The command MUST reject unexpected arguments
 - REQ-PUSHALL-02: The command MUST delegate directly to `/gsd-autonomous --yolo --push-after-phase`
 - REQ-PUSHALL-03: "All" MUST mean all remaining incomplete phases in the current active milestone/ROADMAP context
+- REQ-PUSHALL-04: The command MUST preview the remaining incomplete phase range and `discuss → plan → execute → commit/push` steps before delegation
