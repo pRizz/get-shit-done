@@ -112,6 +112,8 @@ Skill(skill="gsd-autonomous", args="${ARGUMENTS} --yolo --push-after-phase")
 ```
 
 Then stop — autonomous owns the per-phase git finalization in range mode.
+
+This wrapper does not add wrapper-level sub-agents because delegated workflows already own the heavy orchestration, and git finalization should stay inline.
 </step>
 
 <step name="inspect_single_phase_result">

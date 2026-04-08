@@ -1,6 +1,6 @@
 ---
 name: gsd:yolo-discuss-plan-execute-commit-and-push
-description: Chain yolo discuss, plan, execute, and strict git finalization. Single phase pushes after a clean pass; range mode delegates to autonomous yolo push-after-phase mode.
+description: Chain yolo discuss, plan, execute, and strict git finalization. Single phase pushes after a clean pass; range mode delegates to autonomous yolo push-after-phase mode. Thin wrapper; git finalization stays inline for determinism.
 argument-hint: "<phase | --from N | --to N | --only N>"
 allowed-tools:
   - Read
@@ -17,6 +17,7 @@ Run yolo discuss, plan, execute, and then finalize git only when verification is
 
 Single phase mode delegates to phase-level yolo discuss plus the existing auto-chain, then runs a strict commit/push gate.
 Range mode delegates to `/gsd-autonomous --yolo --push-after-phase`.
+No wrapper-level sub-agent is needed because delegated workflows already own the heavy orchestration, and the wrapper-owned git gate should remain inline.
 </objective>
 
 <execution_context>

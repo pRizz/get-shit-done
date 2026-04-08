@@ -53,6 +53,7 @@ Skill(skill="gsd-discuss-phase", args="${ARGUMENTS} --yolo")
 ```
 
 This wrapper adds no custom context logic — all behavior comes from the shared recommendation engine inside discuss-phase.
+No wrapper-level sub-agent is needed because the downstream workflow already owns the substantive orchestration.
 </step>
 
 </process>

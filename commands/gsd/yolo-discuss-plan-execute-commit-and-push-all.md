@@ -1,6 +1,6 @@
 ---
 name: gsd:yolo-discuss-plan-execute-commit-and-push-all
-description: Run yolo discuss, plan, execute, commit, and push for all remaining phases in the current milestone. This is a no-argument alias for autonomous yolo strict-push mode.
+description: Run yolo discuss, plan, execute, commit, and push for all remaining phases in the current milestone. This is a no-argument alias for autonomous yolo strict-push mode and should stay declarative.
 allowed-tools:
   - Read
   - Write
@@ -16,6 +16,8 @@ Run yolo discuss, plan, execute, commit, and push for all remaining incomplete p
 
 This is a strict no-argument convenience alias for:
 `/gsd-autonomous --yolo --push-after-phase`
+
+No wrapper-level sub-agent is needed because this command is only a declarative alias over autonomous yolo strict-push mode.
 </objective>
 
 <execution_context>

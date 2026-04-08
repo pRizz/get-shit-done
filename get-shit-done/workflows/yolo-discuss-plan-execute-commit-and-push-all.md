@@ -74,6 +74,7 @@ Skill(skill="gsd-autonomous", args="--yolo --push-after-phase")
 ```
 
 This wrapper adds no planning, execution, or git logic of its own.
+No wrapper-level sub-agent is needed because this command is only a declarative alias over autonomous yolo strict-push mode.
 </step>
 
 </process>

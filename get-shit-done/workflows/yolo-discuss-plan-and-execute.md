@@ -107,6 +107,8 @@ Then delegate to autonomous yolo mode:
 ```bash
 Skill(skill="gsd-autonomous", args="${ARGUMENTS} --yolo")
 ```
+
+This wrapper does not add wrapper-level sub-agents because the delegated workflows already perform the agentized work.
 </step>
 
 </process>

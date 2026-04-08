@@ -1,6 +1,6 @@
 ---
 name: gsd:yolo-discuss-plan-and-execute
-description: Chain yolo discuss with planning and execution for one phase, or delegate range runs to autonomous yolo mode.
+description: Chain yolo discuss with planning and execution for one phase, or delegate range runs to autonomous yolo mode. Thin wrapper; relies on downstream agentized workflows.
 argument-hint: "<phase | --from N | --to N | --only N>"
 allowed-tools:
   - Read
@@ -17,6 +17,7 @@ Run yolo discuss followed by plan and execute with minimal intervention.
 
 Single phase mode delegates to `/gsd-discuss-phase --yolo --chain`.
 Range mode delegates to `/gsd-autonomous --yolo`.
+No wrapper-level sub-agent is needed because the delegated workflows already own planning and execution orchestration.
 </objective>
 
 <execution_context>

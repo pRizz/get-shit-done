@@ -1,6 +1,6 @@
 ---
 name: gsd:yolo-discuss
-description: Gather recommended discuss answers for one phase and auto-accept them without pausing for approval.
+description: Gather recommended discuss answers for one phase and auto-accept them without pausing for approval. Thin wrapper; relies on downstream discuss-phase orchestration.
 argument-hint: "<phase>"
 allowed-tools:
   - Read
@@ -16,6 +16,7 @@ allowed-tools:
 Run discuss-phase in yolo mode for a single phase.
 
 This is a thin wrapper over `/gsd-discuss-phase --yolo`.
+No wrapper-level sub-agent is needed because `gsd-discuss-phase` owns the real orchestration.
 </objective>
 
 <execution_context>
