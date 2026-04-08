@@ -22,6 +22,9 @@ const {
   generateCodexConfigBlock,
   stripGsdFromCodexConfig,
   mergeCodexConfig,
+  countClaudeRuntimeRootLeaks,
+  getCodexManagedLeakScanRoots,
+  scanCodexManagedClaudeRuntimeLeaks,
   install,
   GSD_CODEX_MARKER,
   CODEX_AGENT_SANDBOX,
@@ -714,6 +717,86 @@ describe('mergeCodexConfig', () => {
 
 // ─── Integration: installCodexConfig ────────────────────────────────────────────
 
+describe('Codex leak scan helpers', () => {
+  let tmpTarget;
+
+  beforeEach(() => {
+    tmpTarget = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-codex-leaks-'));
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpTarget, { recursive: true, force: true });
+  });
+
+  test('countClaudeRuntimeRootLeaks flags only runtime-root Claude paths', () => {
+    const content = [
+      'targetDir = ~/.claude/get-shit-done',
+      'hooksDir = ~/.claude/hooks/',
+      'projectsDir = $HOME/.claude/projects',
+      'configDir = ~/.claude',
+      'Project skills live in .claude/skills/',
+      'Repo guidance can mention .claude/agents/',
+      'Do not flag ~/.claude/skills/ because that is a convention reference here.',
+    ].join('\n');
+
+    assert.strictEqual(countClaudeRuntimeRootLeaks(content), 4, 'only true Claude runtime-root paths should count as leaks');
+  });
+
+  test('getCodexManagedLeakScanRoots only returns installer-managed targets', () => {
+    fs.mkdirSync(path.join(tmpTarget, 'skills'), { recursive: true });
+    fs.mkdirSync(path.join(tmpTarget, 'agents'), { recursive: true });
+    fs.mkdirSync(path.join(tmpTarget, 'get-shit-done'), { recursive: true });
+    fs.mkdirSync(path.join(tmpTarget, 'worktrees', 'abc'), { recursive: true });
+    fs.mkdirSync(path.join(tmpTarget, '.tmp', 'plugins'), { recursive: true });
+    fs.writeFileSync(path.join(tmpTarget, 'config.toml'), '[features]\n');
+    fs.writeFileSync(path.join(tmpTarget, 'history.jsonl'), '{}\n');
+
+    const roots = getCodexManagedLeakScanRoots(tmpTarget)
+      .map(p => path.relative(tmpTarget, p).replace(/\\/g, '/'))
+      .sort();
+
+    assert.deepStrictEqual(roots, ['agents', 'config.toml', 'get-shit-done', 'skills']);
+  });
+
+  test('scanCodexManagedClaudeRuntimeLeaks ignores user/stateful paths and keeps managed leaks', () => {
+    fs.mkdirSync(path.join(tmpTarget, 'skills', 'gsd-test'), { recursive: true });
+    fs.mkdirSync(path.join(tmpTarget, 'agents'), { recursive: true });
+    fs.mkdirSync(path.join(tmpTarget, 'get-shit-done', 'workflows'), { recursive: true });
+    fs.mkdirSync(path.join(tmpTarget, 'worktrees', 'deadbeef'), { recursive: true });
+    fs.mkdirSync(path.join(tmpTarget, '.tmp', 'plugins'), { recursive: true });
+    fs.mkdirSync(path.join(tmpTarget, 'config-backup-repo'), { recursive: true });
+
+    fs.writeFileSync(path.join(tmpTarget, 'skills', 'gsd-test', 'SKILL.md'), 'See .claude/skills/ for project conventions.\n');
+    fs.writeFileSync(path.join(tmpTarget, 'agents', 'gsd-debugger.toml'), 'targetDir = ~/.claude/get-shit-done\n');
+    fs.writeFileSync(path.join(tmpTarget, 'get-shit-done', 'workflows', 'debug.md'), 'configDir = ~/.claude\n');
+    fs.writeFileSync(path.join(tmpTarget, 'worktrees', 'deadbeef', 'leaky.md'), 'hooksDir = ~/.claude/hooks/\n');
+    fs.writeFileSync(path.join(tmpTarget, '.tmp', 'plugins', 'leaky.md'), 'projectsDir = $HOME/.claude/projects\n');
+    fs.writeFileSync(path.join(tmpTarget, 'config-backup-repo', 'leaky.md'), 'targetDir = ~/.claude/get-shit-done\n');
+    fs.writeFileSync(path.join(tmpTarget, 'history.jsonl'), '{"text":"~/.claude/get-shit-done"}\n');
+
+    const leaks = scanCodexManagedClaudeRuntimeLeaks(tmpTarget);
+
+    assert.deepStrictEqual(
+      leaks,
+      [
+        { file: 'agents/gsd-debugger.toml', count: 1 },
+        { file: 'get-shit-done/workflows/debug.md', count: 1 },
+      ],
+      'only managed Codex outputs with true Claude runtime-root leaks should be reported'
+    );
+  });
+});
+
+describe('debugger runtime-root example regression', () => {
+  test('gsd-debugger stale-hook example is runtime-neutral in source', () => {
+    const content = fs.readFileSync(path.join(__dirname, '..', 'agents', 'gsd-debugger.md'), 'utf8');
+    assert.ok(content.includes('configDir = <runtime config root>'), 'source example should use a runtime-neutral config root placeholder');
+    assert.ok(content.includes('targetDir = <managed install root>'), 'source example should use a managed install placeholder');
+    assert.ok(!content.includes('→ checks ~/.claude/hooks/'), 'source example should not mention Claude hook root directly');
+    assert.ok(!content.includes('→ writes to ~/.claude/get-shit-done/hooks/'), 'source example should not mention Claude install root directly');
+  });
+});
+
 describe('installCodexConfig (integration)', () => {
   let tmpTarget;
   const agentsSrc = path.join(__dirname, '..', 'agents');
@@ -757,6 +840,16 @@ describe('installCodexConfig (integration)', () => {
     const checkerToml = fs.readFileSync(path.join(agentsDir, 'gsd-plan-checker.toml'), 'utf8');
     assert.ok(checkerToml.includes('name = "gsd-plan-checker"'), 'plan-checker has name');
     assert.ok(checkerToml.includes('sandbox_mode = "read-only"'), 'plan-checker is read-only');
+  });
+
+  (hasAgents ? test : test.skip)('generated Codex debugger agent is free of Claude runtime-root paths', () => {
+    const { installCodexConfig } = require('../bin/install.js');
+    installCodexConfig(tmpTarget, agentsSrc);
+
+    const debuggerToml = fs.readFileSync(path.join(tmpTarget, 'agents', 'gsd-debugger.toml'), 'utf8');
+    assert.strictEqual(countClaudeRuntimeRootLeaks(debuggerToml), 0, 'debugger.toml should not contain Claude runtime-root leaks');
+    assert.ok(!debuggerToml.includes('~/.claude/get-shit-done'), 'no Claude install root remains');
+    assert.ok(!debuggerToml.includes('~/.claude/hooks'), 'no Claude hook root remains');
   });
 });
 
@@ -817,6 +910,32 @@ describe('Codex install hook configuration (e2e)', () => {
     assert.strictEqual(countMatches(content, /gsd-check-update\.js/g), 1, 'writes one GSD update hook');
     assertNoDraftRootKeys(content);
     assertUsesOnlyEol(content, '\n');
+  });
+
+  test('fresh CODEX_HOME installs with no managed Claude runtime-root leak warnings', () => {
+    runCodexInstall(codexHome);
+
+    const leaks = scanCodexManagedClaudeRuntimeLeaks(codexHome);
+    assert.deepStrictEqual(leaks, [], 'managed Codex install output should not retain Claude runtime-root leaks');
+  });
+
+  test('re-install does not warn on stale managed leaks that are overwritten during install', () => {
+    fs.mkdirSync(path.join(codexHome, 'agents'), { recursive: true });
+    fs.writeFileSync(path.join(codexHome, 'agents', 'gsd-debugger.toml'), 'targetDir = ~/.claude/get-shit-done\n', 'utf8');
+
+    const originalWarn = console.warn;
+    const warnings = [];
+    console.warn = (...args) => warnings.push(args.join(' '));
+    try {
+      runCodexInstall(codexHome);
+    } finally {
+      console.warn = originalWarn;
+    }
+
+    assert.ok(
+      !warnings.some(message => message.includes('managed Claude runtime-root reference')),
+      'installer should scan final managed output, not stale files that it replaces during the same run'
+    );
   });
 
   test('config_file paths are absolute using CODEX_HOME', () => {

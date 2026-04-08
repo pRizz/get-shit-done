@@ -434,12 +434,12 @@ git bisect bad              # or good, based on testing
 **Example:** Stale hook warning persists after update
 ```
 Check code says:  hooksDir = path.join(configDir, 'hooks')
-                  configDir = ~/.claude
-                  → checks ~/.claude/hooks/
+                  configDir = <runtime config root>
+                  → checks <runtime config root>/hooks/
 
 Installer says:   hooksDest = path.join(targetDir, 'hooks')
-                  targetDir = ~/.claude/get-shit-done
-                  → writes to ~/.claude/get-shit-done/hooks/
+                  targetDir = <managed install root>
+                  → writes to <managed install root>/hooks/
 
 MISMATCH: Checker looks in wrong directory → hooks "not found" → reported as stale
 ```

@@ -1496,6 +1496,82 @@ function convertClaudeToCodexMarkdown(content) {
   return converted;
 }
 
+const CLAUDE_RUNTIME_ROOT_LEAK_RE = /(?:~|\$HOME)\/\.claude(?:(?=$|[\s"'`),.:;\]}])|\/(?:get-shit-done|hooks|projects)\b)/g;
+
+function countClaudeRuntimeRootLeaks(content) {
+  if (!content) return 0;
+  const matches = content.match(CLAUDE_RUNTIME_ROOT_LEAK_RE);
+  return matches ? matches.length : 0;
+}
+
+function getCodexManagedLeakScanRoots(targetDir) {
+  const candidates = [
+    path.join(targetDir, 'skills'),
+    path.join(targetDir, 'agents'),
+    path.join(targetDir, 'get-shit-done'),
+    path.join(targetDir, 'config.toml'),
+  ];
+
+  return candidates.filter(candidate => fs.existsSync(candidate));
+}
+
+function scanCodexManagedClaudeRuntimeLeaks(targetDir) {
+  const leakedPaths = [];
+  const roots = getCodexManagedLeakScanRoots(targetDir);
+
+  function scanNode(nodePath) {
+    let stat;
+    try {
+      stat = fs.statSync(nodePath);
+    } catch (err) {
+      if (err.code === 'EPERM' || err.code === 'EACCES') return;
+      throw err;
+    }
+
+    if (stat.isDirectory()) {
+      let entries;
+      try {
+        entries = fs.readdirSync(nodePath, { withFileTypes: true });
+      } catch (err) {
+        if (err.code === 'EPERM' || err.code === 'EACCES') return;
+        throw err;
+      }
+
+      for (const entry of entries) {
+        scanNode(path.join(nodePath, entry.name));
+      }
+      return;
+    }
+
+    const fileName = path.basename(nodePath);
+    if ((!fileName.endsWith('.md') && !fileName.endsWith('.toml')) || fileName === 'CHANGELOG.md') {
+      return;
+    }
+
+    let content;
+    try {
+      content = fs.readFileSync(nodePath, 'utf8');
+    } catch (err) {
+      if (err.code === 'EPERM' || err.code === 'EACCES') return;
+      throw err;
+    }
+
+    const count = countClaudeRuntimeRootLeaks(content);
+    if (count > 0) {
+      leakedPaths.push({
+        file: path.relative(targetDir, nodePath).replace(/\\/g, '/'),
+        count,
+      });
+    }
+  }
+
+  for (const root of roots) {
+    scanNode(root);
+  }
+
+  return leakedPaths.sort((a, b) => a.file.localeCompare(b.file));
+}
+
 function getCodexSkillAdapterHeader(skillName) {
   const invocation = `$${skillName}`;
   return `<codex_skill_adapter>
@@ -5473,55 +5549,6 @@ function install(isGlobal, runtime = 'claude') {
   // Report any backed-up local patches
   reportLocalPatches(targetDir, runtime);
 
-  // Verify no leaked .claude paths in non-Claude runtimes
-  if (runtime !== 'claude') {
-    const leakedPaths = [];
-    function scanForLeakedPaths(dir) {
-      if (!fs.existsSync(dir)) return;
-      let entries;
-      try {
-        entries = fs.readdirSync(dir, { withFileTypes: true });
-      } catch (err) {
-        if (err.code === 'EPERM' || err.code === 'EACCES') {
-          return; // skip inaccessible directories
-        }
-        throw err;
-      }
-      for (const entry of entries) {
-        const fullPath = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
-          scanForLeakedPaths(fullPath);
-        } else if ((entry.name.endsWith('.md') || entry.name.endsWith('.toml')) && entry.name !== 'CHANGELOG.md') {
-          let content;
-          try {
-            content = fs.readFileSync(fullPath, 'utf8');
-          } catch (err) {
-            if (err.code === 'EPERM' || err.code === 'EACCES') {
-              continue; // skip inaccessible files
-            }
-            throw err;
-          }
-          const matches = content.match(/(?:~|\$HOME)\/\.claude\b/g);
-          if (matches) {
-            leakedPaths.push({ file: fullPath.replace(targetDir + '/', ''), count: matches.length });
-          }
-        }
-      }
-    }
-    scanForLeakedPaths(targetDir);
-    if (leakedPaths.length > 0) {
-      const totalLeaks = leakedPaths.reduce((sum, l) => sum + l.count, 0);
-      console.warn(`\n  ${yellow}⚠${reset}  Found ${totalLeaks} unreplaced .claude path reference(s) in ${leakedPaths.length} file(s):`);
-      for (const leak of leakedPaths.slice(0, 5)) {
-        console.warn(`     ${dim}${leak.file}${reset} (${leak.count})`);
-      }
-      if (leakedPaths.length > 5) {
-        console.warn(`     ${dim}... and ${leakedPaths.length - 5} more file(s)${reset}`);
-      }
-      console.warn(`  ${dim}These paths may not resolve correctly for ${runtimeLabel}.${reset}`);
-    }
-  }
-
   if (isCodex) {
     // Generate Codex config.toml and per-agent .toml files
     const agentCount = installCodexConfig(targetDir, agentsSrc);
@@ -5559,6 +5586,19 @@ function install(isGlobal, runtime = 'claude') {
       console.log(`  ${green}✓${reset} Configured Codex hooks (SessionStart)`);
     } catch (e) {
       console.warn(`  ${yellow}⚠${reset}  Could not configure Codex hooks: ${e.message}`);
+    }
+
+    const leakedPaths = scanCodexManagedClaudeRuntimeLeaks(targetDir);
+    if (leakedPaths.length > 0) {
+      const totalLeaks = leakedPaths.reduce((sum, l) => sum + l.count, 0);
+      console.warn(`\n  ${yellow}⚠${reset}  Found ${totalLeaks} managed Claude runtime-root reference(s) in ${leakedPaths.length} file(s):`);
+      for (const leak of leakedPaths.slice(0, 5)) {
+        console.warn(`     ${dim}${leak.file}${reset} (${leak.count})`);
+      }
+      if (leakedPaths.length > 5) {
+        console.warn(`     ${dim}... and ${leakedPaths.length - 5} more file(s)${reset}`);
+      }
+      console.warn(`  ${dim}These managed Claude runtime-root paths may not resolve correctly for ${runtimeLabel}.${reset}`);
     }
 
     return { settingsPath: null, settings: null, statuslineCommand: null, runtime, configDir: targetDir };
@@ -6182,6 +6222,9 @@ if (process.env.GSD_TEST_MODE) {
     stripGsdFromCodexConfig,
     mergeCodexConfig,
     installCodexConfig,
+    countClaudeRuntimeRootLeaks,
+    getCodexManagedLeakScanRoots,
+    scanCodexManagedClaudeRuntimeLeaks,
     install,
     uninstall,
     convertClaudeCommandToCodexSkill,
