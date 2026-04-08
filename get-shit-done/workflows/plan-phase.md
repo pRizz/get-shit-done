@@ -46,11 +46,39 @@ Parse JSON for: `researcher_model`, `planner_model`, `checker_model`, `research_
 
 ## 2. Parse and Normalize Arguments
 
-Extract from $ARGUMENTS: phase number (integer or decimal like `2.1`), flags (`--research`, `--skip-research`, `--gaps`, `--skip-verify`, `--prd <filepath>`, `--reviews`, `--text`).
+Extract from $ARGUMENTS: phase number (integer or decimal like `2.1`), flags (`--research`, `--skip-research`, `--gaps`, `--skip-verify`, `--prd <filepath>`, `--reviews`, `--text`), and optional lifecycle flags (`--lifecycle-id <id>`, `--lifecycle-mode <mode>`).
 
 Set `TEXT_MODE=true` if `--text` is present in $ARGUMENTS OR `text_mode` from init JSON is `true`. When `TEXT_MODE` is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for Claude Code remote sessions (`/rc` mode) where TUI menus don't work through the Claude App.
 
 Extract `--prd <filepath>` from $ARGUMENTS. If present, set PRD_FILE to the filepath.
+
+Resolve lifecycle provenance for plan generation:
+
+```bash
+ARG_LIFECYCLE_ID=$(echo "$ARGUMENTS" | grep -oE '\-\-lifecycle-id\s+[^[:space:]]+' | awk '{print $2}' | tail -1)
+ARG_LIFECYCLE_MODE=$(echo "$ARGUMENTS" | grep -oE '\-\-lifecycle-mode\s+[^[:space:]]+' | awk '{print $2}' | tail -1)
+NOW_TS=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" current-timestamp full)
+
+if [ -n "$ARG_LIFECYCLE_ID" ]; then
+  PHASE_LIFECYCLE_ID="$ARG_LIFECYCLE_ID"
+elif [ -n "$context_path" ]; then
+  PHASE_LIFECYCLE_ID=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" frontmatter get "$context_path" --field phase_lifecycle_id 2>/dev/null | tr -d '"')
+fi
+
+if [ -z "$PHASE_LIFECYCLE_ID" ]; then
+  PHASE_LIFECYCLE_ID="${padded_phase}-$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" current-timestamp filename)"
+fi
+
+if [ -n "$ARG_LIFECYCLE_MODE" ]; then
+  PHASE_LIFECYCLE_MODE="$ARG_LIFECYCLE_MODE"
+elif [ -n "$context_path" ]; then
+  PHASE_LIFECYCLE_MODE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" frontmatter get "$context_path" --field lifecycle_mode 2>/dev/null | tr -d '"')
+fi
+
+if [ -z "$PHASE_LIFECYCLE_MODE" ]; then
+  PHASE_LIFECYCLE_MODE="interactive"
+fi
+```
 
 **If no phase number:** Detect next unplanned phase from roadmap.
 
@@ -121,6 +149,13 @@ Generating CONTEXT.md from requirements...
 
 4. Write CONTEXT.md:
 ```markdown
+---
+generated_by: gsd-plan-phase
+lifecycle_mode: ${PHASE_LIFECYCLE_MODE}
+phase_lifecycle_id: ${PHASE_LIFECYCLE_ID}
+generated_at: ${NOW_TS}
+---
+
 # Phase [X]: [Name] - Context
 
 **Gathered:** [date]
@@ -229,7 +264,9 @@ Otherwise use AskUserQuestion:
   If `DISCUSS_MODE` is `"discuss"` (or unset):
   - "Run discuss-phase first" — Capture design decisions before planning
 
-If "Continue without context": Proceed to step 5.
+If "Continue without context":
+- Set `PHASE_LIFECYCLE_MODE="direct-fallback"`
+- Proceed to step 5
 If "Run discuss-phase first":
   **IMPORTANT:** Do NOT invoke discuss-phase as a nested Skill/Task call — AskUserQuestion
   does not work correctly in nested subcontexts (#1009). Instead, display the command

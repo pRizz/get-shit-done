@@ -97,6 +97,31 @@ When `CONTEXT_WINDOW >= 500000` (1M-class models), subagent prompts include rich
 **If `plan_count` is 0:** Error — no plans found in phase.
 **If `state_exists` is false but `.planning/` exists:** Offer reconstruct or continue.
 
+**Fail-closed lifecycle check (required before any execution):**
+
+Run the lifecycle validator:
+```bash
+LIFECYCLE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" verify lifecycle "${PHASE_ARG}" --require-plans --raw)
+```
+
+Parse JSON for: `valid`, `reasons[]`, `lifecycle_id`, `lifecycle_mode`, `context`, `plans`, `verification`.
+
+If `valid` is `false`, STOP immediately with blocker language. Do not execute any plan in this phase.
+
+Required blocker text:
+```
+Lifecycle validation failed for Phase ${PHASE_NUMBER}.
+
+${reasons joined as bullet lines}
+
+Discuss/plan provenance is incomplete or non-compliant. Refusing to execute.
+```
+
+Special-case wording:
+- If any reason mentions `direct-fallback`: `Fallback/manual artifacts detected. Refusing to execute.`
+- If context is missing or invalid: `Discuss did not produce CONTEXT.md through the formal workflow. Stopping.`
+- If plans are missing or invalid: `Plan did not produce executable PLAN.md through the formal workflow. Stopping.`
+
 When `parallelization` is false, plans within a wave execute sequentially.
 
 **Runtime detection for Copilot:**
@@ -431,8 +456,9 @@ Execute each selected wave in sequence. Within a wave: parallel if `PARALLELIZAT
        - [ ] All tasks executed
        - [ ] Each task committed individually
        - [ ] SUMMARY.md created in plan directory
-       - [ ] STATE.md updated with position and decisions
-       - [ ] ROADMAP.md updated with plan progress (via `roadmap update-plan-progress`)
+- [ ] STATE.md updated with position and decisions
+- [ ] ROADMAP.md updated with plan progress (via `roadmap update-plan-progress`)
+- [ ] Lifecycle validation passed before any plan execution begins
        </success_criteria>
    ```
 

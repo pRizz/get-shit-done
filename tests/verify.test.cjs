@@ -42,6 +42,118 @@ function validPlanContent({ wave = 1, dependsOn = '[]', autonomous = 'true', ext
   ].join('\n');
 }
 
+function lifecycleContextContent({
+  generatedBy = 'gsd-discuss-phase',
+  lifecycleMode = 'interactive',
+  lifecycleId = 'phase-01-attempt',
+  generatedAt = '2026-04-08T12:00:00Z',
+} = {}) {
+  return [
+    '---',
+    `generated_by: ${generatedBy}`,
+    `lifecycle_mode: ${lifecycleMode}`,
+    `phase_lifecycle_id: ${lifecycleId}`,
+    `generated_at: ${generatedAt}`,
+    '---',
+    '',
+    '# Phase 01: Test - Context',
+    '',
+    '<domain>',
+    '## Phase Boundary',
+    '',
+    'Build the test phase.',
+    '',
+    '</domain>',
+  ].join('\n');
+}
+
+function lifecyclePlanContent({
+  generatedBy = 'gsd-plan-phase',
+  lifecycleMode = 'interactive',
+  lifecycleId = 'phase-01-attempt',
+  generatedAt = '2026-04-08T12:05:00Z',
+} = {}) {
+  return [
+    '---',
+    'phase: 01-test',
+    'plan: 01',
+    'type: execute',
+    'wave: 1',
+    'depends_on: []',
+    'files_modified: [src/test.ts]',
+    'autonomous: true',
+    'requirements: [TEST-01]',
+    `generated_by: ${generatedBy}`,
+    `lifecycle_mode: ${lifecycleMode}`,
+    `phase_lifecycle_id: ${lifecycleId}`,
+    `generated_at: ${generatedAt}`,
+    'must_haves:',
+    '  truths:',
+    '    - "Test phase works"',
+    '---',
+    '',
+    '<tasks>',
+    '<task type="auto">',
+    '  <name>Task 1</name>',
+    '  <files>src/test.ts</files>',
+    '  <action>Implement the test phase.</action>',
+    '  <verify><automated>echo ok</automated></verify>',
+    '  <done>Done</done>',
+    '</task>',
+    '</tasks>',
+  ].join('\n');
+}
+
+function lifecycleSummaryContent({
+  generatedBy = 'gsd-execute-plan',
+  lifecycleMode = 'interactive',
+  lifecycleId = 'phase-01-attempt',
+  generatedAt = '2026-04-08T12:10:00Z',
+} = {}) {
+  return [
+    '---',
+    'phase: 01-test',
+    'plan: 01',
+    'subsystem: testing',
+    'tags: [lifecycle]',
+    `generated_by: ${generatedBy}`,
+    `lifecycle_mode: ${lifecycleMode}`,
+    `phase_lifecycle_id: ${lifecycleId}`,
+    `generated_at: ${generatedAt}`,
+    'duration: 5min',
+    'completed: 2026-04-08',
+    '---',
+    '',
+    '# Phase 01 Plan 01 Summary',
+    '',
+    '**Lifecycle summary**',
+  ].join('\n');
+}
+
+function lifecycleVerificationContent({
+  generatedBy = 'gsd-verifier',
+  lifecycleMode = 'interactive',
+  lifecycleId = 'phase-01-attempt',
+  generatedAt = '2026-04-08T12:15:00Z',
+  lifecycleValidated = 'true',
+} = {}) {
+  return [
+    '---',
+    'phase: 01-test',
+    'verified: 2026-04-08T12:15:00Z',
+    'status: passed',
+    'score: 1/1 must-haves verified',
+    `generated_by: ${generatedBy}`,
+    `lifecycle_mode: ${lifecycleMode}`,
+    `phase_lifecycle_id: ${lifecycleId}`,
+    `generated_at: ${generatedAt}`,
+    `lifecycle_validated: ${lifecycleValidated}`,
+    '---',
+    '',
+    '# Verification',
+  ].join('\n');
+}
+
 describe('validate consistency command', () => {
   let tmpDir;
 
@@ -104,6 +216,184 @@ describe('validate consistency command', () => {
     assert.ok(
       output.warnings.some(w => w.includes('Gap in phase numbering')),
       'should warn about gap'
+    );
+  });
+});
+
+describe('verify lifecycle command', () => {
+  let tmpDir;
+  let phaseDir;
+
+  beforeEach(() => {
+    tmpDir = createTempProject();
+    phaseDir = path.join(tmpDir, '.planning', 'phases', '01-test');
+    fs.mkdirSync(phaseDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      '# Roadmap\n\n### Phase 1: Test\n**Goal:** Build the test phase\n**Plans:** 1 plan\n'
+    );
+  });
+
+  afterEach(() => {
+    cleanup(tmpDir);
+  });
+
+  test('accepts valid interactive provenance', () => {
+    fs.writeFileSync(path.join(phaseDir, '01-CONTEXT.md'), lifecycleContextContent());
+    fs.writeFileSync(path.join(phaseDir, '01-01-PLAN.md'), lifecyclePlanContent());
+    fs.writeFileSync(path.join(phaseDir, '01-01-SUMMARY.md'), lifecycleSummaryContent());
+    fs.writeFileSync(path.join(phaseDir, '01-VERIFICATION.md'), lifecycleVerificationContent());
+
+    const result = runGsdTools(
+      'verify lifecycle 1 --require-plans --require-verification',
+      tmpDir
+    );
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.valid, true, JSON.stringify(output.reasons));
+    assert.strictEqual(output.lifecycle_mode, 'interactive');
+    assert.strictEqual(output.lifecycle_id, 'phase-01-attempt');
+  });
+
+  test('accepts valid yolo provenance', () => {
+    fs.writeFileSync(
+      path.join(phaseDir, '01-CONTEXT.md'),
+      lifecycleContextContent({ lifecycleMode: 'yolo' })
+    );
+    fs.writeFileSync(
+      path.join(phaseDir, '01-01-PLAN.md'),
+      lifecyclePlanContent({ lifecycleMode: 'yolo' })
+    );
+
+    const result = runGsdTools('verify lifecycle 1 --require-plans', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.valid, true, JSON.stringify(output.reasons));
+    assert.strictEqual(output.lifecycle_mode, 'yolo');
+  });
+
+  test('accepts explicit skipped-via-config provenance', () => {
+    fs.writeFileSync(
+      path.join(phaseDir, '01-CONTEXT.md'),
+      lifecycleContextContent({
+        generatedBy: 'gsd-autonomous',
+        lifecycleMode: 'skipped-via-config',
+      })
+    );
+    fs.writeFileSync(
+      path.join(phaseDir, '01-01-PLAN.md'),
+      lifecyclePlanContent({ lifecycleMode: 'skipped-via-config' })
+    );
+
+    const result = runGsdTools('verify lifecycle 1 --require-plans', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.valid, true, JSON.stringify(output.reasons));
+    assert.strictEqual(output.lifecycle_mode, 'skipped-via-config');
+  });
+
+  test('fails when context is missing', () => {
+    fs.writeFileSync(path.join(phaseDir, '01-01-PLAN.md'), lifecyclePlanContent());
+
+    const result = runGsdTools('verify lifecycle 1 --require-plans', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.valid, false);
+    assert.ok(output.reasons.includes('context missing'));
+  });
+
+  test('fails when plans are missing', () => {
+    fs.writeFileSync(path.join(phaseDir, '01-CONTEXT.md'), lifecycleContextContent());
+
+    const result = runGsdTools('verify lifecycle 1 --require-plans', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.valid, false);
+    assert.ok(output.reasons.includes('plans missing'));
+  });
+
+  test('fails when phase_lifecycle_id is missing from an artifact', () => {
+    fs.writeFileSync(path.join(phaseDir, '01-CONTEXT.md'), lifecycleContextContent());
+    fs.writeFileSync(
+      path.join(phaseDir, '01-01-PLAN.md'),
+      lifecyclePlanContent().replace('phase_lifecycle_id: phase-01-attempt\n', '')
+    );
+
+    const result = runGsdTools('verify lifecycle 1 --require-plans', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.valid, false);
+    assert.ok(
+      output.reasons.some(reason => reason.includes('plan missing phase_lifecycle_id')),
+      JSON.stringify(output.reasons)
+    );
+  });
+
+  test('fails when artifacts have mismatched lifecycle ids', () => {
+    fs.writeFileSync(path.join(phaseDir, '01-CONTEXT.md'), lifecycleContextContent());
+    fs.writeFileSync(
+      path.join(phaseDir, '01-01-PLAN.md'),
+      lifecyclePlanContent({ lifecycleId: 'phase-01-other' })
+    );
+
+    const result = runGsdTools('verify lifecycle 1 --require-plans', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.valid, false);
+    assert.ok(
+      output.reasons.some(reason => reason.includes('phase_lifecycle_id mismatch')),
+      JSON.stringify(output.reasons)
+    );
+  });
+
+  test('rejects direct-fallback provenance', () => {
+    fs.writeFileSync(
+      path.join(phaseDir, '01-CONTEXT.md'),
+      lifecycleContextContent({ lifecycleMode: 'direct-fallback' })
+    );
+    fs.writeFileSync(
+      path.join(phaseDir, '01-01-PLAN.md'),
+      lifecyclePlanContent({ lifecycleMode: 'direct-fallback' })
+    );
+
+    const result = runGsdTools('verify lifecycle 1 --require-plans', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.valid, false);
+    assert.ok(
+      output.reasons.some(reason => reason.includes('direct-fallback')),
+      JSON.stringify(output.reasons)
+    );
+  });
+
+  test('fails when verification is stale', () => {
+    fs.writeFileSync(path.join(phaseDir, '01-CONTEXT.md'), lifecycleContextContent());
+    fs.writeFileSync(path.join(phaseDir, '01-01-PLAN.md'), lifecyclePlanContent());
+    fs.writeFileSync(path.join(phaseDir, '01-01-SUMMARY.md'), lifecycleSummaryContent());
+    fs.writeFileSync(
+      path.join(phaseDir, '01-VERIFICATION.md'),
+      lifecycleVerificationContent({ generatedAt: '2026-04-08T12:01:00Z' })
+    );
+
+    const result = runGsdTools(
+      'verify lifecycle 1 --require-plans --require-verification',
+      tmpDir
+    );
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.valid, false);
+    assert.ok(
+      output.reasons.includes('verification is stale relative to context, plan, or summary artifacts'),
+      JSON.stringify(output.reasons)
     );
   });
 });

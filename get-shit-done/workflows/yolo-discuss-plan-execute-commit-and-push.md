@@ -53,7 +53,11 @@ Use /gsd-progress to see available phases.
 Run single-phase yolo discuss plus the existing auto-chain:
 
 ```bash
-Skill(skill="gsd-discuss-phase", args="${ARGUMENTS} --yolo --chain")
+PHASE_LIFECYCLE_ID="${phase_number}-$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" current-timestamp filename)"
+```
+
+```bash
+Skill(skill="gsd-discuss-phase", args="${ARGUMENTS} --yolo --chain --lifecycle-id ${PHASE_LIFECYCLE_ID} --lifecycle-mode yolo")
 ```
 Then continue to inspect_single_phase_result.
 </step>
@@ -141,6 +145,21 @@ Phase ${PHASE}: verification status is ${VERIFY_STATUS:-unknown}. Skipping commi
 Stop without any git mutation.
 
 **If `VERIFY_STATUS` is `passed`:** continue to finalize_git.
+
+Before finalizing git, require lifecycle compliance for the same phase attempt:
+
+```bash
+LIFECYCLE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" verify lifecycle "${PHASE}" --require-plans --require-verification --raw)
+```
+
+If `valid` is `false`, display:
+```
+Phase ${PHASE}: lifecycle validation failed. Skipping commit/push.
+
+${validator reasons}
+```
+
+Stop without any git mutation.
 </step>
 
 <step name="finalize_git">

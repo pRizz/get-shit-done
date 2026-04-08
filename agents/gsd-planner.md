@@ -333,28 +333,6 @@ Record in `user_setup` frontmatter. Only include what Claude literally cannot do
 - `creates`: What this produces
 - `has_checkpoint`: Requires user interaction?
 
-**Example with 6 tasks:**
-
-```
-Task A (User model): needs nothing, creates src/models/user.ts
-Task B (Product model): needs nothing, creates src/models/product.ts
-Task C (User API): needs Task A, creates src/api/users.ts
-Task D (Product API): needs Task B, creates src/api/products.ts
-Task E (Dashboard): needs Task C + D, creates src/components/Dashboard.tsx
-Task F (Verify UI): checkpoint:human-verify, needs Task E
-
-Graph:
-  A --> C --\
-              --> E --> F
-  B --> D --/
-
-Wave analysis:
-  Wave 1: A, B (independent roots)
-  Wave 2: C, D (depend only on Wave 1)
-  Wave 3: E (depends on Wave 2)
-  Wave 4: F (checkpoint, depends on Wave 3)
-```
-
 ## Vertical Slices vs Horizontal Layers
 
 **Vertical slices (PREFER):**
@@ -388,8 +366,6 @@ files_modified: [src/models/user.ts, src/api/users.ts]
 # Plan 02 frontmatter (no overlap = parallel)
 files_modified: [src/models/product.ts, src/api/products.ts]
 ```
-
-No overlap → can run parallel. File in multiple plans → later plan depends on earlier.
 
 </dependency_graph>
 
@@ -542,24 +518,17 @@ After completion, create `.planning/phases/XX-name/{phase}-{plan}-SUMMARY.md`
 | `requirements` | Yes | **MUST** list requirement IDs from ROADMAP. Every roadmap requirement ID MUST appear in at least one plan. |
 | `user_setup` | No | Human-required setup items |
 | `must_haves` | Yes | Goal-backward verification criteria |
-
-Wave numbers are pre-computed during planning. Execute-phase reads `wave` directly from frontmatter.
+| `generated_by` | Yes | `gsd-plan-phase` |
+| `lifecycle_mode` | Yes | `interactive`, `yolo`, `skipped-via-config`, or `direct-fallback` |
+| `phase_lifecycle_id` | Yes | Shared lifecycle ID for the phase attempt |
+| `generated_at` | Yes | ISO timestamp |
 
 ## Interface Context for Executors
-
-**Key insight:** "The difference between handing a contractor blueprints versus telling them 'build me a house.'"
 
 When creating plans that depend on existing code or create new interfaces consumed by other plans:
 
 ### For plans that USE existing code:
-After determining `files_modified`, extract the key interfaces/types/exports from the codebase that executors will need:
-
-```bash
-# Extract type definitions, interfaces, and exports from relevant files
-grep -n "export\\|interface\\|type\\|class\\|function" {relevant_source_files} 2>/dev/null | head -50
-```
-
-Embed these in the plan's `<context>` section as an `<interfaces>` block:
+After determining `files_modified`, extract the key interfaces/types/exports from the codebase that executors will need and embed them in the plan's `<context>` section as an `<interfaces>` block:
 
 ```xml
 <interfaces>
@@ -1115,20 +1084,11 @@ The filename MUST follow the exact pattern: `{padded_phase}-{NN}-PLAN.md`
 - `{NN}` = zero-padded sequential plan number within the phase (e.g. `01`, `02`, `03`)
 - The suffix is always `-PLAN.md` — NEVER `PLAN-NN.md`, `NN-PLAN.md`, or any other variation
 
-**Correct examples:**
-- Phase 1, Plan 1 → `01-01-PLAN.md`
-- Phase 3, Plan 2 → `03-02-PLAN.md`
-- Phase 2.1, Plan 1 → `02.1-01-PLAN.md`
-
-**Incorrect (will break gsd-tools detection):**
-- ❌ `PLAN-01-auth.md`
-- ❌ `01-PLAN-01.md`
-- ❌ `plan-01.md`
-- ❌ `01-01-plan.md` (lowercase)
-
 Full write path: `.planning/phases/{padded_phase}-{slug}/{padded_phase}-{NN}-PLAN.md`
 
 Include all frontmatter fields.
+
+Lifecycle metadata rule: `generated_by: gsd-plan-phase`; copy `lifecycle_mode` and `phase_lifecycle_id` from CONTEXT.md or orchestrator input; else use `lifecycle_mode: direct-fallback`.
 </step>
 
 <step name="validate_plan">
@@ -1142,8 +1102,7 @@ Returns JSON: `{ valid, missing, present, schema }`
 
 **If `valid=false`:** Fix missing required fields before proceeding.
 
-Required plan frontmatter fields:
-- `phase`, `plan`, `type`, `wave`, `depends_on`, `files_modified`, `autonomous`, `must_haves`
+Required plan frontmatter fields include the standard execution keys plus `generated_by`, `lifecycle_mode`, `phase_lifecycle_id`, and `generated_at`.
 
 Also validate plan structure:
 

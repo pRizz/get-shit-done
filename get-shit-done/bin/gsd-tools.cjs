@@ -97,6 +97,8 @@
  *     --schema plan|summary|verification
  *
  * Verification Suite:
+ *   verify lifecycle <phase>           Check lifecycle provenance across phase artifacts
+ *     [--expect-id <id>] [--expect-mode <mode>] [--require-plans] [--require-verification]
  *   verify plan-structure <file>       Check PLAN.md structure + tasks
  *   verify phase-completeness <phase>  Check all plans have summaries
  *   verify references <file>           Check @-refs + paths resolve
@@ -563,7 +565,18 @@ async function runCommand(command, args, cwd, raw, defaultValue) {
 
     case 'verify': {
       const subcommand = args[1];
-      if (subcommand === 'plan-structure') {
+      if (subcommand === 'lifecycle') {
+        const { 'expect-id': expectId, 'expect-mode': expectMode } = parseNamedArgs(
+          args,
+          ['expect-id', 'expect-mode']
+        );
+        verify.cmdVerifyLifecycle(cwd, args[2], {
+          expectedId: expectId,
+          expectedMode: expectMode,
+          requirePlans: args.includes('--require-plans'),
+          requireVerification: args.includes('--require-verification'),
+        }, raw);
+      } else if (subcommand === 'plan-structure') {
         verify.cmdVerifyPlanStructure(cwd, args[2], raw);
       } else if (subcommand === 'phase-completeness') {
         verify.cmdVerifyPhaseCompleteness(cwd, args[2], raw);
@@ -579,7 +592,7 @@ async function runCommand(command, args, cwd, raw, defaultValue) {
         const skipFlag = args.includes('--skip');
         verify.cmdVerifySchemaDrift(cwd, args[2], skipFlag, raw);
       } else {
-        error('Unknown verify subcommand. Available: plan-structure, phase-completeness, references, commits, artifacts, key-links, schema-drift');
+        error('Unknown verify subcommand. Available: lifecycle, plan-structure, phase-completeness, references, commits, artifacts, key-links, schema-drift');
       }
       break;
     }

@@ -553,6 +553,44 @@ describe('cmdInitMilestoneOp', () => {
     assert.strictEqual(output.all_phases_complete, true);
   });
 
+  test('uses roadmap analyze counts when phase directories disagree', () => {
+    const phase1 = path.join(tmpDir, '.planning', 'phases', '01-setup');
+    const phase2 = path.join(tmpDir, '.planning', 'phases', '02-api');
+    const orphan = path.join(tmpDir, '.planning', 'phases', '99-orphan');
+    fs.mkdirSync(phase1, { recursive: true });
+    fs.mkdirSync(phase2, { recursive: true });
+    fs.mkdirSync(orphan, { recursive: true });
+    fs.writeFileSync(path.join(phase1, '01-01-PLAN.md'), '# Plan');
+    fs.writeFileSync(path.join(phase1, '01-01-SUMMARY.md'), '# Summary');
+    fs.writeFileSync(path.join(orphan, '99-01-PLAN.md'), '# Plan');
+    fs.writeFileSync(path.join(orphan, '99-01-SUMMARY.md'), '# Summary');
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      `# Roadmap
+
+- [x] **Phase 1: Setup**
+- [ ] **Phase 2: API**
+
+### Phase 1: Setup
+**Goal:** Setup
+
+### Phase 2: API
+**Goal:** API
+`
+    );
+
+    const result = runGsdTools('init milestone-op', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.phase_count, 2, 'roadmap analyze should define phase_count');
+    assert.strictEqual(output.completed_phases, 1, 'roadmap analyze should define completed count');
+    assert.strictEqual(output.phase_count_directory, 3, 'directory count should still be surfaced for diagnostics');
+    assert.strictEqual(output.completed_phases_directory, 2, 'directory completed count should still be surfaced for diagnostics');
+    assert.strictEqual(output.phase_count_mismatch, true, 'mismatch should be flagged');
+    assert.strictEqual(output.phase_count_source, 'roadmap analyze');
+  });
+
   test('archive directory scanning', () => {
     fs.mkdirSync(path.join(tmpDir, '.planning', 'archive', 'v1.0'), { recursive: true });
     fs.mkdirSync(path.join(tmpDir, '.planning', 'archive', 'v0.9'), { recursive: true });
@@ -608,6 +646,63 @@ describe('cmdInitPhaseOp fallback', () => {
     assert.ok(output.phase_dir.includes('03-api'), 'phase_dir should contain 03-api');
     assert.strictEqual(output.has_context, true);
     assert.strictEqual(output.has_plans, true);
+  });
+
+  test('exposes lifecycle validation fields when provenance is compliant', () => {
+    const phaseDir = path.join(tmpDir, '.planning', 'phases', '03-api');
+    fs.mkdirSync(phaseDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(phaseDir, '03-CONTEXT.md'),
+      [
+        '---',
+        'generated_by: gsd-discuss-phase',
+        'lifecycle_mode: interactive',
+        'phase_lifecycle_id: phase-03-attempt',
+        'generated_at: 2026-04-08T12:00:00Z',
+        '---',
+        '',
+        '# Context',
+      ].join('\n')
+    );
+    fs.writeFileSync(
+      path.join(phaseDir, '03-01-PLAN.md'),
+      [
+        '---',
+        'phase: 03-api',
+        'plan: 01',
+        'type: execute',
+        'wave: 1',
+        'depends_on: []',
+        'files_modified: [src/api.ts]',
+        'autonomous: true',
+        'requirements: [API-01]',
+        'generated_by: gsd-plan-phase',
+        'lifecycle_mode: interactive',
+        'phase_lifecycle_id: phase-03-attempt',
+        'generated_at: 2026-04-08T12:05:00Z',
+        'must_haves:',
+        '  truths:',
+        '    - "API works"',
+        '---',
+        '',
+        '<tasks></tasks>',
+      ].join('\n')
+    );
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      '# Roadmap\n\n### Phase 3: API\n**Goal:** Build API\n**Plans:** 1 plans\n'
+    );
+
+    const result = runGsdTools('init phase-op 3', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.lifecycle_valid, true, JSON.stringify(output.lifecycle_reasons));
+    assert.strictEqual(output.lifecycle_id, 'phase-03-attempt');
+    assert.strictEqual(output.lifecycle_mode, 'interactive');
+    assert.strictEqual(output.lifecycle_context_valid, true);
+    assert.strictEqual(output.lifecycle_plans_valid, true);
+    assert.strictEqual(output.lifecycle_has_direct_fallback, false);
   });
 
   test('fallback to ROADMAP when no directory exists', () => {

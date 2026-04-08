@@ -384,7 +384,7 @@ If user_setup exists: create `{phase}-USER-SETUP.md` using template `~/.claude/g
 <step name="create_summary">
 Create `{phase}-{plan}-SUMMARY.md` at `.planning/phases/XX-name/`. Use `~/.claude/get-shit-done/templates/summary.md`.
 
-**Frontmatter:** phase, plan, subsystem, tags | requires/provides/affects | tech-stack.added/patterns | key-files.created/modified | key-decisions | requirements-completed (**MUST** copy `requirements` array from PLAN.md frontmatter verbatim) | duration ($DURATION), completed ($PLAN_END_TIME date).
+**Frontmatter:** phase, plan, subsystem, tags | requires/provides/affects | tech-stack.added/patterns | key-files.created/modified | key-decisions | requirements-completed (**MUST** copy `requirements` array from PLAN.md frontmatter verbatim) | duration ($DURATION), completed ($PLAN_END_TIME date) | `generated_by: gsd-execute-plan` | `lifecycle_mode` copied from PLAN.md | `phase_lifecycle_id` copied from PLAN.md | `generated_at` set to the summary write timestamp.
 
 Title: `# Phase [X] Plan [Y]: [Name] Summary`
 

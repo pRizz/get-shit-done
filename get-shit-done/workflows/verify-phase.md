@@ -342,7 +342,7 @@ If gaps_found:
 REPORT_PATH="$PHASE_DIR/${PHASE_NUM}-VERIFICATION.md"
 ```
 
-Fill template sections: frontmatter (phase/timestamp/status/score), goal achievement, artifact table, wiring table, requirements coverage, anti-patterns, human verification, gaps summary, fix plans (if gaps_found), metadata.
+Fill template sections: frontmatter (phase/timestamp/status/score plus `generated_by`, `lifecycle_mode`, `phase_lifecycle_id`, `generated_at`, `lifecycle_validated`), goal achievement, artifact table, wiring table, requirements coverage, anti-patterns, human verification, gaps summary, fix plans (if gaps_found), metadata.
 
 See ~/.claude/get-shit-done/templates/verification-report.md for complete template.
 </step>

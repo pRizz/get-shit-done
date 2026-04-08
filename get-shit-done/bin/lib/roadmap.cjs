@@ -112,12 +112,11 @@ function cmdRoadmapGetPhase(cwd, phaseNum, raw) {
   }
 }
 
-function cmdRoadmapAnalyze(cwd, raw) {
+function analyzeRoadmapInternal(cwd) {
   const roadmapPath = planningPaths(cwd).roadmap;
 
   if (!fs.existsSync(roadmapPath)) {
-    output({ error: 'ROADMAP.md not found', milestones: [], phases: [], current_phase: null }, raw);
-    return;
+    return { error: 'ROADMAP.md not found', milestones: [], phases: [], current_phase: null };
   }
 
   const rawContent = fs.readFileSync(roadmapPath, 'utf-8');
@@ -251,6 +250,11 @@ function cmdRoadmapAnalyze(cwd, raw) {
     missing_phase_details: missingDetails.length > 0 ? missingDetails : null,
   };
 
+  return result;
+}
+
+function cmdRoadmapAnalyze(cwd, raw) {
+  const result = analyzeRoadmapInternal(cwd);
   output(result, raw);
 }
 
@@ -357,4 +361,5 @@ module.exports = {
   cmdRoadmapGetPhase,
   cmdRoadmapAnalyze,
   cmdRoadmapUpdatePlanProgress,
+  analyzeRoadmapInternal,
 };

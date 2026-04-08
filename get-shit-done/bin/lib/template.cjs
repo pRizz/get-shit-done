@@ -83,6 +83,10 @@ function cmdTemplateFill(cwd, templateType, options, raw) {
         'key-files': { created: [], modified: [] },
         'key-decisions': [],
         'patterns-established': [],
+        generated_by: 'gsd-execute-plan',
+        lifecycle_mode: 'interactive',
+        phase_lifecycle_id: `${phaseId}-${Date.now()}`,
+        generated_at: new Date().toISOString(),
         duration: '[X]min',
         completed: today,
         ...fields,
@@ -128,6 +132,10 @@ function cmdTemplateFill(cwd, templateType, options, raw) {
         files_modified: [],
         autonomous: true,
         user_setup: [],
+        generated_by: 'gsd-plan-phase',
+        lifecycle_mode: 'interactive',
+        phase_lifecycle_id: `${phaseId}-${Date.now()}`,
+        generated_at: new Date().toISOString(),
         must_haves: { truths: [], artifacts: [], key_links: [] },
         ...fields,
       };
@@ -170,6 +178,11 @@ function cmdTemplateFill(cwd, templateType, options, raw) {
         verified: new Date().toISOString(),
         status: 'pending',
         score: '0/0 must-haves verified',
+        generated_by: 'gsd-verifier',
+        lifecycle_mode: 'interactive',
+        phase_lifecycle_id: `${phaseId}-${Date.now()}`,
+        generated_at: new Date().toISOString(),
+        lifecycle_validated: false,
         ...fields,
       };
       body = [

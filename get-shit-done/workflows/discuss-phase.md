@@ -145,6 +145,28 @@ AGENT_SKILLS_ADVISOR=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" agen
 
 Parse JSON for: `commit_docs`, `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `has_research`, `has_context`, `has_plans`, `has_verification`, `plan_count`, `roadmap_exists`, `planning_exists`, `response_language`.
 
+Resolve lifecycle provenance for the current phase attempt:
+
+```bash
+ARG_LIFECYCLE_ID=$(echo "$ARGUMENTS" | grep -oE '\-\-lifecycle-id\s+[^[:space:]]+' | awk '{print $2}' | tail -1)
+ARG_LIFECYCLE_MODE=$(echo "$ARGUMENTS" | grep -oE '\-\-lifecycle-mode\s+[^[:space:]]+' | awk '{print $2}' | tail -1)
+NOW_TS=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" current-timestamp full)
+
+if [ -n "$ARG_LIFECYCLE_ID" ]; then
+  PHASE_LIFECYCLE_ID="$ARG_LIFECYCLE_ID"
+else
+  PHASE_LIFECYCLE_ID="${padded_phase}-$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" current-timestamp filename)"
+fi
+
+if [ -n "$ARG_LIFECYCLE_MODE" ]; then
+  PHASE_LIFECYCLE_MODE="$ARG_LIFECYCLE_MODE"
+elif [[ "$ARGUMENTS" =~ --yolo ]]; then
+  PHASE_LIFECYCLE_MODE="yolo"
+else
+  PHASE_LIFECYCLE_MODE="interactive"
+fi
+```
+
 **If `response_language` is set:** All user-facing questions, prompts, and explanations in this workflow MUST be presented in `{response_language}`. This includes AskUserQuestion labels, option text, gray area descriptions, and discussion summaries. Technical terms, code, and file paths remain in English. Subagent prompts stay in English — only user-facing output is translated.
 
 **If `phase_found` is false:**
@@ -926,6 +948,13 @@ mkdir -p ".planning/phases/${padded_phase}-${phase_slug}"
 **Structure the content by what was discussed:**
 
 ```markdown
+---
+generated_by: gsd-discuss-phase
+lifecycle_mode: ${PHASE_LIFECYCLE_MODE}
+phase_lifecycle_id: ${PHASE_LIFECYCLE_ID}
+generated_at: ${NOW_TS}
+---
+
 # Phase [X]: [Name] - Context
 
 **Gathered:** [date]
@@ -1188,7 +1217,7 @@ Context captured. Launching plan-phase...
 
 Launch plan-phase using the Skill tool to avoid nested Task sessions (which cause runtime freezes due to deep agent nesting — see #686):
 ```
-Skill(skill="gsd-plan-phase", args="${PHASE} --auto ${GSD_WS}")
+Skill(skill="gsd-plan-phase", args="${PHASE} --auto ${GSD_WS} --lifecycle-id ${PHASE_LIFECYCLE_ID} --lifecycle-mode ${PHASE_LIFECYCLE_MODE}")
 ```
 
 This keeps the auto-advance chain flat — discuss, plan, and execute all run at the same nesting level rather than spawning increasingly deep Task agents.

@@ -22,6 +22,10 @@ files_modified: []          # Files this plan modifies.
 autonomous: true            # false if plan has checkpoints requiring user interaction
 requirements: []            # REQUIRED — Requirement IDs from ROADMAP this plan addresses. MUST NOT be empty.
 user_setup: []              # Human-required setup Claude cannot automate (see below)
+generated_by: gsd-plan-phase
+lifecycle_mode: interactive # interactive | yolo | skipped-via-config | direct-fallback
+phase_lifecycle_id: phase-20260408T120000Z
+generated_at: 2026-04-08T12:00:00Z
 
 # Goal-backward verification (derived during planning, verified after execution)
 must_haves:
@@ -140,6 +144,10 @@ After completion, create `.planning/phases/XX-name/{phase}-{plan}-SUMMARY.md`
 | `autonomous` | Yes | `true` if no checkpoints, `false` if has checkpoints |
 | `requirements` | Yes | **MUST** list requirement IDs from ROADMAP. Every roadmap requirement MUST appear in at least one plan. |
 | `user_setup` | No | Array of human-required setup items (external services) |
+| `generated_by` | Yes | Always `gsd-plan-phase` for formal plans |
+| `lifecycle_mode` | Yes | Shared lifecycle provenance mode copied across phase artifacts |
+| `phase_lifecycle_id` | Yes | Shared lifecycle ID for this phase attempt |
+| `generated_at` | Yes | ISO timestamp when the plan was generated |
 | `must_haves` | Yes | Goal-backward verification criteria (see below) |
 
 **Wave is pre-computed:** Wave numbers are assigned during `/gsd-plan-phase`. Execute-phase reads `wave` directly from frontmatter and groups plans by wave number. No runtime dependency analysis needed.

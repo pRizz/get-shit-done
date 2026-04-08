@@ -39,6 +39,10 @@ patterns-established:
   - "Pattern 2: description"
 
 requirements-completed: []  # REQUIRED — Copy ALL requirement IDs from this plan's `requirements` frontmatter field.
+generated_by: gsd-execute-plan
+lifecycle_mode: interactive
+phase_lifecycle_id: phase-20260408T120000Z
+generated_at: 2026-04-08T12:30:00Z
 
 # Metrics
 duration: Xmin
@@ -145,6 +149,7 @@ None - no external service configuration required.
 **Patterns:** Established conventions future phases should maintain.
 
 **Population:** Frontmatter is populated during summary creation in execute-plan.md. See `<step name="create_summary">` for field-by-field guidance.
+`lifecycle_mode` and `phase_lifecycle_id` MUST be copied from the originating PLAN.md so strict autonomous flows can prove the summary belongs to the same formal lifecycle.
 </frontmatter_guidance>
 
 <one_liner_rules>

@@ -693,6 +693,22 @@ function cmdInitPhaseOp(cwd, phase, raw) {
     } catch { /* intentionally empty */ }
   }
 
+  if (phaseInfo?.directory) {
+    const { validateLifecycleInternal } = require('./verify.cjs');
+    const lifecycle = validateLifecycleInternal(cwd, phaseInfo.phase_number || phase);
+    result.lifecycle = lifecycle;
+    result.lifecycle_valid = lifecycle.valid;
+    result.lifecycle_reasons = lifecycle.reasons;
+    result.lifecycle_id = lifecycle.lifecycle_id;
+    result.lifecycle_mode = lifecycle.lifecycle_mode;
+    result.lifecycle_context_valid = lifecycle.context?.valid || false;
+    result.lifecycle_plans_valid = lifecycle.plans?.valid || false;
+    result.lifecycle_verification_valid = lifecycle.verification?.exists
+      ? lifecycle.verification.valid
+      : null;
+    result.lifecycle_has_direct_fallback = lifecycle.reasons.some(reason => reason.includes('direct-fallback'));
+  }
+
   output(withProjectRoot(cwd, result), raw);
 }
 
@@ -787,6 +803,13 @@ function cmdInitMilestoneOp(cwd, raw) {
       .map(e => e.name);
   } catch { /* intentionally empty */ }
 
+  const { analyzeRoadmapInternal } = require('./roadmap.cjs');
+  const roadmapAnalysis = analyzeRoadmapInternal(cwd);
+  const hasRoadmapCounts = Number.isInteger(roadmapAnalysis.phase_count)
+    && Number.isInteger(roadmapAnalysis.completed_phases);
+  const roadmapPhaseCount = hasRoadmapCounts ? roadmapAnalysis.phase_count : phaseCount;
+  const roadmapCompletedPhases = hasRoadmapCounts ? roadmapAnalysis.completed_phases : completedPhases;
+
   const result = {
     // Config
     commit_docs: config.commit_docs,
@@ -797,9 +820,13 @@ function cmdInitMilestoneOp(cwd, raw) {
     milestone_slug: generateSlugInternal(milestone.name),
 
     // Phase counts
-    phase_count: phaseCount,
-    completed_phases: completedPhases,
-    all_phases_complete: phaseCount > 0 && phaseCount === completedPhases,
+    phase_count: roadmapPhaseCount,
+    completed_phases: roadmapCompletedPhases,
+    all_phases_complete: roadmapPhaseCount > 0 && roadmapPhaseCount === roadmapCompletedPhases,
+    phase_count_directory: phaseCount,
+    completed_phases_directory: completedPhases,
+    phase_count_mismatch: phaseCount !== roadmapPhaseCount || completedPhases !== roadmapCompletedPhases,
+    phase_count_source: 'roadmap analyze',
 
     // Archive
     archived_milestones: archivedMilestones,

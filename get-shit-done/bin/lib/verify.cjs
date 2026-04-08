@@ -5,9 +5,329 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { safeReadFile, loadConfig, normalizePhaseName, escapeRegex, execGit, findPhaseInternal, getMilestoneInfo, stripShippedMilestones, extractCurrentMilestone, planningDir, planningRoot, output, error, checkAgentsInstalled, CONFIG_DEFAULTS } = require('./core.cjs');
+const { safeReadFile, loadConfig, normalizePhaseName, escapeRegex, execGit, findPhaseInternal, getMilestoneInfo, stripShippedMilestones, extractCurrentMilestone, planningDir, planningRoot, toPosixPath, output, error, checkAgentsInstalled, CONFIG_DEFAULTS } = require('./core.cjs');
 const { extractFrontmatter, parseMustHavesBlock } = require('./frontmatter.cjs');
 const { writeStateMd } = require('./state.cjs');
+
+const LIFECYCLE_MODES = new Set([
+  'interactive',
+  'yolo',
+  'skipped-via-config',
+  'direct-fallback',
+]);
+
+const LIFECYCLE_ARTIFACT_FIELDS = [
+  'generated_by',
+  'lifecycle_mode',
+  'phase_lifecycle_id',
+  'generated_at',
+];
+
+function parseLifecycleTimestamp(value) {
+  if (!value || typeof value !== 'string') return null;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function coerceLifecycleBoolean(value) {
+  if (value === true || value === false) return value;
+  if (typeof value !== 'string') return null;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return null;
+}
+
+function lifecycleArtifactRecord(cwd, fullPath, artifactType) {
+  const relPath = toPosixPath(path.relative(cwd, fullPath));
+  const missing = {
+    type: artifactType,
+    path: relPath,
+    exists: false,
+    valid: false,
+    reasons: [`${artifactType} missing`],
+  };
+
+  if (!fs.existsSync(fullPath)) return missing;
+
+  const content = safeReadFile(fullPath) || '';
+  const frontmatter = extractFrontmatter(content);
+  const stat = fs.statSync(fullPath);
+  const reasons = [];
+
+  for (const field of LIFECYCLE_ARTIFACT_FIELDS) {
+    const value = frontmatter[field];
+    if (typeof value !== 'string' || value.trim() === '') {
+      reasons.push(`${artifactType} missing ${field}`);
+    }
+  }
+
+  const lifecycleMode = typeof frontmatter.lifecycle_mode === 'string'
+    ? frontmatter.lifecycle_mode.trim()
+    : null;
+  if (lifecycleMode && !LIFECYCLE_MODES.has(lifecycleMode)) {
+    reasons.push(`${artifactType} has invalid lifecycle_mode: ${lifecycleMode}`);
+  }
+
+  const generatedAt = typeof frontmatter.generated_at === 'string'
+    ? frontmatter.generated_at.trim()
+    : null;
+  const generatedAtMs = parseLifecycleTimestamp(generatedAt);
+  if (generatedAt && generatedAtMs === null) {
+    reasons.push(`${artifactType} has invalid generated_at: ${generatedAt}`);
+  }
+
+  let lifecycleValidated = null;
+  if (artifactType === 'verification') {
+    lifecycleValidated = coerceLifecycleBoolean(frontmatter.lifecycle_validated);
+    if (lifecycleValidated === null) {
+      reasons.push('verification missing lifecycle_validated');
+    }
+  }
+
+  return {
+    type: artifactType,
+    path: relPath,
+    exists: true,
+    valid: reasons.length === 0,
+    reasons,
+    generated_by: typeof frontmatter.generated_by === 'string' ? frontmatter.generated_by.trim() : null,
+    lifecycle_mode: lifecycleMode,
+    phase_lifecycle_id: typeof frontmatter.phase_lifecycle_id === 'string'
+      ? frontmatter.phase_lifecycle_id.trim()
+      : null,
+    generated_at: generatedAt,
+    generated_at_ms: generatedAtMs,
+    lifecycle_validated: lifecycleValidated,
+    mtime_ms: stat.mtimeMs,
+  };
+}
+
+function normalizeLifecycleOptions(options = {}) {
+  return {
+    expectedId: options.expectedId || null,
+    expectedMode: options.expectedMode || null,
+    requirePlans: !!options.requirePlans,
+    requireVerification: !!options.requireVerification,
+  };
+}
+
+function validateLifecycleInternal(cwd, phaseArg, options = {}) {
+  const normalizedOptions = normalizeLifecycleOptions(options);
+  const phaseInfo = findPhaseInternal(cwd, phaseArg);
+
+  if (!phaseInfo || !phaseInfo.found || !phaseInfo.directory) {
+    return {
+      phase: phaseArg,
+      phase_dir: null,
+      valid: false,
+      reasons: [`Phase not found: ${phaseArg}`],
+      expected_id: normalizedOptions.expectedId,
+      expected_mode: normalizedOptions.expectedMode,
+      context: {
+        type: 'context',
+        path: null,
+        exists: false,
+        valid: false,
+        reasons: ['context missing'],
+      },
+      plans: {
+        total: 0,
+        valid: false,
+        reasons: normalizedOptions.requirePlans ? ['plans missing'] : [],
+        files: [],
+      },
+      summaries: {
+        total: 0,
+        valid: true,
+        reasons: [],
+        files: [],
+      },
+      verification: {
+        type: 'verification',
+        path: null,
+        exists: false,
+        valid: false,
+        reasons: normalizedOptions.requireVerification ? ['verification missing'] : [],
+      },
+      lifecycle_id: null,
+      lifecycle_mode: null,
+    };
+  }
+
+  const phaseDir = path.join(cwd, phaseInfo.directory);
+  const files = fs.readdirSync(phaseDir).sort();
+  const findFirst = predicate => files.find(predicate) || null;
+
+  const contextFile = findFirst(f => f.endsWith('-CONTEXT.md') || f === 'CONTEXT.md');
+  const verificationFile = findFirst(f => f.endsWith('-VERIFICATION.md') || f === 'VERIFICATION.md');
+  const planFiles = files.filter(f => f.endsWith('-PLAN.md') || f === 'PLAN.md');
+  const summaryFiles = files.filter(f => f.endsWith('-SUMMARY.md') || f === 'SUMMARY.md');
+
+  const context = contextFile
+    ? lifecycleArtifactRecord(cwd, path.join(phaseDir, contextFile), 'context')
+    : {
+        type: 'context',
+        path: null,
+        exists: false,
+        valid: false,
+        reasons: ['context missing'],
+      };
+
+  const verification = verificationFile
+    ? lifecycleArtifactRecord(cwd, path.join(phaseDir, verificationFile), 'verification')
+    : {
+        type: 'verification',
+        path: null,
+        exists: false,
+        valid: false,
+        reasons: ['verification missing'],
+      };
+
+  const planRecords = planFiles.map(file =>
+    lifecycleArtifactRecord(cwd, path.join(phaseDir, file), 'plan')
+  );
+  const summaryRecords = summaryFiles.map(file =>
+    lifecycleArtifactRecord(cwd, path.join(phaseDir, file), 'summary')
+  );
+
+  const reasons = [];
+  const lifecycleIds = new Set();
+  const lifecycleModes = new Set();
+  const lifecycleArtifacts = [];
+
+  if (!context.exists) {
+    reasons.push('context missing');
+  } else {
+    lifecycleArtifacts.push(context);
+  }
+
+  if (!context.valid && context.exists) {
+    reasons.push(...context.reasons);
+  }
+
+  if (normalizedOptions.requirePlans && planRecords.length === 0) {
+    reasons.push('plans missing');
+  }
+
+  if (normalizedOptions.requireVerification && !verification.exists) {
+    reasons.push('verification missing');
+  }
+
+  for (const artifact of [...planRecords, ...summaryRecords]) {
+    lifecycleArtifacts.push(artifact);
+    if (!artifact.valid) {
+      reasons.push(...artifact.reasons);
+    }
+  }
+
+  if (verification.exists) {
+    lifecycleArtifacts.push(verification);
+    if (!verification.valid) {
+      reasons.push(...verification.reasons);
+    }
+    if (verification.lifecycle_validated === false) {
+      reasons.push('verification lifecycle_validated is false');
+    }
+  }
+
+  for (const artifact of lifecycleArtifacts) {
+    if (!artifact.exists) continue;
+    if (artifact.phase_lifecycle_id) lifecycleIds.add(artifact.phase_lifecycle_id);
+    if (artifact.lifecycle_mode) lifecycleModes.add(artifact.lifecycle_mode);
+    if (artifact.lifecycle_mode === 'direct-fallback') {
+      reasons.push(`${artifact.type} uses direct-fallback provenance`);
+    }
+  }
+
+  if (normalizedOptions.expectedId) {
+    for (const artifact of lifecycleArtifacts) {
+      if (!artifact.exists || !artifact.phase_lifecycle_id) continue;
+      if (artifact.phase_lifecycle_id !== normalizedOptions.expectedId) {
+        reasons.push(
+          `${artifact.type} phase_lifecycle_id mismatch: expected ${normalizedOptions.expectedId}, found ${artifact.phase_lifecycle_id}`
+        );
+      }
+    }
+  } else if (lifecycleIds.size > 1) {
+    reasons.push(`phase_lifecycle_id mismatch across artifacts: ${[...lifecycleIds].join(', ')}`);
+  }
+
+  if (normalizedOptions.expectedMode) {
+    for (const artifact of lifecycleArtifacts) {
+      if (!artifact.exists || !artifact.lifecycle_mode) continue;
+      if (artifact.lifecycle_mode !== normalizedOptions.expectedMode) {
+        reasons.push(
+          `${artifact.type} lifecycle_mode mismatch: expected ${normalizedOptions.expectedMode}, found ${artifact.lifecycle_mode}`
+        );
+      }
+    }
+  } else if (lifecycleModes.size > 1) {
+    reasons.push(`lifecycle_mode mismatch across artifacts: ${[...lifecycleModes].join(', ')}`);
+  }
+
+  if (verification.exists) {
+    const upstreamArtifacts = [context, ...planRecords, ...summaryRecords].filter(a => a.exists);
+    const latestArtifactMs = upstreamArtifacts.reduce((max, artifact) => {
+      const candidate = artifact.generated_at_ms || artifact.mtime_ms || 0;
+      return Math.max(max, candidate);
+    }, 0);
+
+    const verificationMs = verification.generated_at_ms || verification.mtime_ms || 0;
+    if (verificationMs > 0 && latestArtifactMs > verificationMs) {
+      reasons.push('verification is stale relative to context, plan, or summary artifacts');
+    }
+  }
+
+  const lifecycleId = normalizedOptions.expectedId
+    || context.phase_lifecycle_id
+    || planRecords.find(record => record.phase_lifecycle_id)?.phase_lifecycle_id
+    || summaryRecords.find(record => record.phase_lifecycle_id)?.phase_lifecycle_id
+    || verification.phase_lifecycle_id
+    || null;
+
+  const lifecycleMode = normalizedOptions.expectedMode
+    || context.lifecycle_mode
+    || planRecords.find(record => record.lifecycle_mode)?.lifecycle_mode
+    || summaryRecords.find(record => record.lifecycle_mode)?.lifecycle_mode
+    || verification.lifecycle_mode
+    || null;
+
+  return {
+    phase: phaseInfo.phase_number,
+    phase_dir: phaseInfo.directory,
+    valid: reasons.length === 0,
+    reasons,
+    expected_id: normalizedOptions.expectedId,
+    expected_mode: normalizedOptions.expectedMode,
+    lifecycle_id: lifecycleId,
+    lifecycle_mode: lifecycleMode,
+    context,
+    plans: {
+      total: planRecords.length,
+      valid: planRecords.length > 0
+        ? planRecords.every(record => record.valid)
+        : !normalizedOptions.requirePlans,
+      reasons: planRecords.flatMap(record => record.reasons),
+      files: planRecords,
+    },
+    summaries: {
+      total: summaryRecords.length,
+      valid: summaryRecords.every(record => record.valid),
+      reasons: summaryRecords.flatMap(record => record.reasons),
+      files: summaryRecords,
+    },
+    verification,
+  };
+}
+
+function cmdVerifyLifecycle(cwd, phaseArg, options, raw) {
+  if (!phaseArg) {
+    error('Usage: verify lifecycle <phase> [--expect-id <id>] [--expect-mode <mode>] [--require-plans] [--require-verification]');
+  }
+
+  const result = validateLifecycleInternal(cwd, phaseArg, options);
+  output(result, raw, result.valid ? 'valid' : 'invalid');
+}
 
 function cmdVerifySummary(cwd, summaryPath, checkFileCount, raw) {
   if (!summaryPath) {
@@ -1019,6 +1339,7 @@ function cmdVerifySchemaDrift(cwd, phaseArg, skipFlag, raw) {
 
 module.exports = {
   cmdVerifySummary,
+  cmdVerifyLifecycle,
   cmdVerifyPlanStructure,
   cmdVerifyPhaseCompleteness,
   cmdVerifyReferences,
@@ -1029,4 +1350,5 @@ module.exports = {
   cmdValidateHealth,
   cmdValidateAgents,
   cmdVerifySchemaDrift,
+  validateLifecycleInternal,
 };

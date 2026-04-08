@@ -52,7 +52,11 @@ Use /gsd-progress to see available phases.
 Then delegate:
 
 ```bash
-Skill(skill="gsd-discuss-phase", args="${ARGUMENTS} --yolo --chain")
+PHASE_LIFECYCLE_ID="${phase_number}-$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" current-timestamp filename)"
+```
+
+```bash
+Skill(skill="gsd-discuss-phase", args="${ARGUMENTS} --yolo --chain --lifecycle-id ${PHASE_LIFECYCLE_ID} --lifecycle-mode yolo")
 ```
 </step>
 

@@ -12,6 +12,11 @@ phase: XX-name
 verified: YYYY-MM-DDTHH:MM:SSZ
 status: passed | gaps_found | human_needed
 score: N/M must-haves verified
+generated_by: gsd-verifier
+lifecycle_mode: interactive
+phase_lifecycle_id: phase-20260408T120000Z
+generated_at: 2026-04-08T12:45:00Z
+lifecycle_validated: true
 ---
 
 # Phase {X}: {Name} Verification Report
@@ -148,6 +153,7 @@ None — all verifiable items checked programmatically.
 
 **Verification approach:** Goal-backward (derived from phase goal)
 **Must-haves source:** {PLAN.md frontmatter | derived from ROADMAP.md goal}
+**Lifecycle provenance:** {validated | invalid — see frontmatter lifecycle_validated}
 **Automated checks:** {N} passed, {M} failed
 **Human checks required:** {N}
 **Total verification time:** {duration}

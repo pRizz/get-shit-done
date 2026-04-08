@@ -52,7 +52,7 @@ describe('recommended and yolo wrapper commands', () => {
       'utf8'
     );
     assert.ok(
-      content.includes('Skill(skill="gsd-discuss-phase", args="${ARGUMENTS} --yolo --chain")'),
+      content.includes('Skill(skill="gsd-discuss-phase", args="${ARGUMENTS} --yolo --chain --lifecycle-id ${PHASE_LIFECYCLE_ID} --lifecycle-mode yolo")'),
       'single-phase yolo chain should delegate to discuss-phase --yolo --chain'
     );
   });
@@ -225,7 +225,7 @@ describe('autonomous: yolo and push-after-phase', () => {
 
   test('workflow routes yolo mode through discuss-phase --yolo', () => {
     assert.ok(
-      workflowContent.includes('Skill(skill="gsd-discuss-phase", args="${PHASE_NUM} --yolo")'),
+      workflowContent.includes('Skill(skill="gsd-discuss-phase", args="${PHASE_NUM} --yolo --lifecycle-id ${PHASE_LIFECYCLE_ID} --lifecycle-mode yolo")'),
       'autonomous yolo should reuse discuss-phase --yolo'
     );
   });
@@ -239,6 +239,10 @@ describe('autonomous: yolo and push-after-phase', () => {
     assert.ok(
       workflowContent.includes('git push --set-upstream origin "${CURRENT_BRANCH}"'),
       'workflow should set upstream on push-after-phase'
+    );
+    assert.ok(
+      workflowContent.includes('verify lifecycle "${PHASE_NUM}" --expect-id "${PHASE_LIFECYCLE_ID}" --expect-mode "${PHASE_LIFECYCLE_MODE}" --require-plans --require-verification --raw'),
+      'strict push mode should validate lifecycle before push'
     );
   });
 
@@ -254,6 +258,40 @@ describe('autonomous: yolo and push-after-phase', () => {
     assert.ok(
       workflowContent.includes('strict git mode stops immediately on the first blocker'),
       'strict push mode should stop on blockers'
+    );
+    assert.ok(
+      workflowContent.includes('Fallback/manual artifacts detected in strict autonomous mode. Refusing to continue.'),
+      'strict push mode should stop on fallback/manual lifecycle artifacts'
+    );
+  });
+
+  test('workflow adds discuss and plan watchdogs plus pre-execute lifecycle validation', () => {
+    assert.ok(
+      workflowContent.includes('Discuss gets **180 seconds** to produce a compliant CONTEXT.md'),
+      'workflow should define a discuss watchdog'
+    );
+    assert.ok(
+      workflowContent.includes('Verify plan produced compliant output with a **300 second** watchdog.'),
+      'workflow should define a plan watchdog'
+    );
+    assert.ok(
+      workflowContent.includes('verify lifecycle "${PHASE_NUM}" --expect-id "${PHASE_LIFECYCLE_ID}" --expect-mode "${PHASE_LIFECYCLE_MODE}" --require-plans --raw'),
+      'workflow should validate lifecycle before execute starts'
+    );
+  });
+
+  test('strict push wrapper validates lifecycle before standalone git finalization', () => {
+    const content = fs.readFileSync(
+      path.join(WORKFLOWS_DIR, 'yolo-discuss-plan-execute-commit-and-push.md'),
+      'utf8'
+    );
+    assert.ok(
+      content.includes('verify lifecycle "${PHASE}" --require-plans --require-verification --raw'),
+      'single-phase strict push wrapper should validate lifecycle before commit/push'
+    );
+    assert.ok(
+      content.includes('lifecycle validation failed. Skipping commit/push.'),
+      'single-phase strict push wrapper should stop when lifecycle validation fails'
     );
   });
 });

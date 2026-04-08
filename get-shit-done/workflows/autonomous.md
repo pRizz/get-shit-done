@@ -184,6 +184,30 @@ Where N = current phase number (from the ROADMAP, e.g., 63), T = total milestone
 
 **Alternative display when phase numbers exceed total** (e.g., multi-milestone projects where phases are numbered globally): If N > T (phase number exceeds milestone phase count), use the format `Phase {N} ({position}/{T})` where `position` is the 1-based index of this phase among incomplete phases being processed. This prevents confusing displays like "Phase 63/5".
 
+**Phase lifecycle provenance (required for this phase attempt):**
+
+Before discuss/planning, establish the lifecycle metadata that every downstream artifact must share.
+
+```bash
+EXISTING_CONTEXT=$(ls "${PHASE_DIR}"/*-CONTEXT.md 2>/dev/null | head -1)
+EXISTING_CONTEXT_ID=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" frontmatter get "$EXISTING_CONTEXT" --field phase_lifecycle_id 2>/dev/null | tr -d '"')
+EXISTING_CONTEXT_MODE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" frontmatter get "$EXISTING_CONTEXT" --field lifecycle_mode 2>/dev/null | tr -d '"')
+
+if [ -n "$EXISTING_CONTEXT_ID" ]; then
+  PHASE_LIFECYCLE_ID="$EXISTING_CONTEXT_ID"
+else
+  PHASE_LIFECYCLE_ID="${PHASE_NUM}-$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" current-timestamp filename)"
+fi
+
+if [ -n "$EXISTING_CONTEXT_MODE" ]; then
+  PHASE_LIFECYCLE_MODE="$EXISTING_CONTEXT_MODE"
+elif [ "$YOLO_MODE" = "true" ]; then
+  PHASE_LIFECYCLE_MODE="yolo"
+else
+  PHASE_LIFECYCLE_MODE="interactive"
+fi
+```
+
 **3a. Smart Discuss**
 
 Check if CONTEXT.md already exists for this phase:
@@ -223,6 +247,13 @@ DETAIL=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" roadmap get-phase 
 Extract `goal` and `requirements` from JSON. Write `${phase_dir}/${padded_phase}-CONTEXT.md` with:
 
 ```markdown
+---
+generated_by: gsd-autonomous
+lifecycle_mode: skipped-via-config
+phase_lifecycle_id: ${PHASE_LIFECYCLE_ID}
+generated_at: $(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" current-timestamp full)
+---
+
 # Phase {PHASE_NUM}: {Phase Name} - Context
 
 **Gathered:** {date}
@@ -266,6 +297,11 @@ None — discuss phase skipped.
 </deferred>
 ```
 
+Set:
+```bash
+PHASE_LIFECYCLE_MODE="skipped-via-config"
+```
+
 Commit the minimal context:
 
 ```bash
@@ -282,26 +318,40 @@ The discuss step in `--auto` mode MUST NOT loop. If CONTEXT.md already exists af
 **If `INTERACTIVE` is set:** Run the standard discuss-phase skill inline (asks interactive questions, waits for user answers). This preserves user input on all design decisions while keeping plan+execute out of the main context:
 
 ```
-Skill(skill="gsd:discuss-phase", args="${PHASE_NUM}")
+Skill(skill="gsd:discuss-phase", args="${PHASE_NUM} --lifecycle-id ${PHASE_LIFECYCLE_ID} --lifecycle-mode ${PHASE_LIFECYCLE_MODE}")
 ```
 
 **If `YOLO_MODE` is set:** Reuse the shared discuss recommendation engine with no approval prompt:
 
 ```
-Skill(skill="gsd-discuss-phase", args="${PHASE_NUM} --yolo")
+Skill(skill="gsd-discuss-phase", args="${PHASE_NUM} --yolo --lifecycle-id ${PHASE_LIFECYCLE_ID} --lifecycle-mode yolo")
 ```
 
 This replaces per-area approval prompts with the same non-interactive recommended picks used by the yolo discuss wrapper.
 
 **If neither `INTERACTIVE` nor `YOLO_MODE` is set:** Execute the smart_discuss step for this phase (batch table proposals, auto-optimized).
 
-After discuss completes (either mode), verify context was written:
+After discuss completes (either mode), run a fail-closed lifecycle watchdog. Discuss gets **180 seconds** to produce a compliant CONTEXT.md for the current lifecycle attempt:
 
 ```bash
-PHASE_STATE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init phase-op ${PHASE_NUM})
+DISCUSS_DEADLINE=$(( $(date +%s) + 180 ))
+while true; do
+  LIFECYCLE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" verify lifecycle "${PHASE_NUM}" --expect-id "${PHASE_LIFECYCLE_ID}" --expect-mode "${PHASE_LIFECYCLE_MODE}" --raw)
+  VALID=$(echo "$LIFECYCLE" | node -e 'let b="";process.stdin.on("data",c=>b+=c);process.stdin.on("end",()=>{const x=JSON.parse(b);process.stdout.write(x.valid ? "true" : "false")})')
+  if [ "$VALID" = "true" ]; then
+    break
+  fi
+  if [ "$(date +%s)" -ge "$DISCUSS_DEADLINE" ]; then
+    echo "$LIFECYCLE"
+    break
+  fi
+  sleep 5
+done
 ```
 
-Check `has_context`. If false → go to handle_blocker: "Discuss for phase ${PHASE_NUM} did not produce CONTEXT.md."
+If lifecycle validation is still invalid when the deadline expires: go to `handle_blocker` with:
+- `Discuss did not produce CONTEXT.md through the formal workflow. Stopping.`
+- Include the validator reasons in the blocker body.
 
 **3a.5. UI Design Contract (Frontend Phases)**
 
@@ -350,7 +400,7 @@ UI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-UI-SPEC.md 2>/dev/null | head -1)
 Agent(
   description="Plan phase ${PHASE_NUM}: ${PHASE_NAME}",
   run_in_background=true,
-  prompt="Run plan-phase for phase ${PHASE_NUM}: Skill(skill=\"gsd:plan-phase\", args=\"${PHASE_NUM}\")"
+  prompt="Run plan-phase for phase ${PHASE_NUM}: Skill(skill=\"gsd:plan-phase\", args=\"${PHASE_NUM} --lifecycle-id ${PHASE_LIFECYCLE_ID} --lifecycle-mode ${PHASE_LIFECYCLE_MODE}\")"
 )
 ```
 
@@ -359,10 +409,30 @@ Store the agent task_id. After discuss for the next phase completes (or if no ne
 **If `INTERACTIVE` is NOT set (default):** Run plan inline as before.
 
 ```
-Skill(skill="gsd-plan-phase", args="${PHASE_NUM}")
+Skill(skill="gsd-plan-phase", args="${PHASE_NUM} --lifecycle-id ${PHASE_LIFECYCLE_ID} --lifecycle-mode ${PHASE_LIFECYCLE_MODE}")
 ```
 
-Verify plan produced output — re-run `init phase-op` and check `has_plans`. If false → go to handle_blocker: "Plan phase ${PHASE_NUM} did not produce any plans."
+Verify plan produced compliant output with a **300 second** watchdog. Plans must be both present and lifecycle-valid:
+
+```bash
+PLAN_DEADLINE=$(( $(date +%s) + 300 ))
+while true; do
+  PLAN_LIFECYCLE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" verify lifecycle "${PHASE_NUM}" --expect-id "${PHASE_LIFECYCLE_ID}" --expect-mode "${PHASE_LIFECYCLE_MODE}" --require-plans --raw)
+  VALID=$(echo "$PLAN_LIFECYCLE" | node -e 'let b="";process.stdin.on("data",c=>b+=c);process.stdin.on("end",()=>{const x=JSON.parse(b);process.stdout.write(x.valid ? "true" : "false")})')
+  if [ "$VALID" = "true" ]; then
+    break
+  fi
+  if [ "$(date +%s)" -ge "$PLAN_DEADLINE" ]; then
+    echo "$PLAN_LIFECYCLE"
+    break
+  fi
+  sleep 5
+done
+```
+
+If lifecycle validation is still invalid when the deadline expires: go to `handle_blocker` with:
+- `Plan did not produce executable PLAN.md through the formal workflow. Stopping.`
+- Include the validator reasons in the blocker body.
 
 **3c. Execute**
 
@@ -379,6 +449,16 @@ Agent(
 Store the agent task_id. The workflow can now start discussing the next phase while this phase executes in the background. Before starting post-execution routing for this phase, wait for the execute agent to complete.
 
 **If `INTERACTIVE` is NOT set (default):** Run execute inline as before.
+
+Before execute starts, re-run lifecycle validation. Execution is never allowed to begin on fallback/manual or mismatched provenance:
+
+```bash
+PRE_EXECUTE_LIFECYCLE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" verify lifecycle "${PHASE_NUM}" --expect-id "${PHASE_LIFECYCLE_ID}" --expect-mode "${PHASE_LIFECYCLE_MODE}" --require-plans --raw)
+```
+
+If `valid` is `false`: go to `handle_blocker` with:
+- `Plan did not produce executable PLAN.md through the formal workflow. Stopping.`
+- If validator mentions `direct-fallback`: `Fallback/manual artifacts detected in strict autonomous mode. Refusing to continue.`
 
 ```
 Skill(skill="gsd-execute-phase", args="${PHASE_NUM} --no-transition")
@@ -426,6 +506,16 @@ Parse `phase_dir` from the JSON.
 **If VERIFY_STATUS is empty** (no VERIFICATION.md or no status field):
 
 Go to handle_blocker: "Execute phase ${PHASE_NUM} did not produce verification results."
+
+Before accepting any verification outcome, re-run lifecycle validation including VERIFICATION.md:
+
+```bash
+POST_VERIFY_LIFECYCLE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" verify lifecycle "${PHASE_NUM}" --expect-id "${PHASE_LIFECYCLE_ID}" --expect-mode "${PHASE_LIFECYCLE_MODE}" --require-plans --require-verification --raw)
+```
+
+If `valid` is `false`: go to `handle_blocker` with:
+- `Verification artifacts are stale or non-compliant for Phase ${PHASE_NUM}. Refusing to continue.`
+- Include the validator reasons in the blocker body.
 
 Set:
 ```bash
@@ -572,6 +662,17 @@ Display the review result summary (score from UI-REVIEW.md if produced). Continu
 > Run only when `PUSH_AFTER_PHASE` is set and `CLEAN_PASS` is `true`. This happens after UI review so any post-execution artifacts are included in the final push.
 
 **If `PUSH_AFTER_PHASE` is empty OR `CLEAN_PASS` is not `true`:** skip this sub-step and continue to iterate.
+
+Strict push mode MUST re-run lifecycle validation one final time before any git mutation:
+
+```bash
+STRICT_LIFECYCLE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" verify lifecycle "${PHASE_NUM}" --expect-id "${PHASE_LIFECYCLE_ID}" --expect-mode "${PHASE_LIFECYCLE_MODE}" --require-plans --require-verification --raw)
+```
+
+If `valid` is `false`: go to `handle_blocker` with:
+- `Lifecycle provenance is missing or invalid. Refusing to push.`
+- If validator mentions `direct-fallback`: `Fallback/manual artifacts detected in strict autonomous mode. Refusing to continue.`
+- Include the validator reasons in the blocker body.
 
 Inspect the current worktree:
 
@@ -819,6 +920,13 @@ After all areas are resolved (or infrastructure skip), write the CONTEXT.md file
 Use **exactly** this structure (identical to discuss-phase output):
 
 ```markdown
+---
+generated_by: gsd-autonomous
+lifecycle_mode: ${PHASE_LIFECYCLE_MODE}
+phase_lifecycle_id: ${PHASE_LIFECYCLE_ID}
+generated_at: $(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" current-timestamp full)
+---
+
 # Phase {PHASE_NUM}: {Phase Name} - Context
 
 **Gathered:** {date}
@@ -1136,6 +1244,11 @@ When any phase operation fails or a blocker is detected, present 3 options via A
 - [ ] All incomplete phases executed in order (discuss variant → ui-phase → plan → execute → ui-review each)
 - [ ] Default mode uses smart discuss with per-area acceptance prompts
 - [ ] `--yolo` routes through `gsd-discuss-phase --yolo` for non-interactive recommended picks
+- [ ] Every phase attempt establishes a shared `phase_lifecycle_id`
+- [ ] Discuss artifacts are lifecycle-validated within 180 seconds or the phase stops
+- [ ] Plan artifacts are lifecycle-validated within 300 seconds or the phase stops
+- [ ] Execute never starts unless `verify lifecycle --require-plans` passes
+- [ ] Verification is re-validated before accepting results or pushing
 - [ ] Progress banners displayed between phases
 - [ ] Execute-phase invoked with --no-transition (autonomous manages transitions)
 - [ ] Post-execution verification reads VERIFICATION.md and routes on status
@@ -1145,6 +1258,7 @@ When any phase operation fails or a blocker is detected, present 3 options via A
 - [ ] Gap closure limited to 1 retry (prevents infinite loops)
 - [ ] Plan-phase and execute-phase failures route to handle_blocker
 - [ ] `--push-after-phase` stops immediately on blockers, `human_needed`, or `gaps_found`
+- [ ] `--push-after-phase` also stops on missing provenance, stale verification, or `direct-fallback` artifacts
 - [ ] `--push-after-phase` stages and commits dirty trees with a deterministic phase-scoped message
 - [ ] `--push-after-phase` pushes the existing upstream when present, otherwise sets upstream on `origin`
 - [ ] ROADMAP.md re-read after each phase (catches inserted phases)

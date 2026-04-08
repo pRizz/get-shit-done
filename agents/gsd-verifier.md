@@ -589,6 +589,11 @@ phase: XX-name
 verified: YYYY-MM-DDTHH:MM:SSZ
 status: passed | gaps_found | human_needed
 score: N/M must-haves verified
+generated_by: gsd-verifier
+lifecycle_mode: interactive # Copy from CONTEXT.md / PLAN.md frontmatter
+phase_lifecycle_id: phase-20260408T120000Z # Copy from CONTEXT.md / PLAN.md frontmatter
+generated_at: YYYY-MM-DDTHH:MM:SSZ
+lifecycle_validated: true # true only when CONTEXT.md, PLAN.md, SUMMARY.md, and VERIFICATION.md all share compliant provenance
 overrides_applied: 0 # Count of PASSED (override) items included in score
 overrides: # Only if overrides exist — carried forward or newly added
   - must_have: "Must-have text that was overridden"
@@ -696,6 +701,8 @@ _Verifier: Claude (gsd-verifier)_
 ## Return to Orchestrator
 
 **DO NOT COMMIT.** The orchestrator bundles VERIFICATION.md with other phase artifacts.
+
+Before writing VERIFICATION.md, read the phase CONTEXT.md and at least one PLAN.md frontmatter block. Copy `lifecycle_mode` and `phase_lifecycle_id` from the formal phase artifacts. If provenance is missing, mismatched, or any upstream artifact is marked `direct-fallback`, set `lifecycle_validated: false` and explain the mismatch in the report.
 
 Return with:
 
