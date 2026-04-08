@@ -47,6 +47,31 @@ npx get-shit-done-cc@latest
 
 ---
 
+## Changes in This Fork
+
+This fork currently adds skill-level workflow changes on top of upstream GSD. The list below reflects the fork-specific additions currently in this repo.
+
+### New Skills In This Fork
+
+- `/gsd-recommended-discuss` — Generates recommended discuss answers for a single phase, lets you review them once, then writes context.
+- `/gsd-yolo-discuss` — Generates recommended discuss answers for a single phase and accepts them without an approval prompt.
+- `/gsd-yolo-discuss-plan-and-execute` — Chains yolo discuss into plan and execute for one phase, or runs the same pattern across a phase range.
+- `/gsd-yolo-discuss-plan-execute-commit-and-push` — Chains yolo discuss into plan and execute, then commits and pushes only after clean verification.
+- `/gsd-yolo-discuss-plan-execute-commit-and-push-all` — Runs the same yolo discuss, plan, execute, commit, and push flow for all remaining phases in the current milestone.
+
+### Changes To Existing Skills
+
+- `/gsd-discuss-phase` adds `--recommended` for one consolidated final review of AI-picked discuss answers before writing context.
+- `/gsd-discuss-phase` adds `--yolo` for non-interactive acceptance of the same recommended answers.
+- `/gsd-discuss-phase --auto` remains the backward-compatible legacy auto behavior.
+- `/gsd-autonomous` adds `--yolo` to reuse yolo discuss behavior phase-by-phase.
+- `/gsd-autonomous` adds `--push-after-phase` for strict per-phase commit/push after clean verification.
+- In autonomous mode, `--interactive` and `--yolo` are mutually exclusive.
+
+These are fork-only changes and are not part of upstream GSD yet.
+
+---
+
 > [!IMPORTANT]
 > ### Welcome Back to GSD
 >
@@ -419,7 +444,9 @@ Or let GSD figure out the next step automatically:
 
 Loop **discuss → plan → execute → verify → ship** until milestone complete.
 
-If you want faster intake during discussion, use `/gsd-discuss-phase <n> --batch` to answer a small grouped set of questions at once instead of one-by-one. Use `--chain` to auto-chain discuss into plan+execute without stopping between steps.
+If you want faster intake during discussion, use `/gsd-discuss-phase <n> --batch` to answer a small grouped set of questions at once instead of one-by-one. Use `--recommended` for one final review of AI-picked discuss answers, `--yolo` to accept those answers without a prompt, and `--chain` to auto-chain discuss into plan+execute without stopping between steps.
+
+For minimal-intervention wrappers, use `/gsd-recommended-discuss <n>`, `/gsd-yolo-discuss <n>`, `/gsd-yolo-discuss-plan-and-execute <n>`, `/gsd-yolo-discuss-plan-execute-commit-and-push <n>`, or `/gsd-yolo-discuss-plan-execute-commit-and-push-all`.
 
 Each phase gets your input (discuss), proper research (plan), clean execution (execute), and human verification (verify). Context stays fresh. Quality stays high.
 
@@ -554,11 +581,17 @@ You're never locked in. The system adapts.
 | Command | What it does |
 |---------|--------------|
 | `/gsd-new-project [--auto]` | Full initialization: questions → research → requirements → roadmap |
-| `/gsd-discuss-phase [N] [--auto] [--analyze] [--chain]` | Capture implementation decisions before planning (`--analyze` adds trade-off analysis, `--chain` auto-chains into plan+execute) |
+| `/gsd-discuss-phase [N] [--auto] [--recommended] [--yolo] [--analyze] [--chain]` | Capture implementation decisions before planning (`--recommended` adds one final review, `--yolo` writes recommended picks without prompts, `--chain` auto-chains into plan+execute) |
+| `/gsd-recommended-discuss <N>` | Synthesize recommended discuss answers, review them once, then write context |
+| `/gsd-yolo-discuss <N>` | Synthesize recommended discuss answers and write context without approval prompts |
+| `/gsd-yolo-discuss-plan-and-execute <N \| --from N \| --to N \| --only N>` | Run yolo discuss plus plan+execute for one phase or a range |
+| `/gsd-yolo-discuss-plan-execute-commit-and-push <N \| --from N \| --to N \| --only N>` | Run yolo discuss plus plan+execute, then commit/push only after clean verification |
+| `/gsd-yolo-discuss-plan-execute-commit-and-push-all` | Run autonomous yolo strict-push mode for all remaining phases in the current milestone |
 | `/gsd-plan-phase [N] [--auto] [--reviews]` | Research + plan + verify for a phase (`--reviews` loads codebase review findings) |
 | `/gsd-execute-phase <N>` | Execute all plans in parallel waves, verify when complete |
 | `/gsd-verify-work [N]` | Manual user acceptance testing ¹ |
 | `/gsd-ship [N] [--draft]` | Create PR from verified phase work with auto-generated body |
+| `/gsd-autonomous [--yolo] [--push-after-phase]` | Run remaining phases autonomously, optionally using non-interactive discuss and strict per-phase git finalization |
 | `/gsd-next` | Automatically advance to the next logical workflow step |
 | `/gsd-fast <text>` | Inline trivial tasks — skips planning entirely, executes immediately |
 | `/gsd-audit-milestone` | Verify milestone achieved its definition of done |

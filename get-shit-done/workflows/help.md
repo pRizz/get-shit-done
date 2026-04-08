@@ -67,10 +67,41 @@ Help articulate your vision for a phase before planning.
 - Creates CONTEXT.md with your vision, essentials, and boundaries
 - Use when you have ideas about how something should look/feel
 - Optional `--batch` asks 2-5 related questions at a time instead of one-by-one
+- Optional `--recommended` synthesizes one consolidated set of recommended answers for review
+- Optional `--yolo` writes those recommended answers without an approval prompt
 
 Usage: `/gsd-discuss-phase 2`
 Usage: `/gsd-discuss-phase 2 --batch`
 Usage: `/gsd-discuss-phase 2 --batch=3`
+Usage: `/gsd-discuss-phase 2 --recommended`
+Usage: `/gsd-discuss-phase 2 --yolo`
+
+**`/gsd-recommended-discuss <number>`**
+Single-phase wrapper for `gsd-discuss-phase --recommended`.
+
+Usage: `/gsd-recommended-discuss 2`
+
+**`/gsd-yolo-discuss <number>`**
+Single-phase wrapper for `gsd-discuss-phase --yolo`.
+
+Usage: `/gsd-yolo-discuss 2`
+
+**`/gsd-yolo-discuss-plan-and-execute <phase | --from N | --to N | --only N>`**
+Run yolo discuss plus plan and execute with minimal intervention.
+
+Usage: `/gsd-yolo-discuss-plan-and-execute 2`
+Usage: `/gsd-yolo-discuss-plan-and-execute --from 2 --to 4`
+
+**`/gsd-yolo-discuss-plan-execute-commit-and-push <phase | --from N | --to N | --only N>`**
+Run yolo discuss plus plan and execute, then commit/push only after clean verification.
+
+Usage: `/gsd-yolo-discuss-plan-execute-commit-and-push 2`
+Usage: `/gsd-yolo-discuss-plan-execute-commit-and-push --only 2`
+
+**`/gsd-yolo-discuss-plan-execute-commit-and-push-all`**
+Run autonomous yolo strict-push mode for all remaining phases in the current milestone.
+
+Usage: `/gsd-yolo-discuss-plan-execute-commit-and-push-all`
 
 **`/gsd-research-phase <number>`**
 Comprehensive ecosystem research for niche/complex domains.
@@ -117,6 +148,17 @@ Execute all plans in a phase, or run a specific wave.
 
 Usage: `/gsd-execute-phase 5`
 Usage: `/gsd-execute-phase 5 --wave 2`
+
+**`/gsd-autonomous`**
+Run remaining phases autonomously.
+
+- Optional `--yolo` reuses `gsd-discuss-phase --yolo` for non-interactive recommended picks
+- Optional `--push-after-phase` commits leftover changes if needed and pushes after each clean phase
+- `--interactive` and `--yolo` are mutually exclusive
+
+Usage: `/gsd-autonomous`
+Usage: `/gsd-autonomous --only 3 --yolo`
+Usage: `/gsd-autonomous --from 3 --to 5 --yolo --push-after-phase`
 
 ### Smart Router
 

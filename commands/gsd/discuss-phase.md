@@ -1,7 +1,7 @@
 ---
 name: gsd:discuss-phase
-description: Gather phase context through adaptive questioning before planning. Use --auto to skip interactive questions (Claude picks recommended defaults). Use --chain for interactive discuss followed by automatic plan+execute. Use --power for bulk question generation into a file-based UI (answer at your own pace).
-argument-hint: "<phase> [--auto] [--chain] [--batch] [--analyze] [--text] [--power]"
+description: Gather phase context through adaptive questioning before planning. Use --recommended to review one consolidated set of recommended answers before writing context, --yolo to auto-accept those answers without a review prompt, --auto for legacy yolo+chain behavior, --chain for interactive discuss followed by automatic plan+execute, and --power for bulk question generation into a file-based UI.
+argument-hint: "<phase> [--auto] [--recommended] [--yolo] [--chain] [--batch] [--analyze] [--text] [--power]"
 allowed-tools:
   - Read
   - Write
@@ -63,6 +63,8 @@ If `DISCUSS_MODE` is `"discuss"` (or unset, or any other value): Read and execut
 - Gray areas identified through intelligent analysis
 - User chose which areas to discuss
 - Each selected area explored until satisfied
+- `--recommended` supports one final consolidated review before writing context
+- `--yolo` writes context from recommended answers without an approval prompt
 - Scope creep redirected to deferred ideas
 - CONTEXT.md captures decisions, not vague vision
 - User knows next steps

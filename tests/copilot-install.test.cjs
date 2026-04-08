@@ -656,10 +656,13 @@ describe('copyCommandsAsCopilotSkills', () => {
 
     // Frontmatter: name converted from gsd:autonomous to gsd-autonomous
     assert.ok(skillContent.startsWith('---\nname: gsd-autonomous\n'), 'name is gsd-autonomous');
-    assert.ok(skillContent.includes('description: Run all remaining phases autonomously'),
+    assert.ok(skillContent.includes('description: Run remaining phases autonomously'),
       'description preserved');
     // argument-hint present and double-quoted
-    assert.ok(skillContent.includes('argument-hint: "[--from N] [--to N] [--only N] [--interactive]"'), 'argument-hint present and quoted');
+    assert.ok(
+      skillContent.includes('argument-hint: "[--from N] [--to N] [--only N] [--interactive] [--yolo] [--push-after-phase]"'),
+      'argument-hint present and quoted'
+    );
     // allowed-tools comma-separated
     assert.ok(skillContent.includes('allowed-tools: Read, Write, Bash, Glob, Grep, AskUserQuestion, Task'),
       'allowed-tools is comma-separated');
@@ -683,6 +686,58 @@ describe('copyCommandsAsCopilotSkills', () => {
     }
     // Path conversion: ~/.claude/ → .github/
     assert.ok(!result.includes('~/.claude/'), 'no ~/.claude/ paths remain');
+  });
+
+  test('generates longest yolo commit-and-push skill from command', () => {
+    const srcFile = path.join(srcDir, 'yolo-discuss-plan-execute-commit-and-push.md');
+    assert.ok(fs.existsSync(srcFile), 'long wrapper command must exist as source');
+
+    copyCommandsAsCopilotSkills(srcDir, tempDir, 'gsd');
+
+    const skillDir = path.join(tempDir, 'gsd-yolo-discuss-plan-execute-commit-and-push');
+    const skillFile = path.join(skillDir, 'SKILL.md');
+    assert.ok(fs.existsSync(skillDir), 'long wrapper skill directory should exist');
+    assert.ok(fs.existsSync(skillFile), 'long wrapper SKILL.md should exist');
+
+    const skillContent = fs.readFileSync(skillFile, 'utf8');
+    assert.ok(
+      skillContent.startsWith('---\nname: gsd-yolo-discuss-plan-execute-commit-and-push\n'),
+      'long wrapper skill name should be converted to flat format'
+    );
+    assert.ok(
+      skillContent.includes('argument-hint: "<phase | --from N | --to N | --only N>"'),
+      'long wrapper skill should preserve argument hint'
+    );
+    assert.ok(
+      !skillContent.includes('~/.claude/'),
+      'long wrapper skill should not retain ~/.claude/ paths'
+    );
+  });
+
+  test('generates strict push all alias skill from command', () => {
+    const srcFile = path.join(srcDir, 'yolo-discuss-plan-execute-commit-and-push-all.md');
+    assert.ok(fs.existsSync(srcFile), 'strict push all alias command must exist as source');
+
+    copyCommandsAsCopilotSkills(srcDir, tempDir, 'gsd');
+
+    const skillDir = path.join(tempDir, 'gsd-yolo-discuss-plan-execute-commit-and-push-all');
+    const skillFile = path.join(skillDir, 'SKILL.md');
+    assert.ok(fs.existsSync(skillDir), 'strict push all alias skill directory should exist');
+    assert.ok(fs.existsSync(skillFile), 'strict push all alias SKILL.md should exist');
+
+    const skillContent = fs.readFileSync(skillFile, 'utf8');
+    assert.ok(
+      skillContent.startsWith('---\nname: gsd-yolo-discuss-plan-execute-commit-and-push-all\n'),
+      'strict push all alias skill name should be converted to flat format'
+    );
+    assert.ok(
+      !skillContent.includes('argument-hint:'),
+      'strict push all alias should preserve its no-argument contract'
+    );
+    assert.ok(
+      !skillContent.includes('~/.claude/'),
+      'strict push all alias skill should not retain ~/.claude/ paths'
+    );
   });
 
   test('cleans up old skill directories on re-run', () => {

@@ -1,6 +1,6 @@
 <purpose>
 
-Drive milestone phases autonomously — all remaining phases, a range via `--from N`/`--to N`, or a single phase via `--only N`. For each incomplete phase: discuss → plan → execute using Skill() flat invocations. Pauses only for explicit user decisions (grey area acceptance, blockers, validation requests). Re-reads ROADMAP.md after each phase to catch dynamically inserted phases.
+Drive milestone phases autonomously — all remaining phases, a range via `--from N`/`--to N`, or a single phase via `--only N`. For each incomplete phase: discuss → plan → execute using Skill() flat invocations. Default mode uses smart-discuss approvals, `--yolo` reuses `gsd-discuss-phase --yolo`, and `--push-after-phase` adds strict git finalization after each clean phase. Re-reads ROADMAP.md after each phase to catch dynamically inserted phases.
 
 </purpose>
 
@@ -16,7 +16,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 ## 1. Initialize
 
-Parse `$ARGUMENTS` for `--from N`, `--to N`, `--only N`, and `--interactive` flags:
+Parse `$ARGUMENTS` for `--from N`, `--to N`, `--only N`, `--interactive`, `--yolo`, and `--push-after-phase` flags:
 
 ```bash
 FROM_PHASE=""
@@ -39,11 +39,29 @@ INTERACTIVE=""
 if echo "$ARGUMENTS" | grep -q '\-\-interactive'; then
   INTERACTIVE="true"
 fi
+
+YOLO_MODE=""
+if echo "$ARGUMENTS" | grep -q '\-\-yolo'; then
+  YOLO_MODE="true"
+fi
+
+PUSH_AFTER_PHASE=""
+if echo "$ARGUMENTS" | grep -q '\-\-push-after-phase'; then
+  PUSH_AFTER_PHASE="true"
+fi
 ```
 
 When `--only` is set, also set `FROM_PHASE` to the same value so existing filter logic applies.
 
 When `--interactive` is set, discuss runs inline with questions (not auto-answered), while plan and execute are dispatched as background agents. This keeps the main context lean — only discuss conversations accumulate — while preserving user input on all design decisions.
+
+If both `INTERACTIVE` and `YOLO_MODE` are set: stop immediately with:
+
+```
+Error: --interactive and --yolo cannot be combined.
+
+Use --interactive for user-driven discuss, or --yolo for non-interactive recommended picks.
+```
 
 Bootstrap via milestone-level init:
 
@@ -72,6 +90,8 @@ If `ONLY_PHASE` is set, display: `Single phase mode: Phase ${ONLY_PHASE}`
 Else if `FROM_PHASE` is set, display: `Starting from phase ${FROM_PHASE}`
 If `TO_PHASE` is set, display: `Stopping after phase ${TO_PHASE}`
 If `INTERACTIVE` is set, display: `Mode: Interactive (discuss inline, plan+execute in background)`
+If `YOLO_MODE` is set, display: `Mode: Yolo (reuse gsd-discuss-phase --yolo for each phase)`
+If `PUSH_AFTER_PHASE` is set, display: `Git: Push after each clean phase`
 
 </step>
 
@@ -265,7 +285,15 @@ The discuss step in `--auto` mode MUST NOT loop. If CONTEXT.md already exists af
 Skill(skill="gsd:discuss-phase", args="${PHASE_NUM}")
 ```
 
-**If `INTERACTIVE` is NOT set:** Execute the smart_discuss step for this phase (batch table proposals, auto-optimized).
+**If `YOLO_MODE` is set:** Reuse the shared discuss recommendation engine with no approval prompt:
+
+```
+Skill(skill="gsd-discuss-phase", args="${PHASE_NUM} --yolo")
+```
+
+This replaces per-area approval prompts with the same non-interactive recommended picks used by the yolo discuss wrapper.
+
+**If neither `INTERACTIVE` nor `YOLO_MODE` is set:** Execute the smart_discuss step for this phase (batch table proposals, auto-optimized).
 
 After discuss completes (either mode), verify context was written:
 
@@ -399,6 +427,11 @@ Parse `phase_dir` from the JSON.
 
 Go to handle_blocker: "Execute phase ${PHASE_NUM} did not produce verification results."
 
+Set:
+```bash
+CLEAN_PASS=""
+```
+
 **If `passed`:**
 
 Display:
@@ -406,9 +439,27 @@ Display:
 Phase ${PHASE_NUM} ✅ ${PHASE_NAME} — Verification passed
 ```
 
-Proceed to iterate step.
+Set:
+```bash
+CLEAN_PASS="true"
+```
+
+Proceed to 3d.5 (UI review), then `push_after_phase` if enabled, then iterate.
 
 **If `human_needed`:**
+
+**If `PUSH_AFTER_PHASE` is set:** stop immediately. Strict push mode requires `status: passed` before any git finalization or next-phase continuation.
+
+Display:
+```
+Phase ${PHASE_NUM} halted: verification status is human_needed.
+Push-after-phase mode stops at the first phase that does not pass cleanly.
+
+Resume after manual validation:
+/gsd-execute-phase ${PHASE_NUM}
+```
+
+Exit the autonomous workflow cleanly.
 
 Read the human_verification section from VERIFICATION.md to get the count and items requiring manual testing.
 
@@ -427,6 +478,19 @@ On "Found issues": Go to handle_blocker with the user's reported issues as the d
 On **"Continue without validation"**: Display `Phase ${PHASE_NUM} ⏭ Human validation deferred` and proceed to iterate step.
 
 **If `gaps_found`:**
+
+**If `PUSH_AFTER_PHASE` is set:** stop immediately. Strict push mode requires `status: passed` before any git finalization or next-phase continuation.
+
+Display:
+```
+Phase ${PHASE_NUM} halted: verification status is gaps_found.
+Push-after-phase mode stops at the first phase that does not pass cleanly.
+
+Resume by addressing gaps manually:
+/gsd-plan-phase ${PHASE_NUM} --gaps
+```
+
+Exit the autonomous workflow cleanly.
 
 Read gap summary from VERIFICATION.md (score and missing items). Display:
 ```
@@ -502,6 +566,51 @@ Skill(skill="gsd-ui-review", args="${PHASE_NUM}")
 Display the review result summary (score from UI-REVIEW.md if produced). Continue to iterate step regardless of score — UI review is advisory, not blocking.
 
 **If `UI_SPEC_FILE` is empty OR `UI_REVIEW_CFG` is `false`:** Skip silently to iterate step.
+
+**3d.6. Push After Phase (Strict Git Mode)**
+
+> Run only when `PUSH_AFTER_PHASE` is set and `CLEAN_PASS` is `true`. This happens after UI review so any post-execution artifacts are included in the final push.
+
+**If `PUSH_AFTER_PHASE` is empty OR `CLEAN_PASS` is not `true`:** skip this sub-step and continue to iterate.
+
+Inspect the current worktree:
+
+```bash
+DIRTY=$(git status --short)
+```
+
+**If `DIRTY` is not empty:** stage and create one deterministic phase-scoped final commit:
+
+```bash
+git add -A
+git commit -m "chore(${PADDED_PHASE}): finalize autonomous phase ${PHASE_NUM}"
+```
+
+Detect the current branch and upstream:
+
+```bash
+CURRENT_BRANCH=$(git branch --show-current)
+UPSTREAM_REF=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)
+```
+
+**If `CURRENT_BRANCH` is empty:** go to `handle_blocker` with "Cannot push from detached HEAD in push-after-phase mode."
+
+**If `UPSTREAM_REF` is not empty:** push to the existing upstream:
+
+```bash
+git push
+```
+
+**If `UPSTREAM_REF` is empty:** set upstream on `origin` and push the current branch:
+
+```bash
+git push --set-upstream origin "${CURRENT_BRANCH}"
+```
+
+Display:
+```
+Phase ${PHASE_NUM} ⬆ Pushed ${CURRENT_BRANCH} after clean verification.
+```
 
 </step>
 
@@ -976,6 +1085,22 @@ Display final completion banner:
 
 ## 6. Handle Blocker
 
+**If `PUSH_AFTER_PHASE` is set:** strict git mode stops immediately on the first blocker or inconclusive phase outcome. Do NOT offer retry/skip choices.
+
+Display:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ GSD ► AUTONOMOUS ▸ STOPPED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ Phase ${PHASE_NUM} (${PHASE_NAME}) stopped strict push mode:
+ {description}
+
+ Resume with: /gsd-autonomous ${ONLY_PHASE ? "--only " + ONLY_PHASE : "--from " + next_phase}${TO_PHASE ? " --to " + TO_PHASE : ""}${YOLO_MODE ? " --yolo" : ""}${PUSH_AFTER_PHASE ? " --push-after-phase" : ""}
+```
+
+Exit cleanly.
+
 When any phase operation fails or a blocker is detected, present 3 options via AskUserQuestion:
 
 **Prompt:** "Phase {N} ({Name}) encountered an issue: {description}"
@@ -1000,7 +1125,7 @@ When any phase operation fails or a blocker is detected, present 3 options via A
  Skipped: {list of skipped phases}
  Remaining: {list of remaining phases}
 
- Resume with: /gsd-autonomous ${ONLY_PHASE ? "--only " + ONLY_PHASE : "--from " + next_phase}${TO_PHASE ? " --to " + TO_PHASE : ""}
+ Resume with: /gsd-autonomous ${ONLY_PHASE ? "--only " + ONLY_PHASE : "--from " + next_phase}${TO_PHASE ? " --to " + TO_PHASE : ""}${YOLO_MODE ? " --yolo" : ""}${PUSH_AFTER_PHASE ? " --push-after-phase" : ""}
 ```
 
 </step>
@@ -1008,8 +1133,9 @@ When any phase operation fails or a blocker is detected, present 3 options via A
 </process>
 
 <success_criteria>
-- [ ] All incomplete phases executed in order (smart discuss → ui-phase → plan → execute → ui-review each)
-- [ ] Smart discuss proposes grey area answers in tables, user accepts or overrides per area
+- [ ] All incomplete phases executed in order (discuss variant → ui-phase → plan → execute → ui-review each)
+- [ ] Default mode uses smart discuss with per-area acceptance prompts
+- [ ] `--yolo` routes through `gsd-discuss-phase --yolo` for non-interactive recommended picks
 - [ ] Progress banners displayed between phases
 - [ ] Execute-phase invoked with --no-transition (autonomous manages transitions)
 - [ ] Post-execution verification reads VERIFICATION.md and routes on status
@@ -1018,6 +1144,9 @@ When any phase operation fails or a blocker is detected, present 3 options via A
 - [ ] Gaps-found → user offered gap closure, continue, or stop
 - [ ] Gap closure limited to 1 retry (prevents infinite loops)
 - [ ] Plan-phase and execute-phase failures route to handle_blocker
+- [ ] `--push-after-phase` stops immediately on blockers, `human_needed`, or `gaps_found`
+- [ ] `--push-after-phase` stages and commits dirty trees with a deterministic phase-scoped message
+- [ ] `--push-after-phase` pushes the existing upstream when present, otherwise sets upstream on `origin`
 - [ ] ROADMAP.md re-read after each phase (catches inserted phases)
 - [ ] STATE.md checked for blockers before each phase
 - [ ] Blockers handled via user choice (retry / skip / stop)
@@ -1054,4 +1183,5 @@ When any phase operation fails or a blocker is detected, present 3 options via A
 - [ ] `--interactive` main context only accumulates discuss conversations (lean)
 - [ ] `--interactive` waits for background agents before post-execution routing
 - [ ] `--interactive` compatible with `--only`, `--from`, and `--to` flags
+- [ ] `--interactive` and `--yolo` are mutually exclusive
 </success_criteria>

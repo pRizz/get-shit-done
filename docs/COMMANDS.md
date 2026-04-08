@@ -98,9 +98,12 @@ Capture implementation decisions before planning.
 
 | Flag | Description |
 |------|-------------|
-| `--auto` | Auto-select recommended defaults for all questions |
+| `--auto` | Legacy auto mode — auto-select recommended defaults and continue the chain |
+| `--recommended` | Synthesize recommended discuss answers, show one final consolidated review, then write context |
+| `--yolo` | Synthesize recommended discuss answers and write context without approval prompts |
 | `--batch` | Group questions for batch intake instead of one-by-one |
 | `--analyze` | Add trade-off analysis during discussion |
+| `--chain` | Auto-chain discuss into plan and execute after context is captured |
 | `--power` | File-based bulk question answering from a prepared answers file |
 
 **Prerequisites:** `.planning/ROADMAP.md` exists
@@ -109,9 +112,91 @@ Capture implementation decisions before planning.
 ```bash
 /gsd-discuss-phase 1                # Interactive discussion for phase 1
 /gsd-discuss-phase 3 --auto         # Auto-select defaults for phase 3
+/gsd-discuss-phase 3 --recommended  # Review one consolidated set of recommended answers
+/gsd-discuss-phase 3 --yolo         # Accept recommended answers without prompts
 /gsd-discuss-phase --batch          # Batch mode for current phase
 /gsd-discuss-phase 2 --analyze      # Discussion with trade-off analysis
 /gsd-discuss-phase 1 --power        # Bulk answers from file
+```
+
+### `/gsd-recommended-discuss`
+
+Run discuss-phase in recommended-review mode for a single phase.
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `phase` | Yes | Phase number to discuss |
+
+| Flag | Description |
+|------|-------------|
+| `--text` | Use plain-text numbered prompts instead of TUI menus |
+
+```bash
+/gsd-recommended-discuss 4
+/gsd-recommended-discuss 4 --text
+```
+
+### `/gsd-yolo-discuss`
+
+Run discuss-phase in yolo mode for a single phase.
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `phase` | Yes | Phase number to discuss |
+
+```bash
+/gsd-yolo-discuss 4
+```
+
+### `/gsd-yolo-discuss-plan-and-execute`
+
+Run yolo discuss plus plan and execute.
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `phase` | No | Single phase number for phase-local yolo chain |
+
+| Flag | Description |
+|------|-------------|
+| `--from N` | Start from a specific phase in autonomous yolo mode |
+| `--to N` | Stop after a specific phase in autonomous yolo mode |
+| `--only N` | Run exactly one phase through autonomous yolo mode |
+
+```bash
+/gsd-yolo-discuss-plan-and-execute 4
+/gsd-yolo-discuss-plan-and-execute --only 4
+/gsd-yolo-discuss-plan-and-execute --from 4 --to 6
+```
+
+### `/gsd-yolo-discuss-plan-execute-commit-and-push`
+
+Run yolo discuss plus plan and execute, then finalize git only after clean verification.
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `phase` | No | Single phase number for local yolo chain + strict git finalization |
+
+| Flag | Description |
+|------|-------------|
+| `--from N` | Start from a specific phase in autonomous strict-push mode |
+| `--to N` | Stop after a specific phase in autonomous strict-push mode |
+| `--only N` | Run exactly one phase in autonomous strict-push mode |
+
+```bash
+/gsd-yolo-discuss-plan-execute-commit-and-push 4
+/gsd-yolo-discuss-plan-execute-commit-and-push --only 4
+/gsd-yolo-discuss-plan-execute-commit-and-push --from 4 --to 6
+```
+
+### `/gsd-yolo-discuss-plan-execute-commit-and-push-all`
+
+Run yolo discuss plus plan, execute, commit, and push for all remaining phases in the current milestone.
+
+This is a strict no-argument convenience alias for:
+`/gsd-autonomous --yolo --push-after-phase`
+
+```bash
+/gsd-yolo-discuss-plan-execute-commit-and-push-all
 ```
 
 ---
@@ -621,12 +706,16 @@ Run all remaining phases autonomously.
 | `--from N` | Start from a specific phase number |
 | `--to N` | Stop after completing a specific phase number |
 | `--interactive` | Lean context with user input |
+| `--yolo` | Reuse `gsd-discuss-phase --yolo` instead of approval-based smart discuss |
+| `--push-after-phase` | After each clean phase, commit leftover changes if needed and push the current branch |
 
 ```bash
 /gsd-autonomous                     # Run all remaining phases
 /gsd-autonomous --from 3            # Start from phase 3
 /gsd-autonomous --to 5              # Run up to and including phase 5
 /gsd-autonomous --from 3 --to 5     # Run phases 3 through 5
+/gsd-autonomous --only 4 --yolo     # Run one phase with non-interactive recommended picks
+/gsd-autonomous --from 4 --to 6 --yolo --push-after-phase
 ```
 
 ### `/gsd-do`

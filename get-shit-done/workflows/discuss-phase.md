@@ -162,17 +162,32 @@ Exit workflow.
 - Read and execute @~/.claude/get-shit-done/workflows/discuss-phase-power.md end-to-end
 - Do not continue with the steps below
 
-**Auto mode** — If `--auto` is present in ARGUMENTS:
-- In `check_existing`: auto-select "Skip" (if context exists) or continue without prompting (if no context/plans)
-- In `present_gray_areas`: auto-select ALL gray areas without asking the user
-- In `discuss_areas`: for each discussion question, choose the recommended option (first option, or the one marked "recommended") without using AskUserQuestion
-- Log each auto-selected choice inline so the user can review decisions in the context file
-- After discussion completes, auto-advance to plan-phase (existing behavior)
+**Recommended review mode** — If `--recommended` is present in ARGUMENTS:
+- Use the shared recommendation engine from `discuss_areas`
+- Auto-select all relevant gray areas and synthesize recommended answers for every question
+- Present one consolidated review covering every area before writing CONTEXT.md
+- Do NOT auto-advance to plan or execute
+
+**Yolo mode** — If `--yolo` is present in ARGUMENTS:
+- Use the same shared recommendation engine as `--recommended`
+- Auto-select all relevant gray areas and recommended answers without AskUserQuestion
+- Write CONTEXT.md and DISCUSSION-LOG.md immediately after one pass
+- Do NOT auto-advance unless `--chain` is also present
+
+**Legacy auto mode** — If `--auto` is present in ARGUMENTS:
+- Use the same shared recommendation engine as `--yolo`
+- Auto-select all relevant gray areas and recommended answers without AskUserQuestion
+- Write CONTEXT.md and DISCUSSION-LOG.md immediately after one pass
+- Auto-advance to plan-phase (existing behavior)
 
 **Chain mode** — If `--chain` is present in ARGUMENTS:
 - Discussion is fully interactive (questions, gray area selection — same as default mode)
-- After discussion completes, auto-advance to plan-phase → execute-phase (same as `--auto`)
+- `--yolo --chain` is also allowed — yolo captures context non-interactively, then auto-advances to plan-phase → execute-phase
 - This is the middle ground: user controls the discuss decisions, then plan+execute run autonomously
+
+**Mode compatibility:**
+- `--auto`, `--recommended`, and `--yolo` are mutually exclusive
+- `--recommended --chain` is not supported — review mode stops after context capture by design
 </step>
 
 <step name="check_blocking_antipatterns" priority="first">
@@ -208,7 +223,7 @@ ls ${phase_dir}/*-CONTEXT.md 2>/dev/null || true
 
 **If exists:**
 
-**If `--auto`:** Auto-select "Update it" — load existing context and continue to analyze_phase. Log: `[auto] Context exists — updating with auto-selected decisions.`
+**If `--auto`, `--recommended`, or `--yolo`:** Auto-select "Update it" — load existing context and continue to analyze_phase. Log: `[auto-select] Context exists — updating with synthesized decisions.`
 
 **Otherwise:** Use AskUserQuestion:
 - header: "Context"
@@ -232,7 +247,7 @@ ls ${phase_dir}/*-DISCUSS-CHECKPOINT.json 2>/dev/null || true
 
 If a checkpoint file exists (previous session was interrupted before CONTEXT.md was written):
 
-**If `--auto`:** Auto-select "Resume" — load checkpoint and continue from last completed area.
+**If `--auto`, `--recommended`, or `--yolo`:** Auto-select "Resume" — load checkpoint and continue from last completed area.
 
 **Otherwise:** Use AskUserQuestion:
 - header: "Resume"
@@ -246,7 +261,7 @@ If "Start fresh": Delete the checkpoint file. Continue as if no checkpoint exist
 
 Check `has_plans` and `plan_count` from init. **If `has_plans` is true:**
 
-**If `--auto`:** Auto-select "Continue and replan after". Log: `[auto] Plans exist — continuing with context capture, will replan after.`
+**If `--auto`, `--recommended`, or `--yolo`:** Auto-select "Continue and replan after". Log: `[auto-select] Plans exist — continuing with context capture, will replan after.`
 
 **Otherwise:** Use AskUserQuestion:
 - header: "Plans exist"
@@ -355,7 +370,7 @@ Which of these todos should be folded into Phase {X} scope?
 - Store internally as `<reviewed_todos>` for inclusion in CONTEXT.md `<deferred>` section
 - This prevents future phases from re-surfacing the same todos as "missed"
 
-**Auto mode (`--auto`):** Fold all todos with score >= 0.4 automatically. Log the selection.
+**Recommendation-engine modes (`--auto`, `--recommended`, or `--yolo`):** Fold all todos with score >= 0.4 automatically. Log the selection.
 </step>
 
 <step name="scout_codebase">
@@ -485,7 +500,7 @@ We'll clarify HOW to implement this.
 - [Decision from Phase M that applies here]
 ```
 
-**If `--auto`:** Auto-select ALL gray areas. Log: `[auto] Selected all gray areas: [list area names].` Skip the AskUserQuestion below and continue directly to discuss_areas with all areas selected.
+**If `--auto`, `--recommended`, or `--yolo`:** Auto-select ALL gray areas. Log: `[auto-select] Selected all gray areas: [list area names].` Skip the AskUserQuestion below and continue directly to discuss_areas with all areas selected.
 
 **Otherwise, use AskUserQuestion (multiSelect: true):**
 - header: "Discuss"
@@ -710,14 +725,16 @@ This gives the user context to make informed decisions without extra prompting. 
 
 Each answer (or answer set, in batch mode) should reveal the next question or next batch.
 
-**Auto mode (`--auto`):** For each area, Claude selects the recommended option (first option, or the one explicitly marked "recommended") for every question without using AskUserQuestion. Log each auto-selected choice:
+**Recommendation-engine modes (`--auto`, `--recommended`, or `--yolo`):** For each area, Claude selects the recommended option (first option, or the one explicitly marked "recommended") for every question without using AskUserQuestion. Log each auto-selected choice:
 ```
 [auto] [Area] — Q: "[question text]" → Selected: "[chosen option]" (recommended default)
 ```
-After all areas are auto-resolved, skip the "Explore more gray areas" prompt and proceed directly to write_context.
+After all areas are auto-resolved:
+- If `--recommended` is active: skip the "Explore more gray areas" prompt and proceed directly to `review_recommended_summary`
+- If `--yolo` or `--auto` is active: skip the "Explore more gray areas" prompt and proceed directly to `write_context`
 
-**CRITICAL — Auto-mode pass cap:**
-In `--auto` mode, the discuss step MUST complete in a **single pass**. After writing CONTEXT.md once, you are DONE — proceed immediately to write_context and then auto_advance. Do NOT re-read your own CONTEXT.md to find "gaps", "undefined types", or "missing decisions" and run additional passes. This creates a self-feeding loop where each pass generates references that the next pass treats as gaps, consuming unbounded time and resources.
+**CRITICAL — Recommendation-engine pass cap:**
+In `--auto`, `--recommended`, or `--yolo` mode, the discuss step MUST complete in a **single pass**. After writing CONTEXT.md once, you are DONE — proceed immediately to `write_context`, then `auto_advance` only when chaining is active. Do NOT re-read your own CONTEXT.md to find "gaps", "undefined types", or "missing decisions" and run additional passes. This creates a self-feeding loop where each pass generates references that the next pass treats as gaps, consuming unbounded time and resources.
 
 Check the pass cap from config:
 ```bash
@@ -726,7 +743,7 @@ MAX_PASSES=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get wor
 
 If you have already written and committed CONTEXT.md, the discuss step is complete. Move on.
 
-**Interactive mode (no `--auto`):**
+**Interactive mode (no `--auto`, `--recommended`, or `--yolo`):**
 
 **For each area:**
 
@@ -807,7 +824,7 @@ Track deferred ideas internally.
 
 **Incremental checkpoint — save after each area completes:**
 
-After each area is resolved (user says "Next area" or area auto-resolves in `--auto` mode), immediately write a checkpoint file with all decisions captured so far. This prevents data loss if the session is interrupted mid-discussion.
+After each area is resolved (user says "Next area" or the area auto-resolves in `--auto`, `--recommended`, or `--yolo` mode), immediately write a checkpoint file with all decisions captured so far. This prevents data loss if the session is interrupted mid-discussion.
 
 **Checkpoint file:** `${phase_dir}/${padded_phase}-DISCUSS-CHECKPOINT.json`
 
@@ -852,6 +869,42 @@ For each question asked, accumulate:
 This data is used to generate DISCUSSION-LOG.md in the `write_context` step.
 </step>
 
+<step name="review_recommended_summary">
+Run this step only when `--recommended` is active.
+
+Build one consolidated review grouped by area and question. For every item include:
+- the recommended answer
+- a short rationale
+- the alternatives that were considered
+
+Render the summary before writing CONTEXT.md.
+
+Prompt the user with AskUserQuestion:
+- header: "Recommend"
+- question: "Review the recommended discuss answers for Phase ${PHASE}. What do you want to do?"
+- options:
+  - "Accept all" — write CONTEXT.md and DISCUSSION-LOG.md with the synthesized answers
+  - "Modify question" — choose a specific question to change, update the answer, then re-render the full summary
+  - "Discuss area" — switch one area back into the standard interactive discuss loop, then re-render the full summary
+  - "Cancel" — stop without writing artifacts
+
+**Modify flow:**
+1. Let the user choose a specific area/question pair from the consolidated summary
+2. Present the alternatives for that question plus "You decide"
+3. Record the new choice
+4. Re-render the full consolidated summary
+5. Require a final "Accept all" before continuing to `write_context`
+
+**Discuss-area flow:**
+1. Let the user choose an area from the consolidated summary
+2. Run the standard interactive questioning loop for that area only
+3. Merge the captured answers back into the recommendation set
+4. Re-render the full consolidated summary
+5. Require a final "Accept all" before continuing to `write_context`
+
+**Cancel flow:** Exit immediately. Do not write CONTEXT.md, DISCUSSION-LOG.md, or STATE.md updates.
+</step>
+
 <step name="write_context">
 Create CONTEXT.md capturing decisions made.
 
@@ -877,6 +930,7 @@ mkdir -p ".planning/phases/${padded_phase}-${phase_slug}"
 
 **Gathered:** [date]
 **Status:** Ready for planning
+**Mode:** [Interactive | Recommended Review | Yolo | Legacy Auto]
 
 <domain>
 ## Phase Boundary
@@ -1026,6 +1080,7 @@ Created: .planning/phases/${PADDED_PHASE}-${SLUG}/${PADDED_PHASE}-CONTEXT.md
 
 **Date:** [ISO date]
 **Phase:** [phase number]-[phase name]
+**Mode:** [Interactive | Recommended Review | Yolo | Legacy Auto]
 **Areas discussed:** [comma-separated list]
 
 ---
@@ -1092,7 +1147,7 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs(state): record
 <step name="auto_advance">
 Check for auto-advance trigger:
 
-1. Parse `--auto` and `--chain` flags from $ARGUMENTS
+1. Parse `--auto`, `--chain`, `--recommended`, and `--yolo` flags from $ARGUMENTS
 2. **Sync chain flag with intent** — if user invoked manually (no `--auto` and no `--chain`), clear the ephemeral chain flag from any previous interrupted `--auto` chain. This does NOT touch `workflow.auto_advance` (the user's persistent settings preference):
    ```bash
    if [[ ! "$ARGUMENTS" =~ --auto ]] && [[ ! "$ARGUMENTS" =~ --chain ]]; then
@@ -1104,11 +1159,21 @@ Check for auto-advance trigger:
    AUTO_CHAIN=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow._auto_chain_active 2>/dev/null || echo "false")
    AUTO_CFG=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.auto_advance 2>/dev/null || echo "false")
    ```
+4. Compute the local-stop override:
+   ```bash
+   FORCE_LOCAL_STOP="false"
+   if ([[ "$ARGUMENTS" =~ --recommended ]] || [[ "$ARGUMENTS" =~ --yolo ]]) && [[ ! "$ARGUMENTS" =~ --chain ]] && [[ ! "$ARGUMENTS" =~ --auto ]]; then
+     FORCE_LOCAL_STOP="true"
+   fi
+   ```
 
 **If `--auto` or `--chain` flag present AND `AUTO_CHAIN` is not true:** Persist chain flag to config (handles direct usage without new-project):
 ```bash
 node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-set workflow._auto_chain_active true
 ```
+
+**If `FORCE_LOCAL_STOP` is `true`:**
+Route to `confirm_creation` immediately. This keeps `--recommended` and plain `--yolo` phase-local even when `workflow.auto_advance` is enabled in project config.
 
 **If `--auto` flag present OR `--chain` flag present OR `AUTO_CHAIN` is true OR `AUTO_CFG` is true:**
 
@@ -1196,6 +1261,11 @@ The power user mode generates ALL questions upfront into machine-readable and hu
 - Checkpoint file written after each area completes (incremental save)
 - Interrupted sessions can be resumed from checkpoint (no re-answering completed areas)
 - Checkpoint file cleaned up after successful CONTEXT.md write
+- `--recommended` presents one consolidated review before writing context
+- `--recommended` re-renders the full summary after modifications and requires final acceptance
+- `--yolo` writes context from recommended answers without an approval prompt
+- `--recommended` and plain `--yolo` stay local to discuss-phase even when `workflow.auto_advance` is enabled
 - `--chain` triggers interactive discuss followed by auto plan+execute (no auto-answering)
+- `--yolo --chain` captures context non-interactively, then auto-advances to plan-phase
 - `--chain` and `--auto` both persist chain flag and auto-advance to plan-phase
 </success_criteria>

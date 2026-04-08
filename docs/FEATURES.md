@@ -175,7 +175,7 @@
 
 ### 2. Phase Discussion
 
-**Command:** `/gsd-discuss-phase [N] [--auto] [--batch]`
+**Command:** `/gsd-discuss-phase [N] [--auto] [--recommended] [--yolo] [--batch]`
 
 **Purpose:** Capture user's implementation preferences and decisions before research and planning begin. Eliminates the gray areas that cause AI to guess.
 
@@ -187,6 +187,9 @@
 - REQ-DISC-05: System MUST support `--auto` flag to auto-select recommended defaults
 - REQ-DISC-06: System MUST support `--batch` flag for grouped question intake
 - REQ-DISC-07: System MUST scout relevant source files before identifying gray areas (code-aware discussion)
+- REQ-DISC-08: System MUST support `--recommended` mode with one consolidated final review before writing artifacts
+- REQ-DISC-09: System MUST support `--yolo` mode that auto-accepts the same recommended answers without an approval prompt
+- REQ-DISC-10: `--auto`, `--recommended`, and `--yolo` MUST share the same recommendation engine
 
 **Produces:** `{padded_phase}-CONTEXT.md` — User preferences that feed into research and planning
 
@@ -447,7 +450,7 @@
 
 ### 11. Autonomous Mode
 
-**Command:** `/gsd-autonomous [--from N]`
+**Command:** `/gsd-autonomous [--from N] [--to N] [--only N] [--interactive] [--yolo] [--push-after-phase]`
 
 **Purpose:** Run all remaining phases autonomously — discuss → plan → execute per phase.
 
@@ -457,6 +460,9 @@
 - REQ-AUTO-03: System MUST pause for explicit user decisions (gray area acceptance, blockers, validation)
 - REQ-AUTO-04: System MUST re-read ROADMAP.md after each phase to catch dynamically inserted phases
 - REQ-AUTO-05: `--from N` flag MUST start from a specific phase number
+- REQ-AUTO-06: `--yolo` MUST replace approval-based discuss with `gsd-discuss-phase --yolo`
+- REQ-AUTO-07: `--push-after-phase` MUST commit/push only after `status: passed`
+- REQ-AUTO-08: `--push-after-phase` MUST stop at the first phase that does not pass cleanly
 
 ---
 
@@ -2179,3 +2185,97 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 - REQ-PATCH-VERIFY-01: Reapply-patches MUST verify each hunk was applied after the merge
 - REQ-PATCH-VERIFY-02: Dropped or partial hunks MUST be reported to the user with file and line context
 - REQ-PATCH-VERIFY-03: Verification MUST run after all patches are applied, not per-patch
+
+---
+
+### 104. Recommended Discuss Review
+
+**Flag:** `/gsd-discuss-phase --recommended`
+
+**Purpose:** Generate one complete set of recommended discuss answers, show them once in a consolidated review, then write the normal discussion artifacts only after approval.
+
+**Requirements:**
+- REQ-RECDISC-01: System MUST synthesize recommended picks for all selected gray areas before prompting
+- REQ-RECDISC-02: System MUST present one consolidated summary grouped by area and question
+- REQ-RECDISC-03: System MUST support modify, discuss-area, accept-all, and cancel actions
+- REQ-RECDISC-04: System MUST re-render the full summary after any modification and require final acceptance
+
+---
+
+### 105. Yolo Discuss
+
+**Flag:** `/gsd-discuss-phase --yolo`
+
+**Purpose:** Reuse the same recommended-answer engine as recommended discuss, but write CONTEXT.md and DISCUSSION-LOG.md with no approval prompt.
+
+**Requirements:**
+- REQ-YOLODISC-01: System MUST reuse the same recommendation engine as `--recommended`
+- REQ-YOLODISC-02: System MUST stop after writing discussion artifacts unless `--chain` is also present
+- REQ-YOLODISC-03: System MUST preserve the same artifact structure as standard discuss-phase
+
+---
+
+### 106. Recommended and Yolo Discuss Wrappers
+
+**Commands:** `/gsd-recommended-discuss`, `/gsd-yolo-discuss`
+
+**Purpose:** Provide top-level single-phase entry points for the new discuss modes without requiring users to remember the underlying flags.
+
+**Requirements:**
+- REQ-WRAPDISC-01: `/gsd-recommended-discuss` MUST delegate to `/gsd-discuss-phase --recommended`
+- REQ-WRAPDISC-02: `/gsd-yolo-discuss` MUST delegate to `/gsd-discuss-phase --yolo`
+- REQ-WRAPDISC-03: Both wrappers MUST remain single-phase only
+
+---
+
+### 107. Yolo Discuss Plan Execute Wrapper
+
+**Command:** `/gsd-yolo-discuss-plan-and-execute`
+
+**Purpose:** Provide a top-level minimal-intervention wrapper that runs yolo discuss plus planning and execution.
+
+**Requirements:**
+- REQ-YOLOCHAIN-01: Single-phase mode MUST delegate to `/gsd-discuss-phase --yolo --chain`
+- REQ-YOLOCHAIN-02: Multi-phase or range mode MUST delegate to `/gsd-autonomous --yolo`
+- REQ-YOLOCHAIN-03: Existing planning and execution gates MUST remain intact
+
+---
+
+### 108. Strict Push Wrapper
+
+**Command:** `/gsd-yolo-discuss-plan-execute-commit-and-push`
+
+**Purpose:** Provide a top-level wrapper that runs yolo discuss plus plan and execute, then performs strict git finalization only after clean verification.
+
+**Requirements:**
+- REQ-PUSHWRAP-01: Single-phase mode MUST push only when verification status is `passed`
+- REQ-PUSHWRAP-02: Single-phase mode MUST inspect the worktree, create a deterministic final commit when dirty, and push the current branch
+- REQ-PUSHWRAP-03: Multi-phase mode MUST delegate to `/gsd-autonomous --yolo --push-after-phase`
+- REQ-PUSHWRAP-04: No commit or push MUST happen on `human_needed`, `gaps_found`, blockers, or inconclusive execution
+
+---
+
+### 109. Autonomous Strict Push
+
+**Flags:** `/gsd-autonomous --yolo --push-after-phase`
+
+**Purpose:** Run autonomous yolo execution with strict per-phase git finalization.
+
+**Requirements:**
+- REQ-AUTOPUSH-01: System MUST stage and commit leftover changes after a clean phase using a deterministic phase-scoped message
+- REQ-AUTOPUSH-02: System MUST push the existing upstream when one exists
+- REQ-AUTOPUSH-03: System MUST create an upstream on `origin` when none exists
+- REQ-AUTOPUSH-04: System MUST stop the overall run at the first phase that does not pass cleanly
+
+---
+
+### 110. Yolo Strict Push All Alias
+
+**Command:** `/gsd-yolo-discuss-plan-execute-commit-and-push-all`
+
+**Purpose:** Provide a no-argument convenience alias for running autonomous yolo strict-push mode across all remaining phases in the current milestone.
+
+**Requirements:**
+- REQ-PUSHALL-01: The command MUST reject unexpected arguments
+- REQ-PUSHALL-02: The command MUST delegate directly to `/gsd-autonomous --yolo --push-after-phase`
+- REQ-PUSHALL-03: "All" MUST mean all remaining incomplete phases in the current active milestone/ROADMAP context
