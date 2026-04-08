@@ -1536,6 +1536,19 @@ Parallel fan-out:
 Result parsing:
 - Look for structured markers in agent output: \`CHECKPOINT\`, \`PLAN COMPLETE\`, \`SUMMARY\`, etc.
 - \`close_agent(id)\` after collecting results from each agent
+
+## D. Skill() → Nested Skill Delegation
+GSD workflows may invoke other skills using \`Skill(skill="X", args="Y")\`. In Codex, treat this as inline delegation, not as an unsupported primitive.
+
+Delegation rules:
+- Continue execution in the current thread by loading the target skill instructions and running them immediately
+- The delegated \`args="Y"\` becomes that skill's effective \`{{GSD_ARGS}}\`
+- Nested skill delegation may recurse multiple levels (for example wrapper → \`gsd-autonomous\` → \`gsd-plan-phase\` → \`gsd-execute-phase\`)
+
+Skill resolution order:
+- First check local project install: \`./.codex/skills/<skill>/SKILL.md\`
+- If missing, fallback to global install: \`$HOME/.codex/skills/<skill>/SKILL.md\`
+- If neither exists, stop with a clear missing-skill error naming the unresolved skill
 </codex_skill_adapter>`;
 }
 

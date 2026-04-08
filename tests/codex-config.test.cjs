@@ -16,6 +16,7 @@ const os = require('os');
 
 const {
   getCodexSkillAdapterHeader,
+  convertClaudeCommandToCodexSkill,
   convertClaudeAgentToCodexAgent,
   generateCodexAgentToml,
   generateCodexConfigBlock,
@@ -75,13 +76,14 @@ function assertUsesOnlyEol(content, eol) {
 // ─── getCodexSkillAdapterHeader ─────────────────────────────────────────────────
 
 describe('getCodexSkillAdapterHeader', () => {
-  test('contains all three sections', () => {
+  test('contains all four sections', () => {
     const result = getCodexSkillAdapterHeader('gsd-execute-phase');
     assert.ok(result.includes('<codex_skill_adapter>'), 'has opening tag');
     assert.ok(result.includes('</codex_skill_adapter>'), 'has closing tag');
     assert.ok(result.includes('## A. Skill Invocation'), 'has section A');
     assert.ok(result.includes('## B. AskUserQuestion'), 'has section B');
     assert.ok(result.includes('## C. Task() → spawn_agent'), 'has section C');
+    assert.ok(result.includes('## D. Skill() → Nested Skill Delegation'), 'has section D');
   });
 
   test('includes correct invocation syntax', () => {
@@ -109,6 +111,62 @@ describe('getCodexSkillAdapterHeader', () => {
     assert.ok(result.includes('wait(ids)'), 'documents parallel wait pattern');
     assert.ok(result.includes('close_agent'), 'documents close_agent cleanup');
     assert.ok(result.includes('CHECKPOINT'), 'documents result markers');
+  });
+
+  test('section D maps nested Skill delegation', () => {
+    const result = getCodexSkillAdapterHeader('gsd-yolo-discuss-plan-execute-commit-and-push-all');
+    assert.ok(result.includes('inline delegation'), 'documents inline delegation behavior');
+    assert.ok(result.includes('./.codex/skills/<skill>/SKILL.md'), 'documents local skill resolution');
+    assert.ok(result.includes('$HOME/.codex/skills/<skill>/SKILL.md'), 'documents global skill resolution');
+    assert.ok(result.includes('{{GSD_ARGS}}'), 'documents delegated argument propagation');
+    assert.ok(result.includes('may recurse multiple levels'), 'documents recursive nested skill handling');
+    assert.ok(result.includes('clear missing-skill error'), 'documents missing-skill failure mode');
+  });
+});
+
+// ─── convertClaudeCommandToCodexSkill ──────────────────────────────────────────
+
+describe('convertClaudeCommandToCodexSkill', () => {
+  test('injects the codex skill adapter header for wrapper skills', () => {
+    const input = `---
+name: gsd:yolo-discuss-plan-execute-commit-and-push-all
+description: Run yolo discuss, plan, execute, commit, and push for all remaining phases.
+---
+
+Skill(skill="gsd-autonomous", args="--yolo --push-after-phase")`;
+
+    const result = convertClaudeCommandToCodexSkill(
+      input,
+      'gsd-yolo-discuss-plan-execute-commit-and-push-all'
+    );
+
+    assert.ok(result.includes('## D. Skill() → Nested Skill Delegation'), 'converted skill includes nested skill section');
+    assert.ok(result.includes('./.codex/skills/<skill>/SKILL.md'), 'converted skill includes local resolution guidance');
+    assert.ok(result.includes('$HOME/.codex/skills/<skill>/SKILL.md'), 'converted skill includes global resolution guidance');
+    assert.ok(result.includes('`$gsd-yolo-discuss-plan-execute-commit-and-push-all`'), 'converted skill uses Codex invocation syntax');
+  });
+
+  test('converted wrapper body still preserves nested Skill(...) calls under the new adapter', () => {
+    const input = `---
+name: gsd:yolo-discuss-plan-execute-commit-and-push-all
+description: Run all remaining phases.
+---
+
+Skill(skill="gsd-autonomous", args="--yolo --push-after-phase")`;
+
+    const result = convertClaudeCommandToCodexSkill(
+      input,
+      'gsd-yolo-discuss-plan-execute-commit-and-push-all'
+    );
+
+    assert.ok(
+      result.includes('Skill(skill="gsd-autonomous", args="--yolo --push-after-phase")'),
+      'converted wrapper keeps nested Skill call in body'
+    );
+    assert.ok(
+      result.includes('treat this as inline delegation'),
+      'adapter explicitly documents nested Skill inline delegation'
+    );
   });
 });
 
