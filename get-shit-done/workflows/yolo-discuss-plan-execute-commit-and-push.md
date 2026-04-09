@@ -180,6 +180,8 @@ CURRENT_BRANCH=$(git branch --show-current)
 UPSTREAM_REF=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)
 ```
 
+This final push step does not create or switch branches. It only pushes the branch that is already checked out.
+
 **If `CURRENT_BRANCH` is empty:** stop with an error — cannot push from a detached HEAD.
 
 **If `UPSTREAM_REF` is not empty:** push to the existing upstream:
@@ -210,4 +212,5 @@ Phase ${phase_number} pushed from ${CURRENT_BRANCH}.
 - Single-phase mode commits and pushes only when verification status is `passed`
 - Dirty trees receive a deterministic phase-scoped final commit before push
 - Existing upstream is preferred; otherwise upstream is created on `origin`
+- Strict push never creates or switches to a different branch during finalization
 </success_criteria>

@@ -694,6 +694,8 @@ CURRENT_BRANCH=$(git branch --show-current)
 UPSTREAM_REF=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)
 ```
 
+Strict push mode does not create or switch branches here. It only pushes the branch that is already checked out.
+
 **If `CURRENT_BRANCH` is empty:** go to `handle_blocker` with "Cannot push from detached HEAD in push-after-phase mode."
 
 **If `UPSTREAM_REF` is not empty:** push to the existing upstream:

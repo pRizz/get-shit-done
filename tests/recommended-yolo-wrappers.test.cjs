@@ -112,9 +112,23 @@ describe('recommended and yolo wrapper commands', () => {
       path.join(WORKFLOWS_DIR, 'yolo-discuss-plan-execute-commit-and-push.md'),
       'utf8'
     );
+    const pushSection = sliceSection(
+      content,
+      'Detect the current branch and upstream:',
+      'Display:'
+    );
     assert.ok(content.includes("VERIFY_STATUS` is not `passed`"), 'wrapper should guard on passed verification');
     assert.ok(content.includes('git push --set-upstream origin "${CURRENT_BRANCH}"'), 'wrapper should set upstream when missing');
     assert.ok(content.includes('git commit -m "chore(${padded_phase}): finalize autonomous phase ${phase_number}"'), 'wrapper should define deterministic final commit message');
+    assert.ok(
+      content.includes('This final push step does not create or switch branches. It only pushes the branch that is already checked out.'),
+      'wrapper should document current-branch-only push behavior'
+    );
+    assert.ok(pushSection.includes('git push\n```'), 'wrapper should use plain git push when upstream exists');
+    assert.ok(
+      !pushSection.includes('git checkout -b') && !pushSection.includes('git switch -c'),
+      'wrapper push section should not create a new branch'
+    );
   });
 
   test('all alias delegates directly to autonomous strict push mode', () => {
@@ -259,14 +273,28 @@ describe('autonomous: yolo and push-after-phase', () => {
   });
 
   test('workflow defines strict push-after-phase sub-step and clean-pass gate', () => {
+    const pushSection = sliceSection(
+      workflowContent,
+      'Detect the current branch and upstream:',
+      'Display:'
+    );
     assert.ok(
       workflowContent.includes('3d.6. Push After Phase (Strict Git Mode)'),
       'workflow should define push-after-phase sub-step'
     );
     assert.ok(workflowContent.includes('CLEAN_PASS'), 'workflow should track clean pass');
     assert.ok(
+      workflowContent.includes('Strict push mode does not create or switch branches here. It only pushes the branch that is already checked out.'),
+      'workflow should document current-branch-only push behavior'
+    );
+    assert.ok(
       workflowContent.includes('git push --set-upstream origin "${CURRENT_BRANCH}"'),
       'workflow should set upstream on push-after-phase'
+    );
+    assert.ok(pushSection.includes('git push\n```'), 'workflow should use plain git push when upstream exists');
+    assert.ok(
+      !pushSection.includes('git checkout -b') && !pushSection.includes('git switch -c'),
+      'workflow push section should not create a new branch'
     );
     assert.ok(
       workflowContent.includes('verify lifecycle "${PHASE_NUM}" --expect-id "${PHASE_LIFECYCLE_ID}" --expect-mode "${PHASE_LIFECYCLE_MODE}" --require-plans --require-verification --raw'),
