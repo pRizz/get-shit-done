@@ -1203,6 +1203,9 @@ PHASE1_HAS_UI=$(echo "$PHASE1_SECTION" | grep -qi "UI hint.*yes" && echo "true" 
 **Also available:**
 - /gsd-ui-phase 1 — generate UI design contract (recommended for frontend phases)
 - /gsd-plan-phase 1 — skip discussion, plan directly
+- /gsd-yolo-discuss 1 — non-interactive discuss using recommended answers
+- /gsd-yolo-discuss-plan-and-execute 1 — discuss, plan, and execute with minimal intervention
+- /gsd-yolo-discuss-plan-execute-commit-and-push 1 — same flow, then commit/push only after clean verification
 
 ───────────────────────────────────────────────────────────────
 ```
@@ -1224,6 +1227,9 @@ PHASE1_HAS_UI=$(echo "$PHASE1_SECTION" | grep -qi "UI hint.*yes" && echo "true" 
 
 **Also available:**
 - /gsd-plan-phase 1 — skip discussion, plan directly
+- /gsd-yolo-discuss 1 — non-interactive discuss using recommended answers
+- /gsd-yolo-discuss-plan-and-execute 1 — discuss, plan, and execute with minimal intervention
+- /gsd-yolo-discuss-plan-execute-commit-and-push 1 — same flow, then commit/push only after clean verification
 
 ───────────────────────────────────────────────────────────────
 ```

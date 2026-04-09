@@ -10,6 +10,34 @@ const COMMANDS_DOC_PATH = path.join(ROOT, 'docs', 'COMMANDS.md');
 const FEATURES_DOC_PATH = path.join(ROOT, 'docs', 'FEATURES.md');
 const README_PATH = path.join(ROOT, 'README.md');
 const HELP_PATH = path.join(ROOT, 'get-shit-done', 'workflows', 'help.md');
+const CONTINUATION_FORMAT_PATH = path.join(
+  ROOT,
+  'get-shit-done',
+  'references',
+  'continuation-format.md'
+);
+
+function sliceSection(content, startMarker, endMarker) {
+  const start = content.indexOf(startMarker);
+  assert.ok(start !== -1, `Missing start marker: ${startMarker}`);
+  const end = endMarker ? content.indexOf(endMarker, start) : content.length;
+  assert.ok(end !== -1, `Missing end marker: ${endMarker}`);
+  return content.slice(start, end);
+}
+
+function assertInOrder(content, fragments, message) {
+  let lastIndex = -1;
+
+  for (const fragment of fragments) {
+    const nextIndex = content.indexOf(fragment, lastIndex + 1);
+    assert.ok(nextIndex !== -1, `${message}: missing fragment ${fragment}`);
+    assert.ok(
+      nextIndex > lastIndex,
+      `${message}: fragment out of order ${fragment}`
+    );
+    lastIndex = nextIndex;
+  }
+}
 
 describe('recommended and yolo wrapper commands', () => {
   const commandFiles = [
@@ -328,5 +356,186 @@ describe('docs reference recommended and yolo wrappers', () => {
     assert.ok(help.includes('/gsd-yolo-discuss-plan-execute-commit-and-push-all'), 'help should include strict push all alias usage');
     assert.ok(help.includes('Prints a short preview of the phases and high-level steps before it runs'), 'help should mention wrapper previews');
     assert.ok(help.includes('/gsd-autonomous --from 3 --to 5 --yolo --push-after-phase'), 'help should include autonomous strict push usage');
+  });
+});
+
+describe('phase-entry Also available lists surface yolo wrappers', () => {
+  test('new-project phase 1 Next Up variants advertise yolo wrappers after plan', () => {
+    const content = fs.readFileSync(
+      path.join(WORKFLOWS_DIR, 'new-project.md'),
+      'utf8'
+    );
+    const withUi = sliceSection(
+      content,
+      '**If Phase 1 has UI (`PHASE1_HAS_UI` is `true`):**',
+      '**If Phase 1 has no UI:**'
+    );
+    const withoutUi = sliceSection(
+      content,
+      '**If Phase 1 has no UI:**',
+      '</process>'
+    );
+
+    assertInOrder(
+      withUi,
+      [
+        '/gsd-ui-phase 1 — generate UI design contract (recommended for frontend phases)',
+        '/gsd-plan-phase 1 — skip discussion, plan directly',
+        '/gsd-yolo-discuss 1 — non-interactive discuss using recommended answers',
+        '/gsd-yolo-discuss-plan-and-execute 1 — discuss, plan, and execute with minimal intervention',
+        '/gsd-yolo-discuss-plan-execute-commit-and-push 1 — same flow, then commit/push only after clean verification',
+      ],
+      'new-project UI Next Up ordering'
+    );
+
+    assertInOrder(
+      withoutUi,
+      [
+        '/gsd-plan-phase 1 — skip discussion, plan directly',
+        '/gsd-yolo-discuss 1 — non-interactive discuss using recommended answers',
+        '/gsd-yolo-discuss-plan-and-execute 1 — discuss, plan, and execute with minimal intervention',
+        '/gsd-yolo-discuss-plan-execute-commit-and-push 1 — same flow, then commit/push only after clean verification',
+      ],
+      'new-project no-UI Next Up ordering'
+    );
+  });
+
+  test('progress phase-entry blocks advertise yolo wrappers in the intended order', () => {
+    const content = fs.readFileSync(
+      path.join(WORKFLOWS_DIR, 'progress.md'),
+      'utf8'
+    );
+    const currentWithUi = sliceSection(
+      content,
+      '**If CONTEXT.md does NOT exist AND phase has UI (`PHASE_HAS_UI` is `true`):**',
+      '**If CONTEXT.md does NOT exist AND phase has no UI:**'
+    );
+    const currentWithoutUi = sliceSection(
+      content,
+      '**If CONTEXT.md does NOT exist AND phase has no UI:**',
+      '**Route E: UAT gaps need fix plans**'
+    );
+    const nextWithUi = sliceSection(
+      content,
+      '**If next phase has UI (`NEXT_HAS_UI` is `true`):**',
+      '**If next phase has no UI:**'
+    );
+    const nextWithoutUi = sliceSection(
+      content,
+      '**If next phase has no UI:**',
+      '**Route D: Milestone complete**'
+    );
+
+    assertInOrder(
+      currentWithUi,
+      [
+        '`/gsd-ui-phase {phase}` — generate UI design contract (recommended for frontend phases)',
+        '`/gsd-plan-phase {phase}` — skip discussion, plan directly',
+        '`/gsd-yolo-discuss {phase}` — non-interactive discuss using recommended answers',
+        '`/gsd-yolo-discuss-plan-and-execute {phase}` — discuss, plan, and execute with minimal intervention',
+        '`/gsd-yolo-discuss-plan-execute-commit-and-push {phase}` — same flow, then commit/push only after clean verification',
+        '`/gsd-list-phase-assumptions {phase}` — see Claude\'s assumptions',
+      ],
+      'progress current phase UI ordering'
+    );
+
+    assertInOrder(
+      currentWithoutUi,
+      [
+        '`/gsd-plan-phase {phase} ${GSD_WS}` — skip discussion, plan directly',
+        '`/gsd-yolo-discuss {phase} ${GSD_WS}` — non-interactive discuss using recommended answers',
+        '`/gsd-yolo-discuss-plan-and-execute {phase} ${GSD_WS}` — discuss, plan, and execute with minimal intervention',
+        '`/gsd-yolo-discuss-plan-execute-commit-and-push {phase} ${GSD_WS}` — same flow, then commit/push only after clean verification',
+        '`/gsd-list-phase-assumptions {phase} ${GSD_WS}` — see Claude\'s assumptions',
+      ],
+      'progress current phase no-UI ordering'
+    );
+
+    assertInOrder(
+      nextWithUi,
+      [
+        '`/gsd-ui-phase {Z+1}` — generate UI design contract (recommended for frontend phases)',
+        '`/gsd-plan-phase {Z+1}` — skip discussion, plan directly',
+        '`/gsd-yolo-discuss {Z+1}` — non-interactive discuss using recommended answers',
+        '`/gsd-yolo-discuss-plan-and-execute {Z+1}` — discuss, plan, and execute with minimal intervention',
+        '`/gsd-yolo-discuss-plan-execute-commit-and-push {Z+1}` — same flow, then commit/push only after clean verification',
+        '`/gsd-verify-work {Z}` — user acceptance test before continuing',
+      ],
+      'progress next phase UI ordering'
+    );
+
+    assertInOrder(
+      nextWithoutUi,
+      [
+        '`/gsd-plan-phase {Z+1} ${GSD_WS}` — skip discussion, plan directly',
+        '`/gsd-yolo-discuss {Z+1} ${GSD_WS}` — non-interactive discuss using recommended answers',
+        '`/gsd-yolo-discuss-plan-and-execute {Z+1} ${GSD_WS}` — discuss, plan, and execute with minimal intervention',
+        '`/gsd-yolo-discuss-plan-execute-commit-and-push {Z+1} ${GSD_WS}` — same flow, then commit/push only after clean verification',
+        '`/gsd-verify-work {Z} ${GSD_WS}` — user acceptance test before continuing',
+      ],
+      'progress next phase no-UI ordering'
+    );
+  });
+
+  test('transition missing-context block advertises yolo wrappers before research', () => {
+    const content = fs.readFileSync(
+      path.join(WORKFLOWS_DIR, 'transition.md'),
+      'utf8'
+    );
+    const missingContext = sliceSection(
+      content,
+      '**If CONTEXT.md does NOT exist:**',
+      '**If CONTEXT.md exists:**'
+    );
+
+    assertInOrder(
+      missingContext,
+      [
+        '`/gsd-plan-phase [X+1] ${GSD_WS}` — skip discussion, plan directly',
+        '`/gsd-yolo-discuss [X+1] ${GSD_WS}` — non-interactive discuss using recommended answers',
+        '`/gsd-yolo-discuss-plan-and-execute [X+1] ${GSD_WS}` — discuss, plan, and execute with minimal intervention',
+        '`/gsd-yolo-discuss-plan-execute-commit-and-push [X+1] ${GSD_WS}` — same flow, then commit/push only after clean verification',
+        '`/gsd-research-phase [X+1] ${GSD_WS}` — investigate unknowns',
+      ],
+      'transition missing-context ordering'
+    );
+  });
+
+  test('continuation-format examples include yolo wrapper discoverability pattern', () => {
+    const content = fs.readFileSync(CONTINUATION_FORMAT_PATH, 'utf8');
+    const planPhase = sliceSection(
+      content,
+      '### Plan a Phase',
+      '### Phase Complete, Ready for Next'
+    );
+    const phaseComplete = sliceSection(
+      content,
+      '### Phase Complete, Ready for Next',
+      '### Multiple Equal Options'
+    );
+
+    assertInOrder(
+      planPhase,
+      [
+        '`/gsd-discuss-phase 2` — gather context first',
+        '`/gsd-yolo-discuss 2` — non-interactive discuss using recommended answers',
+        '`/gsd-yolo-discuss-plan-and-execute 2` — discuss, plan, and execute with minimal intervention',
+        '`/gsd-yolo-discuss-plan-execute-commit-and-push 2` — same flow, then commit/push only after clean verification',
+        '`/gsd-research-phase 2` — investigate unknowns',
+      ],
+      'continuation-format plan phase ordering'
+    );
+
+    assertInOrder(
+      phaseComplete,
+      [
+        '`/gsd-discuss-phase 3` — gather context first',
+        '`/gsd-yolo-discuss 3` — non-interactive discuss using recommended answers',
+        '`/gsd-yolo-discuss-plan-and-execute 3` — discuss, plan, and execute with minimal intervention',
+        '`/gsd-yolo-discuss-plan-execute-commit-and-push 3` — same flow, then commit/push only after clean verification',
+        '`/gsd-research-phase 3` — investigate unknowns',
+      ],
+      'continuation-format phase complete ordering'
+    );
   });
 });

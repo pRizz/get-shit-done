@@ -270,6 +270,9 @@ PHASE_HAS_UI=$(echo "$PHASE_SECTION" | grep -qi "UI hint.*yes" && echo "true" ||
 **Also available:**
 - `/gsd-ui-phase {phase}` — generate UI design contract (recommended for frontend phases)
 - `/gsd-plan-phase {phase}` — skip discussion, plan directly
+- `/gsd-yolo-discuss {phase}` — non-interactive discuss using recommended answers
+- `/gsd-yolo-discuss-plan-and-execute {phase}` — discuss, plan, and execute with minimal intervention
+- `/gsd-yolo-discuss-plan-execute-commit-and-push {phase}` — same flow, then commit/push only after clean verification
 - `/gsd-list-phase-assumptions {phase}` — see Claude's assumptions
 
 ---
@@ -292,6 +295,9 @@ PHASE_HAS_UI=$(echo "$PHASE_SECTION" | grep -qi "UI hint.*yes" && echo "true" ||
 
 **Also available:**
 - `/gsd-plan-phase {phase} ${GSD_WS}` — skip discussion, plan directly
+- `/gsd-yolo-discuss {phase} ${GSD_WS}` — non-interactive discuss using recommended answers
+- `/gsd-yolo-discuss-plan-and-execute {phase} ${GSD_WS}` — discuss, plan, and execute with minimal intervention
+- `/gsd-yolo-discuss-plan-execute-commit-and-push {phase} ${GSD_WS}` — same flow, then commit/push only after clean verification
 - `/gsd-list-phase-assumptions {phase} ${GSD_WS}` — see Claude's assumptions
 
 ---
@@ -401,6 +407,9 @@ NEXT_HAS_UI=$(echo "$NEXT_PHASE_SECTION" | grep -qi "UI hint.*yes" && echo "true
 **Also available:**
 - `/gsd-ui-phase {Z+1}` — generate UI design contract (recommended for frontend phases)
 - `/gsd-plan-phase {Z+1}` — skip discussion, plan directly
+- `/gsd-yolo-discuss {Z+1}` — non-interactive discuss using recommended answers
+- `/gsd-yolo-discuss-plan-and-execute {Z+1}` — discuss, plan, and execute with minimal intervention
+- `/gsd-yolo-discuss-plan-execute-commit-and-push {Z+1}` — same flow, then commit/push only after clean verification
 - `/gsd-verify-work {Z}` — user acceptance test before continuing
 
 ---
@@ -425,6 +434,9 @@ NEXT_HAS_UI=$(echo "$NEXT_PHASE_SECTION" | grep -qi "UI hint.*yes" && echo "true
 
 **Also available:**
 - `/gsd-plan-phase {Z+1} ${GSD_WS}` — skip discussion, plan directly
+- `/gsd-yolo-discuss {Z+1} ${GSD_WS}` — non-interactive discuss using recommended answers
+- `/gsd-yolo-discuss-plan-and-execute {Z+1} ${GSD_WS}` — discuss, plan, and execute with minimal intervention
+- `/gsd-yolo-discuss-plan-execute-commit-and-push {Z+1} ${GSD_WS}` — same flow, then commit/push only after clean verification
 - `/gsd-verify-work {Z} ${GSD_WS}` — user acceptance test before continuing
 
 ---

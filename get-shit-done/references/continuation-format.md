@@ -99,6 +99,9 @@ Add note that this is the last plan and what comes after:
 
 **Also available:**
 - `/gsd-discuss-phase 2` — gather context first
+- `/gsd-yolo-discuss 2` — non-interactive discuss using recommended answers
+- `/gsd-yolo-discuss-plan-and-execute 2` — discuss, plan, and execute with minimal intervention
+- `/gsd-yolo-discuss-plan-execute-commit-and-push 2` — same flow, then commit/push only after clean verification
 - `/gsd-research-phase 2` — investigate unknowns
 - Review roadmap
 
@@ -128,6 +131,9 @@ Show completion status before next action:
 
 **Also available:**
 - `/gsd-discuss-phase 3` — gather context first
+- `/gsd-yolo-discuss 3` — non-interactive discuss using recommended answers
+- `/gsd-yolo-discuss-plan-and-execute 3` — discuss, plan, and execute with minimal intervention
+- `/gsd-yolo-discuss-plan-execute-commit-and-push 3` — same flow, then commit/push only after clean verification
 - `/gsd-research-phase 3` — investigate unknowns
 - Review what Phase 2 built
 

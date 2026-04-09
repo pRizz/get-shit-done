@@ -483,6 +483,9 @@ Exit skill and invoke SlashCommand("/gsd-discuss-phase [X+1] --auto ${GSD_WS}")
 
 **Also available:**
 - `/gsd-plan-phase [X+1] ${GSD_WS}` — skip discussion, plan directly
+- `/gsd-yolo-discuss [X+1] ${GSD_WS}` — non-interactive discuss using recommended answers
+- `/gsd-yolo-discuss-plan-and-execute [X+1] ${GSD_WS}` — discuss, plan, and execute with minimal intervention
+- `/gsd-yolo-discuss-plan-execute-commit-and-push [X+1] ${GSD_WS}` — same flow, then commit/push only after clean verification
 - `/gsd-research-phase [X+1] ${GSD_WS}` — investigate unknowns
 
 ---
