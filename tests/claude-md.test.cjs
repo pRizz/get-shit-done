@@ -32,6 +32,10 @@ describe('generate-claude-md', () => {
     assert.strictEqual(output.action, 'created');
     assert.strictEqual(output.sections_total, 6);
     assert.ok(output.sections_generated.includes('workflow'));
+    assert.strictEqual(output.manual_content_preexisting, false);
+    assert.deepStrictEqual(output.managed_sections_appended, []);
+    assert.strictEqual(output.audit_recommended, false);
+    assert.strictEqual(output.audit_message, '');
 
     const claudePath = path.join(tmpDir, 'CLAUDE.md');
     const content = fs.readFileSync(claudePath, 'utf-8');
@@ -59,15 +63,119 @@ describe('generate-claude-md', () => {
     assert.ok(content.includes('## Local Notes'));
     assert.ok(content.includes('## GSD Workflow Enforcement'));
   });
+
+  test('appends managed AGENTS.md sections after existing manual content without rewriting it', () => {
+    const outputPath = path.join(tmpDir, 'AGENTS.md');
+    const manualContent = '# Existing Instructions\n\nKeep this intro exactly.\n\n\n';
+
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'PROJECT.md'),
+      '# Test Project\n\n## What This Is\n\nA small test project.\n'
+    );
+    fs.writeFileSync(outputPath, manualContent);
+
+    const result = runGsdTools(['generate-claude-md', '--output', outputPath, '--raw'], tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.action, 'updated');
+    assert.strictEqual(output.claude_md_path, outputPath);
+    assert.strictEqual(output.manual_content_preexisting, true);
+    assert.deepStrictEqual(
+      output.managed_sections_appended,
+      ['project', 'stack', 'conventions', 'architecture', 'skills', 'workflow']
+    );
+    assert.strictEqual(output.audit_recommended, true);
+    assert.ok(output.audit_message.includes('Review AGENTS.md'));
+
+    const content = fs.readFileSync(outputPath, 'utf-8');
+    assert.strictEqual(content.slice(0, manualContent.length), manualContent);
+    assert.ok(content.startsWith(manualContent + '<!-- GSD:project-start'));
+    assert.ok(content.includes('## GSD Workflow Enforcement'));
+  });
+
+  test('updates managed AGENTS.md sections in place and preserves manual content around them', () => {
+    const outputPath = path.join(tmpDir, 'AGENTS.md');
+    const manualTop = '# Existing Instructions\n\nKeep this intro.\n';
+    const manualMiddle = '\n## Team Notes\n\nDo not rewrite this note.\n';
+    const manualFooter = '\n## Local Footer\n\nTail note.\n';
+    const existingContent = [
+      manualTop,
+      '<!-- GSD:project-start source:PROJECT.md -->',
+      '## Project',
+      '',
+      'Old project summary.',
+      '<!-- GSD:project-end -->',
+      manualMiddle,
+      '<!-- GSD:workflow-start source:GSD defaults -->',
+      '## GSD Workflow Enforcement',
+      '',
+      'Outdated workflow rule.',
+      '<!-- GSD:workflow-end -->',
+      manualFooter,
+    ].join('\n');
+
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'PROJECT.md'),
+      '# Test Project\n\n## What This Is\n\nA small test project.\n'
+    );
+    fs.writeFileSync(outputPath, existingContent);
+
+    const result = runGsdTools(['generate-claude-md', '--output', outputPath, '--raw'], tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    const output = JSON.parse(result.output);
+
+    assert.strictEqual(output.manual_content_preexisting, true);
+    assert.deepStrictEqual(output.managed_sections_appended, ['stack', 'conventions', 'architecture', 'skills']);
+    assert.strictEqual(output.audit_recommended, true);
+    assert.ok(output.audit_message.includes('Review AGENTS.md'));
+
+    const content = fs.readFileSync(outputPath, 'utf-8');
+    assert.ok(content.includes(manualTop));
+    assert.ok(content.includes(manualMiddle));
+    assert.ok(content.includes(manualFooter));
+    assert.ok(!content.includes('Old project summary.'));
+    assert.ok(!content.includes('Outdated workflow rule.'));
+    assert.ok(content.includes('**Test Project**'));
+    assert.ok(content.indexOf('## Team Notes') < content.indexOf('<!-- GSD:workflow-start'));
+    assert.ok(content.indexOf('## Local Footer') < content.indexOf('<!-- GSD:stack-start'));
+  });
+
+  test('does not recommend audit when a mixed AGENTS.md only refreshes existing managed sections', () => {
+    const outputPath = path.join(tmpDir, 'AGENTS.md');
+
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'PROJECT.md'),
+      '# Test Project\n\n## What This Is\n\nA small test project.\n'
+    );
+    fs.writeFileSync(outputPath, '# Existing Instructions\n\nKeep this intro.\n');
+
+    const firstRun = runGsdTools(['generate-claude-md', '--output', outputPath, '--raw'], tmpDir);
+    assert.ok(firstRun.success, `Command failed: ${firstRun.error}`);
+
+    const secondRun = runGsdTools(['generate-claude-md', '--output', outputPath, '--raw'], tmpDir);
+    assert.ok(secondRun.success, `Command failed: ${secondRun.error}`);
+
+    const output = JSON.parse(secondRun.output);
+    assert.strictEqual(output.manual_content_preexisting, true);
+    assert.deepStrictEqual(output.managed_sections_appended, []);
+    assert.strictEqual(output.audit_recommended, false);
+    assert.strictEqual(output.audit_message, '');
+  });
 });
 
-describe('new-project workflow includes CLAUDE.md generation', () => {
+describe('new-project workflow includes instruction-file merge behavior', () => {
   const workflowPath = path.join(__dirname, '..', 'get-shit-done', 'workflows', 'new-project.md');
   const commandsPath = path.join(__dirname, '..', 'docs', 'COMMANDS.md');
 
   test('new-project workflow generates instruction file before final commit', () => {
     const content = fs.readFileSync(workflowPath, 'utf-8');
     assert.ok(content.includes('generate-claude-md'));
+    assert.ok(content.includes('INSTRUCTION_RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md --output "$INSTRUCTION_FILE")'));
+    assert.ok(content.includes('if [[ "$INSTRUCTION_RESULT" == @file:* ]]; then INSTRUCTION_RESULT=$(cat "${INSTRUCTION_RESULT#@file:}"); fi'));
+    assert.ok(content.includes('INSTRUCTION_AUDIT_RECOMMENDED=$(_gsd_field "$INSTRUCTION_RESULT" audit_recommended)'));
+    assert.ok(content.includes('INSTRUCTION_AUDIT_MESSAGE=$(_gsd_field "$INSTRUCTION_RESULT" audit_message)'));
+    assert.ok(content.includes('Create or merge project instruction file before final commit'));
     // Codex fix: workflow now uses $INSTRUCTION_FILE (AGENTS.md for Codex, CLAUDE.md otherwise)
     assert.ok(content.includes('--files .planning/ROADMAP.md .planning/STATE.md .planning/REQUIREMENTS.md "$INSTRUCTION_FILE"'));
   });
@@ -76,10 +184,18 @@ describe('new-project workflow includes CLAUDE.md generation', () => {
     const workflowContent = fs.readFileSync(workflowPath, 'utf-8');
     const commandsContent = fs.readFileSync(commandsPath, 'utf-8');
 
-    // Codex fix: hardcoded CLAUDE.md replaced with $INSTRUCTION_FILE variable
+    assert.ok(workflowContent.includes('create or merge the default GSD workflow-enforcement guidance'));
     assert.ok(workflowContent.includes('| Project guide  | `$INSTRUCTION_FILE`'));
     assert.ok(workflowContent.includes('- `$INSTRUCTION_FILE`'));
-    assert.ok(commandsContent.includes('`CLAUDE.md`'));
+    assert.ok(workflowContent.includes('created or merged with GSD workflow guidance'));
+    assert.ok(workflowContent.includes('**Audit note:** [INSTRUCTION_AUDIT_MESSAGE] Review `$INSTRUCTION_FILE` before proceeding.'));
+    assert.ok(
+      workflowContent.indexOf('**Audit note:** [INSTRUCTION_AUDIT_MESSAGE] Review `$INSTRUCTION_FILE` before proceeding.')
+      < workflowContent.indexOf('AUTO-ADVANCING → DISCUSS PHASE 1')
+    );
+    assert.ok(commandsContent.includes('instruction file'));
+    assert.ok(commandsContent.includes('prompts you to audit that file'));
+    assert.ok(commandsContent.includes('`AGENTS.md` for Codex'));
   });
 });
 

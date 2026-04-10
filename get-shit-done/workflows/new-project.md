@@ -1129,13 +1129,17 @@ Use AskUserQuestion:
 
 **If "Review full file":** Display raw `cat .planning/ROADMAP.md`, then re-ask.
 
-**Generate or refresh project instruction file before final commit:**
+**Create or merge project instruction file before final commit:**
 
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md --output "$INSTRUCTION_FILE"
+_gsd_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
+INSTRUCTION_RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md --output "$INSTRUCTION_FILE")
+if [[ "$INSTRUCTION_RESULT" == @file:* ]]; then INSTRUCTION_RESULT=$(cat "${INSTRUCTION_RESULT#@file:}"); fi
+INSTRUCTION_AUDIT_RECOMMENDED=$(_gsd_field "$INSTRUCTION_RESULT" audit_recommended)
+INSTRUCTION_AUDIT_MESSAGE=$(_gsd_field "$INSTRUCTION_RESULT" audit_message)
 ```
 
-This ensures new projects get the default GSD workflow-enforcement guidance and current project context in `$INSTRUCTION_FILE`.
+This ensures new projects create or merge the default GSD workflow-enforcement guidance and current project context into `$INSTRUCTION_FILE`, while preserving non-GSD content already present in the file. If GSD appended managed sections into an already-populated root instruction file, the completion summary includes an audit prompt.
 
 **Commit roadmap (after approval or auto mode):**
 
@@ -1162,6 +1166,10 @@ Present completion summary:
 | Requirements   | `.planning/REQUIREMENTS.md` |
 | Roadmap        | `.planning/ROADMAP.md`      |
 | Project guide  | `$INSTRUCTION_FILE`         |
+
+If `INSTRUCTION_AUDIT_RECOMMENDED` is `true`, include:
+
+**Audit note:** [INSTRUCTION_AUDIT_MESSAGE] Review `$INSTRUCTION_FILE` before proceeding.
 
 **[N] phases** | **[X] requirements** | Ready to build ✓
 ```
@@ -1271,7 +1279,7 @@ PHASE1_HAS_UI=$(echo "$PHASE1_SECTION" | grep -qi "UI hint.*yes" && echo "true" 
 - [ ] ROADMAP.md created with phases, requirement mappings, success criteria
 - [ ] STATE.md initialized
 - [ ] REQUIREMENTS.md traceability updated
-- [ ] `$INSTRUCTION_FILE` generated with GSD workflow guidance (AGENTS.md for Codex, CLAUDE.md otherwise)
+- [ ] `$INSTRUCTION_FILE` created or merged with GSD workflow guidance (AGENTS.md for Codex, CLAUDE.md otherwise)
 - [ ] User knows next step is `/gsd-discuss-phase 1`
 
 **Atomic commits:** Each phase commits its artifacts immediately. If context is lost, artifacts persist.

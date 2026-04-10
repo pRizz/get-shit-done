@@ -141,6 +141,9 @@ describe('generate-claude-md command', () => {
     const outputPath = path.join(tmpDir, 'CLAUDE.md');
     const result = runGsdTools(['generate-claude-md', '--output', outputPath, '--auto', '--raw'], tmpDir);
     assert.ok(result.success, `Failed: ${result.error}`);
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.audit_recommended, false);
+    assert.deepStrictEqual(output.managed_sections_appended, []);
 
     if (fs.existsSync(outputPath)) {
       const content = fs.readFileSync(outputPath, 'utf-8');
@@ -153,6 +156,15 @@ describe('generate-claude-md command', () => {
     fs.writeFileSync(outputPath, '# Custom CLAUDE.md\n\nUser content.\n');
 
     const result = runGsdTools(['generate-claude-md', '--output', outputPath, '--auto', '--raw'], tmpDir);
+    assert.ok(result.success, `Failed: ${result.error}`);
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.manual_content_preexisting, true);
+    assert.deepStrictEqual(
+      output.managed_sections_appended,
+      ['project', 'stack', 'conventions', 'architecture', 'skills', 'workflow']
+    );
+    assert.strictEqual(output.audit_recommended, true);
+    assert.ok(output.audit_message.includes('Review CLAUDE.md'));
     // Should merge, not overwrite
     const content = fs.readFileSync(outputPath, 'utf-8');
     assert.ok(content.length > 0, 'should still have content');

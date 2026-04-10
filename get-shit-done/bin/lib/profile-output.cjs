@@ -222,23 +222,45 @@ function generateClaudeInstruction(dimension, rating) {
   return `Adapt to this developer's ${dimension.replace(/_/g, ' ')} preference: ${rating}.`;
 }
 
-function extractSectionContent(fileContent, sectionName) {
-  const startMarker = `<!-- GSD:${sectionName}-start`;
-  const endMarker = `<!-- GSD:${sectionName}-end -->`;
-  const startIdx = fileContent.indexOf(startMarker);
-  const endIdx = fileContent.indexOf(endMarker);
-  if (startIdx === -1 || endIdx === -1) return null;
-  const startTagEnd = fileContent.indexOf('-->', startIdx);
-  if (startTagEnd === -1) return null;
-  return fileContent.substring(startTagEnd + 3, endIdx);
-}
-
 function buildSection(sectionName, sourceFile, content) {
   return [
     `<!-- GSD:${sectionName}-start source:${sourceFile} -->`,
     content,
     `<!-- GSD:${sectionName}-end -->`,
   ].join('\n');
+}
+
+function hasManagedSection(fileContent, sectionName) {
+  return fileContent.indexOf(`<!-- GSD:${sectionName}-start`) !== -1;
+}
+
+function appendManagedBlock(fileContent, blockContent) {
+  if (!blockContent) return fileContent;
+
+  const normalizedBlock = blockContent.endsWith('\n')
+    ? blockContent
+    : blockContent + '\n';
+
+  if (fileContent.length === 0) {
+    return normalizedBlock;
+  }
+
+  const separator = fileContent.endsWith('\n\n')
+    ? ''
+    : fileContent.endsWith('\n')
+      ? '\n'
+      : '\n\n';
+
+  return fileContent + separator + normalizedBlock;
+}
+
+function stripGsdManagedSections(fileContent) {
+  if (!fileContent) return '';
+  return fileContent.replace(/<!-- GSD:([a-z-]+)-start\b[\s\S]*?<!-- GSD:\1-end -->/g, '');
+}
+
+function hasManualContentOutsideManagedSections(fileContent) {
+  return stripGsdManagedSections(fileContent).trim().length > 0;
 }
 
 function updateSection(fileContent, sectionName, newContent) {
@@ -251,14 +273,16 @@ function updateSection(fileContent, sectionName, newContent) {
     const after = fileContent.substring(endIdx + endMarker.length);
     return { content: before + newContent + after, action: 'replaced' };
   }
-  return { content: fileContent.trimEnd() + '\n\n' + newContent + '\n', action: 'appended' };
+  return { content: appendManagedBlock(fileContent, newContent), action: 'appended' };
 }
 
-function detectManualEdit(fileContent, sectionName, expectedContent) {
-  const currentContent = extractSectionContent(fileContent, sectionName);
-  if (currentContent === null) return false;
-  const normalize = (s) => s.trim().replace(/\n{3,}/g, '\n\n');
-  return normalize(currentContent) !== normalize(expectedContent);
+function buildManagedSections(sectionNames, generated, sectionHeadings) {
+  return sectionNames.map((name) => {
+    const gen = generated[name];
+    const heading = sectionHeadings[name];
+    const body = `${heading}\n\n${gen.content}`;
+    return buildSection(name, gen.source, body);
+  });
 }
 
 function extractMarkdownSection(content, sectionName) {
@@ -951,54 +975,39 @@ function cmdGenerateClaudeMd(cwd, options, raw) {
 
   let existingContent = safeReadFile(outputPath);
   let action;
+  const manualContentPreexisting = existingContent !== null
+    && hasManualContentOutsideManagedSections(existingContent);
+  const managedSectionsAppended = [];
 
   if (existingContent === null) {
-    const sections = [];
-    for (const name of MANAGED_SECTIONS) {
-      const gen = generated[name];
-      const heading = sectionHeadings[name];
-      const body = `${heading}\n\n${gen.content}`;
-      sections.push(buildSection(name, gen.source, body));
-    }
-    sections.push('');
-    sections.push(CLAUDE_MD_PROFILE_PLACEHOLDER);
-    existingContent = sections.join('\n\n') + '\n';
+    const sections = buildManagedSections(MANAGED_SECTIONS, generated, sectionHeadings);
+    existingContent = sections.join('\n\n') + '\n\n' + CLAUDE_MD_PROFILE_PLACEHOLDER + '\n';
     action = 'created';
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
     fs.writeFileSync(outputPath, existingContent, 'utf-8');
   } else {
     action = 'updated';
     let fileContent = existingContent;
+    const missingSections = [];
 
     for (const name of MANAGED_SECTIONS) {
-      const gen = generated[name];
-      const heading = sectionHeadings[name];
-      const body = `${heading}\n\n${gen.content}`;
-      const fullSection = buildSection(name, gen.source, body);
-      const hasMarkers = fileContent.indexOf(`<!-- GSD:${name}-start`) !== -1;
+      const [fullSection] = buildManagedSections([name], generated, sectionHeadings);
 
-      if (hasMarkers) {
-        if (options.auto) {
-          const expectedBody = `${heading}\n\n${gen.content}`;
-          if (detectManualEdit(fileContent, name, expectedBody)) {
-            sectionsSkipped.push(name);
-            const genIdx = sectionsGenerated.indexOf(name);
-            if (genIdx !== -1) sectionsGenerated.splice(genIdx, 1);
-            const fbIdx = sectionsFallback.indexOf(name);
-            if (fbIdx !== -1) sectionsFallback.splice(fbIdx, 1);
-            continue;
-          }
-        }
+      if (hasManagedSection(fileContent, name)) {
         const result = updateSection(fileContent, name, fullSection);
         fileContent = result.content;
       } else {
-        const result = updateSection(fileContent, name, fullSection);
-        fileContent = result.content;
+        missingSections.push(fullSection);
+        managedSectionsAppended.push(name);
       }
     }
 
+    if (missingSections.length > 0) {
+      fileContent = appendManagedBlock(fileContent, missingSections.join('\n\n'));
+    }
+
     if (!options.auto && fileContent.indexOf('<!-- GSD:profile-start') === -1) {
-      fileContent = fileContent.trimEnd() + '\n\n' + CLAUDE_MD_PROFILE_PLACEHOLDER + '\n';
+      fileContent = appendManagedBlock(fileContent, CLAUDE_MD_PROFILE_PLACEHOLDER);
     }
 
     fs.writeFileSync(outputPath, fileContent, 'utf-8');
@@ -1018,6 +1027,10 @@ function cmdGenerateClaudeMd(cwd, options, raw) {
 
   const genCount = sectionsGenerated.length;
   const totalManaged = MANAGED_SECTIONS.length;
+  const auditRecommended = manualContentPreexisting && managedSectionsAppended.length > 0;
+  const auditMessage = auditRecommended
+    ? `Review ${path.basename(outputPath)} at the project root: GSD preserved existing content and appended its own managed sections.`
+    : '';
   let message = `Generated ${genCount}/${totalManaged} sections.`;
   if (sectionsFallback.length > 0) message += ` Fallback: ${sectionsFallback.join(', ')}.`;
   if (sectionsSkipped.length > 0) message += ` Skipped (manually edited): ${sectionsSkipped.join(', ')}.`;
@@ -1026,6 +1039,10 @@ function cmdGenerateClaudeMd(cwd, options, raw) {
   const result = {
     claude_md_path: outputPath,
     action,
+    manual_content_preexisting: manualContentPreexisting,
+    managed_sections_appended: managedSectionsAppended,
+    audit_recommended: auditRecommended,
+    audit_message: auditMessage,
     sections_generated: sectionsGenerated,
     sections_fallback: sectionsFallback,
     sections_skipped: sectionsSkipped,
