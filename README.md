@@ -154,6 +154,8 @@ GSD evolves fast. Update periodically:
 npx get-shit-done-cc@latest
 ```
 
+Check the currently installed build metadata anytime with `/gsd-version`.
+
 <details>
 <summary><strong>Non-interactive Install (Docker, CI, Scripts)</strong></summary>
 
@@ -631,6 +633,7 @@ You're never locked in. The system adapts.
 | `/gsd-progress` | Where am I? What's next? |
 | `/gsd-next` | Auto-detect state and run the next step |
 | `/gsd-help` | Show all commands and usage guide |
+| `/gsd-version` | Show installed version, commit, and commit date |
 | `/gsd-update` | Update GSD with changelog preview |
 | `/gsd-join-discord` | Join the GSD Discord community |
 | `/gsd-manager` | Interactive command center for managing multiple phases |
@@ -846,7 +849,7 @@ This prevents Claude from reading these files entirely, regardless of what comma
 - For Codex, verify skills exist in `~/.codex/skills/gsd-*/SKILL.md` (global) or `./.codex/skills/gsd-*/SKILL.md` (local)
 
 **Commands not working as expected?**
-- Run `/gsd-help` to verify installation
+- Run `/gsd-help` or `/gsd-version` to verify installation
 - Re-run `npx get-shit-done-cc` to reinstall
 
 **Updating to the latest version?**

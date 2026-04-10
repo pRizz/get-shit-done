@@ -1159,7 +1159,7 @@ describe('Copilot manifest and patches fixes', () => {
 // E2E Integration Tests — Copilot Install & Uninstall
 // ============================================================================
 
-const { execFileSync } = require('child_process');
+const { execFileSync, execSync } = require('child_process');
 const crypto = require('crypto');
 
 const INSTALL_PATH = path.join(__dirname, '..', 'bin', 'install.js');
@@ -1219,6 +1219,11 @@ describe('E2E: Copilot full install verification', () => {
       assert.ok(fs.existsSync(skillMdPath),
         `Missing SKILL.md in ${skill.name}`);
     }
+  });
+
+  test('installs gsd-version skill directory', () => {
+    const skillPath = path.join(tmpDir, '.github', 'skills', 'gsd-version', 'SKILL.md');
+    assert.ok(fs.existsSync(skillPath), 'gsd-version skill should be installed for Copilot');
   });
 
   test('installs expected number of agent files', () => {
@@ -1320,7 +1325,7 @@ describe('E2E: Copilot full install verification', () => {
   test('engine directory contains required subdirectories and files', () => {
     const engineDir = path.join(tmpDir, '.github', 'get-shit-done');
     const requiredDirs = ['bin', 'references', 'templates', 'workflows'];
-    const requiredFiles = ['CHANGELOG.md', 'VERSION'];
+    const requiredFiles = ['CHANGELOG.md', 'RELEASE.json', 'VERSION'];
 
     for (const dir of requiredDirs) {
       const dirPath = path.join(engineDir, dir);
@@ -1332,6 +1337,18 @@ describe('E2E: Copilot full install verification', () => {
       assert.ok(fs.existsSync(filePath) && fs.statSync(filePath).isFile(),
         `Engine should contain file: ${file}`);
     }
+  });
+
+  test('repo checkout install stamps current HEAD into RELEASE.json', () => {
+    const releasePath = path.join(tmpDir, '.github', 'get-shit-done', 'RELEASE.json');
+    const release = JSON.parse(fs.readFileSync(releasePath, 'utf8'));
+    const expectedHead = execSync('git rev-parse HEAD', { cwd: path.join(__dirname, '..'), encoding: 'utf8', stdio: 'pipe' }).trim();
+    const expectedCommitDate = new Date(
+      execSync('git show -s --format=%cI HEAD', { cwd: path.join(__dirname, '..'), encoding: 'utf8', stdio: 'pipe' }).trim()
+    ).toISOString();
+
+    assert.strictEqual(release.gitHead, expectedHead, 'Copilot install should stamp the current repo HEAD');
+    assert.strictEqual(release.commitDate, expectedCommitDate, 'Copilot install should stamp the current repo commit date');
   });
 });
 

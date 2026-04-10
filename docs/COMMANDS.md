@@ -1001,6 +1001,14 @@ Query, inspect, or refresh queryable codebase intelligence files stored in `.pla
 
 ## Update Commands
 
+### `/gsd-version`
+
+Show installed GSD build metadata.
+
+```bash
+/gsd-version                        # Inspect installed version and release metadata
+```
+
 ### `/gsd-update`
 
 Update GSD with changelog preview.

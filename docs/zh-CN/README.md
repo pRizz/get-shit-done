@@ -498,6 +498,7 @@ lmn012o feat(08-02): 创建注册端点
 |---------|--------------|
 | `/gsd-progress` | 我在哪？接下来做什么？ |
 | `/gsd-help` | 显示所有命令和使用指南 |
+| `/gsd-version` | 显示已安装的构建元数据 |
 | `/gsd-update` | 更新 GSD 并预览变更日志 |
 | `/gsd-join-discord` | 加入 GSD Discord 社区 |
 

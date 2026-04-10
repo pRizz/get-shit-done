@@ -412,7 +412,7 @@ Adicione padrões sensíveis ao deny list do Claude Code:
 - Verifique se os arquivos foram instalados no diretório correto
 
 **Comandos não funcionam como esperado?**
-- Rode `/gsd-help`
+- Rode `/gsd-help` ou `/gsd-version`
 - Reinstale com `npx get-shit-done-cc@latest`
 
 **Em Docker/container?**

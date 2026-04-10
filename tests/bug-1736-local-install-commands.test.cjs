@@ -79,4 +79,17 @@ describe('#1736: local Claude install populates .claude/commands/gsd/', () => {
       '.claude/commands/gsd/quick.md must exist after local install'
     );
   });
+
+  test('local install deploys version.md to .claude/commands/gsd/', (t) => {
+    const origCwd = process.cwd();
+    t.after(() => { process.chdir(origCwd); });
+    process.chdir(tmpDir);
+    install(false, 'claude');
+
+    const versionCmd = path.join(tmpDir, '.claude', 'commands', 'gsd', 'version.md');
+    assert.ok(
+      fs.existsSync(versionCmd),
+      '.claude/commands/gsd/version.md must exist after local install'
+    );
+  });
 });

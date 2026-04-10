@@ -21,6 +21,8 @@ GSD evolves fast. Update periodically:
 npx get-shit-done-cc@latest
 ```
 
+Use `/gsd-version` to inspect the installed build metadata before or after an update.
+
 ## Core Workflow
 
 ```
@@ -496,6 +498,11 @@ Usage: `/gsd-cleanup`
 
 **`/gsd-help`**
 Show this command reference.
+
+**`/gsd-version`**
+Show the installed GSD version, release commit, commit date, runtime, and install scope.
+
+Usage: `/gsd-version`
 
 **`/gsd-update`**
 Update GSD to latest version with changelog preview.

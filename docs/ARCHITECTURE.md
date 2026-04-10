@@ -409,11 +409,13 @@ UI-SPEC.md (per phase) ───────────────────
 
 ```
 ~/.claude/                          # Claude Code (global install)
-├── commands/gsd/*.md               # 69 slash commands
+├── commands/gsd/*.md               # 70 slash commands
 ├── get-shit-done/
 │   ├── bin/gsd-tools.cjs           # CLI utility
 │   ├── bin/lib/*.cjs               # 19 domain modules
-│   ├── workflows/*.md              # 68 workflow definitions
+│   ├── workflows/*.md              # 69 workflow definitions
+│   ├── RELEASE.json                # Installed version/commit metadata
+│   ├── VERSION                     # Installed version number
 │   ├── references/*.md             # 35 shared reference docs
 │   └── templates/                  # Planning artifact templates
 ├── agents/*.md                     # 24 agent definitions
@@ -421,8 +423,7 @@ UI-SPEC.md (per phase) ───────────────────
 │   ├── gsd-statusline.js           # Statusline hook
 │   ├── gsd-context-monitor.js      # Context warning hook
 │   └── gsd-check-update.js         # Update check hook
-├── settings.json                   # Hook registrations
-└── VERSION                         # Installed version number
+└── settings.json                   # Hook registrations
 ```
 
 Equivalent paths for other runtimes:
@@ -535,7 +536,7 @@ Runtime Engine (Claude Code / Gemini CLI)
     │   Writes: stdout (hookSpecificOutput with additionalContext warning)
     │
     └── SessionStart event ──► gsd-check-update.js
-        Reads: VERSION file
+        Reads: get-shit-done/VERSION
         Writes: ~/.claude/cache/gsd-update-check.json (spawns background process)
 ```
 

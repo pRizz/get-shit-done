@@ -13,6 +13,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { execSync } = require('child_process');
 
 const {
   getCodexSkillAdapterHeader,
@@ -1716,5 +1717,38 @@ describe('Codex uninstall symmetry for hook-enabled configs', () => {
     assert.strictEqual(countMatches(cleaned, /^codex_hooks = true$/gm), 0, 'removes the injected codex_hooks key');
     assert.strictEqual(countMatches(cleaned, /gsd-check-update\.js/g), 0, 'removes the GSD update hook');
     assert.strictEqual(countMatches(cleaned, /\[agents\.gsd-/g), 0, 'removes managed GSD agent sections');
+  });
+});
+
+describe('Codex install version surfaces', () => {
+  let tmpRoot;
+  let codexHome;
+
+  beforeEach(() => {
+    tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-codex-version-'));
+    codexHome = path.join(tmpRoot, '.codex');
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpRoot, { recursive: true, force: true });
+  });
+
+  test('install writes gsd-version skill and release metadata', () => {
+    runCodexInstall(codexHome);
+
+    const skillPath = path.join(codexHome, 'skills', 'gsd-version', 'SKILL.md');
+    const releasePath = path.join(codexHome, 'get-shit-done', 'RELEASE.json');
+
+    assert.ok(fs.existsSync(skillPath), 'Codex install should include gsd-version skill');
+    assert.ok(fs.existsSync(releasePath), 'Codex install should include RELEASE.json');
+
+    const release = JSON.parse(fs.readFileSync(releasePath, 'utf8'));
+    const expectedHead = execSync('git rev-parse HEAD', { cwd: path.join(__dirname, '..'), encoding: 'utf8', stdio: 'pipe' }).trim();
+    const expectedCommitDate = new Date(
+      execSync('git show -s --format=%cI HEAD', { cwd: path.join(__dirname, '..'), encoding: 'utf8', stdio: 'pipe' }).trim()
+    ).toISOString();
+
+    assert.strictEqual(release.gitHead, expectedHead, 'Codex install should stamp the current repo HEAD');
+    assert.strictEqual(release.commitDate, expectedCommitDate, 'Codex install should stamp the current repo commit date');
   });
 });

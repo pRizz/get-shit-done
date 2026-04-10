@@ -344,11 +344,13 @@ UI-SPEC.md (per phase) ───────────────────
 
 ```
 ~/.claude/                          # Claude Code (전역 설치)
-├── commands/gsd/*.md               # 37개 슬래시 명령어
+├── commands/gsd/*.md               # 70개 슬래시 명령어
 ├── get-shit-done/
 │   ├── bin/gsd-tools.cjs           # CLI 유틸리티
 │   ├── bin/lib/*.cjs               # 15개 도메인 모듈
-│   ├── workflows/*.md              # 42개 워크플로우 정의
+│   ├── workflows/*.md              # 69개 워크플로우 정의
+│   ├── RELEASE.json                # 설치된 버전/커밋 메타데이터
+│   ├── VERSION                     # 설치된 버전 번호
 │   ├── references/*.md             # 13개 공유 참조 문서
 │   └── templates/                  # 계획 아티팩트 템플릿
 ├── agents/*.md                     # 15개 에이전트 정의
@@ -356,8 +358,7 @@ UI-SPEC.md (per phase) ───────────────────
 │   ├── gsd-statusline.js           # 상태표시줄 훅
 │   ├── gsd-context-monitor.js      # 컨텍스트 경고 훅
 │   └── gsd-check-update.js         # 업데이트 확인 훅
-├── settings.json                   # 훅 등록
-└── VERSION                         # 설치된 버전 번호
+└── settings.json                   # 훅 등록
 ```
 
 다른 런타임의 동등한 경로입니다.
@@ -467,7 +468,7 @@ Runtime Engine (Claude Code / Gemini CLI)
     │   Writes: stdout (hookSpecificOutput with additionalContext warning)
     │
     └── SessionStart event ──► gsd-check-update.js
-        Reads: VERSION file
+        Reads: get-shit-done/VERSION
         Writes: ~/.claude/cache/gsd-update-check.json (spawns background process)
 ```
 

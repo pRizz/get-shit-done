@@ -44,8 +44,9 @@
     "vitest": "^4.1.2"
   },
   "scripts": {
+    "build:release-metadata": "node scripts/build-release-metadata.js",
     "build:hooks": "node scripts/build-hooks.js",
-    "prepublishOnly": "npm run build:hooks",
+    "prepublishOnly": "npm run build:release-metadata && npm run build:hooks",
     "test": "node scripts/run-tests.cjs",
     "test:coverage": "c8 --check-coverage --lines 70 --reporter text --include 'get-shit-done/bin/lib/*.cjs' --exclude 'tests/**' --all node scripts/run-tests.cjs"
   }

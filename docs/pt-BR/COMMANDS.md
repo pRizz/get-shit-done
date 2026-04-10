@@ -29,6 +29,7 @@ Para detalhes completos de flags avançadas e mudanças recentes, consulte tamb�
 | `/gsd-session-report` | Gera resumo da sessão |
 | `/gsd-autonomous` | Executa todas as fases restantes de forma autônoma (`--from N`, `--to N`, `--only N`) |
 | `/gsd-help` | Lista comandos e uso |
+| `/gsd-version` | Mostra a versão, o commit e a data do commit instalados |
 | `/gsd-update` | Atualiza o GSD |
 
 ## Gestão de Fases

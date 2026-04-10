@@ -5,6 +5,7 @@ const path = require('path');
 const os = require('os');
 const readline = require('readline');
 const crypto = require('crypto');
+const { execFileSync } = require('child_process');
 
 // Colors
 const cyan = '\x1b[36m';
@@ -4956,6 +4957,75 @@ function verifyFileInstalled(filePath, description) {
   return true;
 }
 
+function normalizeReleaseMetadata(metadata) {
+  const commitDate = typeof metadata?.commitDate === 'string'
+    ? metadata.commitDate
+    : null;
+  const normalizedDate = commitDate && !Number.isNaN(new Date(commitDate).getTime())
+    ? new Date(commitDate).toISOString()
+    : null;
+
+  return {
+    schemaVersion: 1,
+    version: typeof metadata?.version === 'string' && metadata.version.trim() ? metadata.version.trim() : pkg.version,
+    gitHead: typeof metadata?.gitHead === 'string' && metadata.gitHead.trim() ? metadata.gitHead.trim() : null,
+    commitDate: normalizedDate,
+  };
+}
+
+function readReleaseMetadata(filePath) {
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
+
+  try {
+    return normalizeReleaseMetadata(JSON.parse(fs.readFileSync(filePath, 'utf8')));
+  } catch {
+    return null;
+  }
+}
+
+function buildReleaseMetadataFromGit(repoRoot) {
+  try {
+    const gitHead = execFileSync('git', ['rev-parse', 'HEAD'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim();
+    const commitDate = execFileSync('git', ['show', '-s', '--format=%cI', 'HEAD'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim();
+
+    return normalizeReleaseMetadata({
+      version: pkg.version,
+      gitHead,
+      commitDate,
+    });
+  } catch {
+    return null;
+  }
+}
+
+function resolveReleaseMetadata(srcRoot) {
+  const bundled = readReleaseMetadata(path.join(srcRoot, 'get-shit-done', RELEASE_METADATA_NAME));
+  const gitFallback = buildReleaseMetadataFromGit(srcRoot);
+
+  return normalizeReleaseMetadata({
+    version: gitFallback?.version || bundled?.version || pkg.version,
+    gitHead: gitFallback?.gitHead || bundled?.gitHead || null,
+    commitDate: gitFallback?.commitDate || bundled?.commitDate || null,
+  });
+}
+
+function writeReleaseMetadataFile(targetDir, srcRoot) {
+  const metadata = resolveReleaseMetadata(srcRoot);
+  const releaseDest = path.join(targetDir, 'get-shit-done', RELEASE_METADATA_NAME);
+  fs.writeFileSync(releaseDest, `${JSON.stringify(metadata, null, 2)}\n`, 'utf8');
+  return { metadata, releaseDest };
+}
+
 /**
  * Install to the specified directory for a specific runtime
  * @param {boolean} isGlobal - Whether to install globally or locally
@@ -4968,6 +5038,7 @@ function verifyFileInstalled(filePath, description) {
 
 const PATCHES_DIR_NAME = 'gsd-local-patches';
 const MANIFEST_NAME = 'gsd-file-manifest.json';
+const RELEASE_METADATA_NAME = 'RELEASE.json';
 
 /**
  * Compute SHA256 hash of file contents
@@ -5477,6 +5548,16 @@ function install(isGlobal, runtime = 'claude') {
     console.log(`  ${green}✓${reset} Wrote VERSION (${pkg.version})`);
   } else {
     failures.push('VERSION');
+  }
+
+  const { metadata: releaseMetadata, releaseDest } = writeReleaseMetadataFile(targetDir, src);
+  if (verifyFileInstalled(releaseDest, RELEASE_METADATA_NAME)) {
+    const releaseSummary = releaseMetadata.gitHead
+      ? `${releaseMetadata.version} @ ${releaseMetadata.gitHead.slice(0, 7)}`
+      : `${releaseMetadata.version} @ unavailable`;
+    console.log(`  ${green}✓${reset} Wrote ${RELEASE_METADATA_NAME} (${releaseSummary})`);
+  } else {
+    failures.push(RELEASE_METADATA_NAME);
   }
 
   if (!isCodex && !isCopilot && !isCursor && !isWindsurf && !isTrae) {
@@ -6267,6 +6348,11 @@ if (process.env.GSD_TEST_MODE) {
     convertClaudeCommandToTraeSkill,
     convertClaudeAgentToTraeAgent,
     copyCommandsAsTraeSkills,
+    normalizeReleaseMetadata,
+    readReleaseMetadata,
+    buildReleaseMetadataFromGit,
+    resolveReleaseMetadata,
+    writeReleaseMetadataFile,
     writeManifest,
     reportLocalPatches,
     validateHookFields,

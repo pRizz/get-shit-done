@@ -498,6 +498,7 @@ For a focused assessment without full `/gsd-map-codebase` overhead:
 | `/gsd-pause-work` | Save structured handoff (HANDOFF.json + continue-here.md) | Stopping mid-phase |
 | `/gsd-session-report` | Generate session summary with work and outcomes | End of session, stakeholder sharing |
 | `/gsd-help` | Show all commands | Quick reference |
+| `/gsd-version` | Show installed build metadata | Verify version, commit, or runtime scope |
 | `/gsd-update` | Update GSD with changelog preview | Check for new versions |
 | `/gsd-join-discord` | Open Discord community invite | Questions or community |
 

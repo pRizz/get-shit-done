@@ -814,6 +814,21 @@
 
 ---
 
+### 30.1 Version Reporting
+
+**Command:** `/gsd-version`
+
+**Purpose:** Display installed GSD build metadata for the invoking runtime.
+
+**Requirements:**
+- REQ-VERSION-01: System MUST show the installed semantic version for the resolved runtime install
+- REQ-VERSION-02: System MUST show the stamped release commit SHA when metadata is available
+- REQ-VERSION-03: System MUST show the stamped release commit date when metadata is available
+- REQ-VERSION-04: System MUST show the resolved runtime and install scope
+- REQ-VERSION-05: System MUST fall back gracefully when release metadata is missing or incomplete
+
+---
+
 ### 31. Update System
 
 **Command:** `/gsd-update`
