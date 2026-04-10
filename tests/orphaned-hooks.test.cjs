@@ -13,6 +13,7 @@ const path = require('path');
 
 const CHECK_UPDATE_PATH = path.join(__dirname, '..', 'hooks', 'gsd-check-update.js');
 const BUILD_HOOKS_PATH = path.join(__dirname, '..', 'scripts', 'build-hooks.js');
+const { MANAGED_HOOKS } = require('../hooks/gsd-check-update.js');
 
 describe('orphaned hooks stale detection (#1750)', () => {
   test('stale hook scanner uses an allowlist of managed hooks, not a wildcard', () => {
@@ -22,13 +23,10 @@ describe('orphaned hooks stale detection (#1750)', () => {
     // orphaned files from removed features (gsd-intel-index.js, gsd-intel-prune.js, etc.)
     // Instead, it should reference a known set of managed hook filenames.
 
-    // Extract the spawned child script (everything between the template literal backticks)
-    const childScriptMatch = content.match(/spawn\(process\.execPath,\s*\['-e',\s*`([\s\S]*?)`\]/);
-    assert.ok(childScriptMatch, 'should find the spawned child script');
-    const childScript = childScriptMatch[1];
+    assert.ok(content.includes('const MANAGED_HOOKS = ['), 'should define a managed hooks allowlist');
 
-    // The child script must NOT have a broad gsd-*.js wildcard filter
-    const hasBroadFilter = /readdirSync\([^)]+\)\.filter\([^)]*startsWith\('gsd-'\)\s*&&[^)]*endsWith\('\.js'\)/s.test(childScript);
+    // The hook scanner must NOT have a broad gsd-*.js wildcard filter
+    const hasBroadFilter = /readdirSync\([^)]+\)\.filter\([^)]*startsWith\('gsd-'\)\s*&&[^)]*endsWith\('\.js'\)/s.test(content);
     assert.ok(!hasBroadFilter,
       'scanner must NOT use broad startsWith("gsd-") && endsWith(".js") filter — ' +
       'this catches orphaned hooks from removed features (e.g., gsd-intel-index.js). ' +
@@ -48,26 +46,16 @@ describe('orphaned hooks stale detection (#1750)', () => {
     }
     assert.ok(jsHooks.length >= 5, `expected at least 5 JS hooks in HOOKS_TO_COPY, got ${jsHooks.length}`);
 
-    // The check-update hook should define its own managed hooks list
-    // that matches the JS entries from HOOKS_TO_COPY
-    const checkContent = fs.readFileSync(CHECK_UPDATE_PATH, 'utf8');
-    const childScriptMatch = checkContent.match(/spawn\(process\.execPath,\s*\['-e',\s*`([\s\S]*?)`\]/);
-    const childScript = childScriptMatch[1];
-
     // Verify each JS hook from HOOKS_TO_COPY is referenced in the managed list
     for (const hook of jsHooks) {
       assert.ok(
-        childScript.includes(hook),
+        MANAGED_HOOKS.includes(hook),
         `managed hooks in check-update should include '${hook}' from HOOKS_TO_COPY`
       );
     }
   });
 
   test('orphaned hook filenames would NOT match the managed hooks list', () => {
-    const checkContent = fs.readFileSync(CHECK_UPDATE_PATH, 'utf8');
-    const childScriptMatch = checkContent.match(/spawn\(process\.execPath,\s*\['-e',\s*`([\s\S]*?)`\]/);
-    const childScript = childScriptMatch[1];
-
     // These are real orphaned hooks from the removed intel feature
     const orphanedHooks = [
       'gsd-intel-index.js',
@@ -77,7 +65,7 @@ describe('orphaned hooks stale detection (#1750)', () => {
 
     for (const orphan of orphanedHooks) {
       assert.ok(
-        !childScript.includes(orphan),
+        !MANAGED_HOOKS.includes(orphan),
         `orphaned hook '${orphan}' must NOT be in the managed hooks list`
       );
     }

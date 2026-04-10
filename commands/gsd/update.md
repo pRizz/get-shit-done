@@ -1,22 +1,27 @@
 ---
 name: gsd:update
-description: Update GSD to latest version with changelog display
+description: Update GSD from the fork source with commit and datetime preview
 allowed-tools:
   - Bash
   - AskUserQuestion
 ---
 
 <objective>
-Check for GSD updates, install if available, and display what changed.
+Check for GSD updates from the fork repo, install if available, and display the target commit details including its exact datetime.
 
 Routes to the update workflow which handles:
 - Version detection (local vs global installation)
-- npm version checking
-- Changelog fetching and display
+- Fork ref resolution (`main` by default, or `--ref <sha-or-branch>`)
+- Temporary fork clone and commit + datetime preview
 - User confirmation with clean install warning
-- Update execution and cache clearing
+- Temp-checkout install execution and cache clearing
 - Restart reminder
 </objective>
+
+<arguments>
+Optional flags from `$ARGUMENTS`:
+- `--ref <sha-or-branch>`: install from a specific fork branch or commit instead of the default `main`
+</arguments>
 
 <execution_context>
 @~/.claude/get-shit-done/workflows/update.md
@@ -27,11 +32,11 @@ Routes to the update workflow which handles:
 
 The workflow handles all logic including:
 1. Installed version detection (local/global)
-2. Latest version checking via npm
-3. Version comparison
-4. Changelog fetching and extraction
-5. Clean install warning display
-6. User confirmation
-7. Update execution
+2. Installed release metadata lookup from `RELEASE.json`
+3. Fork ref resolution to an exact commit SHA
+4. Commit + datetime preview or migration notice
+5. Global-vs-local confirmation when a local install exists
+6. Clean install warning display
+7. Temp-checkout update execution
 8. Cache clearing
 </process>
