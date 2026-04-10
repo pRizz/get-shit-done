@@ -391,10 +391,10 @@ describe('validate health command', () => {
     assert.ok(result.success, `Command failed: ${result.error}`);
 
     const output = JSON.parse(result.output);
-    assert.ok(
-      output.warnings.some(w => w.code === 'W008'),
-      `Expected W008 in warnings: ${JSON.stringify(output.warnings)}`
-    );
+    const warning = output.warnings.find(w => w.code === 'W008');
+    assert.ok(warning, `Expected W008 in warnings: ${JSON.stringify(output.warnings)}`);
+    assert.match(warning.message, /missing canonical explicit value/);
+    assert.match(warning.fix, /materialize workflow\.nyquist_validation: true/);
   });
 
   test('does not emit W008 when nyquist_validation is explicitly set', () => {

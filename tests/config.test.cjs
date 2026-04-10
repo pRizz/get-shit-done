@@ -300,6 +300,28 @@ describe('config-get command', () => {
     assert.strictEqual(output, true);
   });
 
+  test('workflow callers can treat legacy missing nyquist_validation as enabled via --default true', () => {
+    writeConfig(tmpDir, { model_profile: 'balanced', workflow: { research: true } });
+
+    const result = runGsdTools(
+      ['config-get', 'workflow.nyquist_validation', '--raw', '--default', 'true'],
+      tmpDir
+    );
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    assert.strictEqual(result.output, 'true');
+  });
+
+  test('explicit false nyquist_validation overrides the --default true fallback', () => {
+    writeConfig(tmpDir, { model_profile: 'balanced', workflow: { nyquist_validation: false } });
+
+    const result = runGsdTools(
+      ['config-get', 'workflow.nyquist_validation', '--raw', '--default', 'true'],
+      tmpDir
+    );
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    assert.strictEqual(result.output, 'false');
+  });
+
   test('errors for nonexistent key', () => {
     const result = runGsdTools('config-get nonexistent_key', tmpDir);
     assert.strictEqual(result.success, false);

@@ -966,7 +966,7 @@ function cmdValidateHealth(cwd, options, raw) {
       const configRaw = fs.readFileSync(configPath, 'utf-8');
       const configParsed = JSON.parse(configRaw);
       if (configParsed.workflow && configParsed.workflow.nyquist_validation === undefined) {
-        addIssue('warning', 'W008', 'config.json: workflow.nyquist_validation absent (defaults to enabled but agents may skip)', 'Run /gsd-health --repair to add key', true);
+        addIssue('warning', 'W008', 'config.json: workflow.nyquist_validation missing canonical explicit value (runtime defaults to true)', 'Run /gsd-health --repair to materialize workflow.nyquist_validation: true', true);
         if (!repairs.includes('addNyquistKey')) repairs.push('addNyquistKey');
       }
     } catch { /* intentionally empty */ }
