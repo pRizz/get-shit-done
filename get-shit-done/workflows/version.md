@@ -234,7 +234,7 @@ Run:
 RELEASE_FILE="$TARGET_DIR/get-shit-done/RELEASE.json"
 
 if [ -n "$TARGET_DIR" ] && [ -f "$RELEASE_FILE" ]; then
-  node - <<'NODE' "$RELEASE_FILE" "$INSTALLED_VERSION"
+  release_output="$(node - <<'NODE' "$RELEASE_FILE" "$INSTALLED_VERSION"
 const fs = require('fs');
 
 const releaseFile = process.argv[2];
@@ -257,17 +257,22 @@ try {
   process.stdout.write(`${installedVersion}\nunavailable\nunavailable\n`);
 }
 NODE
+)"
 else
-  echo "$INSTALLED_VERSION"
-  echo "unavailable"
-  echo "unavailable"
+  release_output="$(printf '%s\n%s\n%s\n' "$INSTALLED_VERSION" "unavailable" "unavailable")"
 fi
+
+display_version="$(printf '%s\n' "$release_output" | sed -n '1p')"
+git_head="$(printf '%s\n' "$release_output" | sed -n '2p')"
+commit_date="$(printf '%s\n' "$release_output" | sed -n '3p')"
 ```
 
-Parse output:
-- Line 1 = display version
-- Line 2 = commit SHA or `unavailable`
-- Line 3 = commit date or `unavailable`
+This step must stay compatible with macOS default Bash 3.2. Do not use `mapfile` or `readarray` here.
+
+Parse output from `release_output` with portable shell logic:
+- `display_version` = line 1
+- `git_head` = line 2 or `unavailable`
+- `commit_date` = line 3 or `unavailable`
 </step>
 
 <step name="display_output">

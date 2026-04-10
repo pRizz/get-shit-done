@@ -31,4 +31,26 @@ describe('version command', () => {
     assert.ok(content.includes('Commit Date:'), 'workflow should output commit date');
     assert.ok(content.includes('Commit metadata unavailable'), 'workflow should document the fallback note');
   });
+
+  test('workflow uses portable shell parsing for release metadata', () => {
+    const workflowPath = path.join(__dirname, '..', 'get-shit-done', 'workflows', 'version.md');
+    const content = fs.readFileSync(workflowPath, 'utf8');
+
+    const codeBlocks = content.match(/```bash[\s\S]*?```/g) || [];
+    const hasMapfileInCode = codeBlocks.some(block => block.includes('mapfile -t'));
+    const hasReadarrayInCode = codeBlocks.some(block => block.includes('readarray'));
+
+    assert.ok(!hasMapfileInCode,
+      'version.md bash code blocks use mapfile which is bash 4+ only and breaks macOS default bash 3.2');
+    assert.ok(!hasReadarrayInCode,
+      'version.md bash code blocks use readarray which is bash 4+ only and breaks macOS default bash 3.2');
+    assert.ok(content.includes('release_output="$('),
+      'version.md should capture release metadata into a plain shell variable');
+    assert.ok(content.includes("sed -n '1p'"),
+      'version.md should parse display version with portable sed line extraction');
+    assert.ok(content.includes("sed -n '2p'"),
+      'version.md should parse git head with portable sed line extraction');
+    assert.ok(content.includes("sed -n '3p'"),
+      'version.md should parse commit date with portable sed line extraction');
+  });
 });
