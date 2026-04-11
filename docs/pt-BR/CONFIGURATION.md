@@ -20,7 +20,7 @@ Esta versão resume os parâmetros principais em Português. Para schema complet
     "research": true,
     "plan_check": true,
     "verifier": true,
-    "nyquist_validation": true,
+    "nyquist_validation": false,
     "ui_phase": true,
     "ui_safety_gate": true,
     "research_before_questions": false,
@@ -52,7 +52,7 @@ Esta versão resume os parâmetros principais em Português. Para schema complet
 | `workflow.research` | `true` | Pesquisa antes de planejar |
 | `workflow.plan_check` | `true` | Loop de verificação de plano |
 | `workflow.verifier` | `true` | Verificação pós-execução |
-| `workflow.nyquist_validation` | `true` | Camada de validação automatizada por requisito |
+| `workflow.nyquist_validation` | `false` | Camada de validação automatizada por requisito |
 | `workflow.ui_phase` | `true` | Contrato de UI para fases frontend |
 | `workflow.ui_safety_gate` | `true` | Gate de segurança para registry UI |
 | `workflow.research_before_questions` | `false` | Pesquisa antes da discussão |

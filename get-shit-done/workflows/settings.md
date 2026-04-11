@@ -25,11 +25,11 @@ Creates `.planning/config.json` with defaults if missing and loads current confi
 cat .planning/config.json
 ```
 
-Parse current values (default to `true` if not present):
+Parse current values (use config defaults when not present):
 - `workflow.research` — spawn researcher during plan-phase
 - `workflow.plan_check` — spawn plan checker during plan-phase
 - `workflow.verifier` — spawn verifier during execute-phase
-- `workflow.nyquist_validation` — validation architecture research during plan-phase (default: true if absent)
+- `workflow.nyquist_validation` — validation architecture research during plan-phase (default: false if absent)
 - `workflow.ui_phase` — generate UI-SPEC.md design contracts for frontend phases (default: true if absent)
 - `workflow.ui_safety_gate` — prompt to run /gsd-ui-phase before planning frontend phases (default: true if absent)
 - `model_profile` — which model each agent uses (default: `balanced`)

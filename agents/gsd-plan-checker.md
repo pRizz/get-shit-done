@@ -371,7 +371,7 @@ Plans reduce {N} user decisions. Options:
 
 ## Dimension 8: Nyquist Compliance
 
-Skip if: `workflow.nyquist_validation` is explicitly set to `false` in config.json (absent key = enabled), phase has no RESEARCH.md, or RESEARCH.md has no "Validation Architecture" section. Output: "Dimension 8: SKIPPED (nyquist_validation disabled or not applicable)"
+Skip if: `workflow.nyquist_validation` is not explicitly set to `true` in config.json, phase has no RESEARCH.md, or RESEARCH.md has no "Validation Architecture" section. Output: "Dimension 8: SKIPPED (nyquist_validation disabled or not applicable)"
 
 ### Check 8e — VALIDATION.md Existence (Gate)
 

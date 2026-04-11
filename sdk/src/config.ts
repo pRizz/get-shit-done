@@ -74,7 +74,7 @@ export const CONFIG_DEFAULTS: GSDConfig = {
     research: true,
     plan_check: true,
     verifier: true,
-    nyquist_validation: true,
+    nyquist_validation: false,
     auto_advance: false,
     node_repair: true,
     node_repair_budget: 2,

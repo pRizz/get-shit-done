@@ -825,7 +825,7 @@
 | `workflow.plan_check` | boolean | `true` | プラン検証ループ |
 | `workflow.verifier` | boolean | `true` | 実行後検証 |
 | `workflow.auto_advance` | boolean | `false` | ディスカッション→プラン→実行の自動チェーン |
-| `workflow.nyquist_validation` | boolean | `true` | Nyquist テストカバレッジマッピング |
+| `workflow.nyquist_validation` | boolean | `false` | Nyquist テストカバレッジマッピング |
 | `workflow.ui_phase` | boolean | `true` | UI デザインコントラクト生成 |
 | `workflow.ui_safety_gate` | boolean | `true` | フロントエンドフェーズで ui-phase を促す |
 | `workflow.node_repair` | boolean | `true` | 自律的なタスクリペア |

@@ -865,7 +865,7 @@
 | `workflow.plan_check` | boolean | `true` | Plan verification loop |
 | `workflow.verifier` | boolean | `true` | Post-execution verification |
 | `workflow.auto_advance` | boolean | `false` | Auto-chain discuss→plan→execute |
-| `workflow.nyquist_validation` | boolean | `true` | Nyquist test coverage mapping |
+| `workflow.nyquist_validation` | boolean | `false` | Nyquist test coverage mapping |
 | `workflow.ui_phase` | boolean | `true` | UI design contract generation |
 | `workflow.ui_safety_gate` | boolean | `true` | Prompt for ui-phase on frontend phases |
 | `workflow.node_repair` | boolean | `true` | Autonomous task repair |

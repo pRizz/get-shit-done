@@ -138,10 +138,10 @@ For each REQ-ID, determine status using all three sources:
 
 ## 5.5. Nyquist Compliance Discovery
 
-Skip if `workflow.nyquist_validation` is explicitly `false` (absent = enabled).
+Skip unless `workflow.nyquist_validation` resolves to `true`.
 
 ```bash
-NYQUIST_CONFIG=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.nyquist_validation --raw --default true 2>/dev/null)
+NYQUIST_CONFIG=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.nyquist_validation --raw --default false 2>/dev/null)
 ```
 
 If `false`: skip entirely.

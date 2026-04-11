@@ -46,12 +46,12 @@ Para seguir automaticamente o próximo passo:
 
 Durante `plan-phase`, o GSD pode mapear requisitos para comandos de teste automáticos antes da implementação. Isso gera `{phase}-VALIDATION.md` e aumenta a confiabilidade de verificação pós-execução.
 
-Desativar:
+Ativar:
 
 ```json
 {
   "workflow": {
-    "nyquist_validation": false
+    "nyquist_validation": true
   }
 }
 ```
@@ -201,7 +201,7 @@ Arquivo de configuração: `.planning/config.json`
 | `workflow.research` | `true` |
 | `workflow.plan_check` | `true` |
 | `workflow.verifier` | `true` |
-| `workflow.nyquist_validation` | `true` |
+| `workflow.nyquist_validation` | `false` |
 | `workflow.ui_phase` | `true` |
 | `workflow.ui_safety_gate` | `true` |
 

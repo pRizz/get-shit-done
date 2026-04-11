@@ -825,7 +825,7 @@
 | `workflow.plan_check` | boolean | `true` | 계획 검증 루프 |
 | `workflow.verifier` | boolean | `true` | 실행 후 검증 |
 | `workflow.auto_advance` | boolean | `false` | 논의→계획→실행 자동 연결 |
-| `workflow.nyquist_validation` | boolean | `true` | Nyquist 테스트 커버리지 매핑 |
+| `workflow.nyquist_validation` | boolean | `false` | Nyquist 테스트 커버리지 매핑 |
 | `workflow.ui_phase` | boolean | `true` | UI 설계 계약 생성 |
 | `workflow.ui_safety_gate` | boolean | `true` | 프론트엔드 페이즈에서 ui-phase 촉구 |
 | `workflow.node_repair` | boolean | `true` | 자율적 작업 복구 |

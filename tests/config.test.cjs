@@ -265,7 +265,7 @@ describe('config-set command', () => {
 
     const config = readConfig(tmpDir);
     assert.strictEqual(config.workflow.nyquist_validation_enabled, undefined);
-    assert.strictEqual(config.workflow.nyquist_validation, true);
+    assert.strictEqual(config.workflow.nyquist_validation, false);
   });
 });
 
@@ -300,26 +300,26 @@ describe('config-get command', () => {
     assert.strictEqual(output, true);
   });
 
-  test('workflow callers can treat legacy missing nyquist_validation as enabled via --default true', () => {
+  test('workflow callers can treat missing nyquist_validation as disabled via --default false', () => {
     writeConfig(tmpDir, { model_profile: 'balanced', workflow: { research: true } });
 
     const result = runGsdTools(
-      ['config-get', 'workflow.nyquist_validation', '--raw', '--default', 'true'],
-      tmpDir
-    );
-    assert.ok(result.success, `Command failed: ${result.error}`);
-    assert.strictEqual(result.output, 'true');
-  });
-
-  test('explicit false nyquist_validation overrides the --default true fallback', () => {
-    writeConfig(tmpDir, { model_profile: 'balanced', workflow: { nyquist_validation: false } });
-
-    const result = runGsdTools(
-      ['config-get', 'workflow.nyquist_validation', '--raw', '--default', 'true'],
+      ['config-get', 'workflow.nyquist_validation', '--raw', '--default', 'false'],
       tmpDir
     );
     assert.ok(result.success, `Command failed: ${result.error}`);
     assert.strictEqual(result.output, 'false');
+  });
+
+  test('explicit true nyquist_validation overrides the --default false fallback', () => {
+    writeConfig(tmpDir, { model_profile: 'balanced', workflow: { nyquist_validation: true } });
+
+    const result = runGsdTools(
+      ['config-get', 'workflow.nyquist_validation', '--raw', '--default', 'false'],
+      tmpDir
+    );
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    assert.strictEqual(result.output, 'true');
   });
 
   test('errors for nonexistent key', () => {
@@ -358,6 +358,15 @@ describe('config-get command', () => {
         result.error.includes('No config.json'),
         `Expected "No config.json" in error: ${result.error}`
       );
+    });
+
+    test('returns the provided default when config.json does not exist', () => {
+      const result = runGsdTools(
+        ['config-get', 'workflow.nyquist_validation', '--raw', '--default', 'false'],
+        emptyTmpDir
+      );
+      assert.ok(result.success, `Command failed: ${result.error}`);
+      assert.strictEqual(result.output, 'false');
     });
   });
 
@@ -488,7 +497,7 @@ describe('config-new-project command', () => {
     assert.ok(config.git && typeof config.git === 'object');
     assert.strictEqual(config.git.branching_strategy, 'none');
     assert.ok(config.workflow && typeof config.workflow === 'object');
-    assert.strictEqual(config.workflow.nyquist_validation, true);
+    assert.strictEqual(config.workflow.nyquist_validation, false);
     assert.strictEqual(config.workflow.auto_advance, false);
     assert.strictEqual(config.workflow.node_repair, true);
     assert.strictEqual(config.workflow.node_repair_budget, 2);

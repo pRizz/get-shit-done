@@ -88,9 +88,9 @@ All state lives in `.planning/` as human-readable Markdown and JSON. No database
 - State is inspectable by both humans and agents
 - State can be committed to git for team visibility
 
-### 4. Absent = Enabled
+### 4. Feature Flag Defaults
 
-Workflow feature flags follow the **absent = enabled** pattern. If a key is missing from `config.json`, it defaults to `true`. Users explicitly disable features; they don't need to enable defaults.
+Most workflow feature flags default to enabled when absent. Nyquist validation is the main opt-in exception: a missing `workflow.nyquist_validation` resolves to `false`, and only an explicit `true` enables the validation layer.
 
 ### 5. Defense in Depth
 

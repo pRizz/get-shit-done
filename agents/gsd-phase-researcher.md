@@ -386,7 +386,7 @@ Verified patterns from official sources:
 
 ## Validation Architecture
 
-> Skip this section entirely if workflow.nyquist_validation is explicitly set to false in .planning/config.json. If the key is absent, treat as enabled.
+> Skip this section entirely unless workflow.nyquist_validation is explicitly set to true in .planning/config.json.
 
 ### Test Framework
 | Property | Value |
@@ -477,7 +477,7 @@ if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 
 Extract from init JSON: `phase_dir`, `padded_phase`, `phase_number`, `commit_docs`.
 
-Also read `.planning/config.json` — include Validation Architecture section in RESEARCH.md unless `workflow.nyquist_validation` is explicitly `false`. If the key is absent or `true`, include the section.
+Also read `.planning/config.json` — include Validation Architecture section in RESEARCH.md only when `workflow.nyquist_validation` is explicitly `true`.
 
 Then read CONTEXT.md if exists:
 ```bash
@@ -595,7 +595,7 @@ For each domain: Context7 first → Official docs → WebSearch → Cross-verify
 
 ## Step 4: Validation Architecture Research (if nyquist_validation enabled)
 
-**Skip if** workflow.nyquist_validation is explicitly set to false. If absent, treat as enabled.
+**Skip unless** workflow.nyquist_validation is explicitly set to true.
 
 ### Detect Test Infrastructure
 Scan for: test config files (pytest.ini, jest.config.*, vitest.config.*), test directories (test/, tests/, __tests__/), test files (*.test.*, *.spec.*), package.json test scripts.

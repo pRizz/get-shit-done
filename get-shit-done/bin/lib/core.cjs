@@ -238,7 +238,7 @@ const CONFIG_DEFAULTS = {
   research: true,
   plan_checker: true,
   verifier: true,
-  nyquist_validation: true,
+  nyquist_validation: false,
   parallelization: true,
   brave_search: false,
   firecrawl: false,

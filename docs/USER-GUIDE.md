@@ -111,9 +111,10 @@ A detailed reference for workflows, troubleshooting, and configuration. For quic
 
 ### Validation Architecture (Nyquist Layer)
 
-During plan-phase research, GSD now maps automated test coverage to each phase
-requirement before any code is written. This ensures that when Claude's executor
-commits a task, a feedback mechanism already exists to verify it within seconds.
+When `workflow.nyquist_validation` is enabled, GSD maps automated test coverage
+to each phase requirement before any code is written. This ensures that when
+Claude's executor commits a task, a feedback mechanism already exists to verify
+it within seconds.
 
 The researcher detects your existing test infrastructure, maps each requirement to
 a specific test command, and identifies any test scaffolding that must be created
@@ -124,8 +125,8 @@ lack automated verify commands will not be approved.
 
 **Output:** `{phase}-VALIDATION.md` -- the feedback contract for the phase.
 
-**Disable:** Set `workflow.nyquist_validation: false` in `/gsd-settings` for
-rapid prototyping phases where test infrastructure isn't the focus.
+**Enable:** Set `workflow.nyquist_validation: true` in `/gsd-settings` for
+phases where you want validation architecture and the 8th plan-check dimension.
 
 ### Retroactive Validation (`/gsd-validate-phase`)
 
@@ -575,7 +576,7 @@ GSD stores project settings in `.planning/config.json`. Configure during `/gsd-n
     "research": true,
     "plan_check": true,
     "verifier": true,
-    "nyquist_validation": true,
+    "nyquist_validation": false,
     "ui_phase": true,
     "ui_safety_gate": true,
     "research_before_questions": false,
@@ -620,7 +621,7 @@ GSD stores project settings in `.planning/config.json`. Configure during `/gsd-n
 | `workflow.research` | `true`, `false` | `true` | Domain investigation before planning |
 | `workflow.plan_check` | `true`, `false` | `true` | Plan verification loop (up to 3 iterations) |
 | `workflow.verifier` | `true`, `false` | `true` | Post-execution verification against phase goals |
-| `workflow.nyquist_validation` | `true`, `false` | `true` | Validation architecture research during plan-phase; 8th plan-check dimension |
+| `workflow.nyquist_validation` | `true`, `false` | `false` | Validation architecture research during plan-phase; 8th plan-check dimension |
 | `workflow.ui_phase` | `true`, `false` | `true` | Generate UI design contracts for frontend phases |
 | `workflow.ui_safety_gate` | `true`, `false` | `true` | plan-phase prompts to run /gsd-ui-phase for frontend phases |
 | `workflow.research_before_questions` | `true`, `false` | `false` | Run research before discussion questions instead of after |

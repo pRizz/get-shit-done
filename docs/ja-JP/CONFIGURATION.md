@@ -25,7 +25,7 @@ GSD はプロジェクト設定を `.planning/config.json` に保存します。
     "plan_check": true,
     "verifier": true,
     "auto_advance": false,
-    "nyquist_validation": true,
+    "nyquist_validation": false,
     "ui_phase": true,
     "ui_safety_gate": true,
     "node_repair": true,
@@ -87,7 +87,7 @@ GSD はプロジェクト設定を `.planning/config.json` に保存します。
 
 ## ワークフロートグル
 
-すべてのワークフロートグルは **未設定 = 有効** のパターンに従います。config にキーが存在しない場合、デフォルトは `true` になります。
+ほとんどのワークフロートグルは未設定なら有効です。`workflow.nyquist_validation` は主要な例外で、明示的に `true` を設定しない限りデフォルトは `false` です。
 
 | 設定 | 型 | デフォルト | 説明 |
 |------|-----|-----------|------|
@@ -95,7 +95,7 @@ GSD はプロジェクト設定を `.planning/config.json` に保存します。
 | `workflow.plan_check` | boolean | `true` | プラン検証ループ（最大3回の反復） |
 | `workflow.verifier` | boolean | `true` | 実行後にフェーズ目標に対する検証を実施 |
 | `workflow.auto_advance` | boolean | `false` | discuss → plan → execute を停止せずに自動連鎖 |
-| `workflow.nyquist_validation` | boolean | `true` | plan-phase のリサーチ中にテストカバレッジマッピングを実施 |
+| `workflow.nyquist_validation` | boolean | `false` | plan-phase のリサーチ中にテストカバレッジマッピングを実施 |
 | `workflow.ui_phase` | boolean | `true` | フロントエンドフェーズで UI デザインコントラクトを生成 |
 | `workflow.ui_safety_gate` | boolean | `true` | plan-phase 中にフロントエンドフェーズに対して /gsd-ui-phase の実行を促すプロンプトを表示 |
 | `workflow.node_repair` | boolean | `true` | 検証失敗時にタスクを自律的に修復 |

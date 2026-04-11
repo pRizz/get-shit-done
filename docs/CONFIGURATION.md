@@ -26,7 +26,7 @@ GSD stores project settings in `.planning/config.json`. Created during `/gsd-new
     "plan_check": true,
     "verifier": true,
     "auto_advance": false,
-    "nyquist_validation": true,
+    "nyquist_validation": false,
     "ui_phase": true,
     "ui_safety_gate": true,
     "node_repair": true,
@@ -109,7 +109,7 @@ GSD stores project settings in `.planning/config.json`. Created during `/gsd-new
 
 ## Workflow Toggles
 
-All workflow toggles follow the **absent = enabled** pattern. If a key is missing from config, it defaults to `true`.
+Most workflow toggles default to enabled when absent. `workflow.nyquist_validation` is the main opt-in exception and defaults to `false` unless it is explicitly set to `true`.
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
@@ -117,7 +117,7 @@ All workflow toggles follow the **absent = enabled** pattern. If a key is missin
 | `workflow.plan_check` | boolean | `true` | Plan verification loop (up to 3 iterations) |
 | `workflow.verifier` | boolean | `true` | Post-execution verification against phase goals |
 | `workflow.auto_advance` | boolean | `false` | Auto-chain discuss → plan → execute without stopping |
-| `workflow.nyquist_validation` | boolean | `true` | Test coverage mapping during plan-phase research |
+| `workflow.nyquist_validation` | boolean | `false` | Test coverage mapping during plan-phase research |
 | `workflow.ui_phase` | boolean | `true` | Generate UI design contracts for frontend phases |
 | `workflow.ui_safety_gate` | boolean | `true` | Prompt to run /gsd-ui-phase for frontend phases during plan-phase |
 | `workflow.node_repair` | boolean | `true` | Autonomous task repair on verification failure |

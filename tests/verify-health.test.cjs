@@ -374,9 +374,7 @@ describe('validate health command', () => {
     );
   });
 
-  // ─── Check 5b: Nyquist validation key presence (W008) ─────────────────────
-
-  test('detects W008 when workflow.nyquist_validation absent from config', () => {
+  test('does not emit Nyquist warnings when workflow.nyquist_validation is absent from config', () => {
     writeMinimalProjectMd(tmpDir);
     writeMinimalRoadmap(tmpDir, ['1']);
     writeMinimalStateMd(tmpDir, '# Session State\n\nPhase 1 in progress.\n');
@@ -385,36 +383,20 @@ describe('validate health command', () => {
       path.join(tmpDir, '.planning', 'config.json'),
       JSON.stringify({ model_profile: 'balanced', workflow: { research: true } }, null, 2)
     );
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', '01-a'), { recursive: true });
-
-    const result = runGsdTools('validate health', tmpDir);
-    assert.ok(result.success, `Command failed: ${result.error}`);
-
-    const output = JSON.parse(result.output);
-    const warning = output.warnings.find(w => w.code === 'W008');
-    assert.ok(warning, `Expected W008 in warnings: ${JSON.stringify(output.warnings)}`);
-    assert.match(warning.message, /missing canonical explicit value/);
-    assert.match(warning.fix, /materialize workflow\.nyquist_validation: true/);
-  });
-
-  test('does not emit W008 when nyquist_validation is explicitly set', () => {
-    writeMinimalProjectMd(tmpDir);
-    writeMinimalRoadmap(tmpDir, ['1']);
-    writeMinimalStateMd(tmpDir, '# Session State\n\nPhase 1 in progress.\n');
-    // Config with workflow.nyquist_validation explicitly set
+    const phaseDir = path.join(tmpDir, '.planning', 'phases', '01-a');
+    fs.mkdirSync(phaseDir, { recursive: true });
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'config.json'),
-      JSON.stringify({ model_profile: 'balanced', workflow: { research: true, nyquist_validation: true } }, null, 2)
+      path.join(phaseDir, '01-RESEARCH.md'),
+      '# Research\n\n## Validation Architecture\n\nSome validation content.\n'
     );
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', '01-a'), { recursive: true });
 
     const result = runGsdTools('validate health', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
 
     const output = JSON.parse(result.output);
     assert.ok(
-      !output.warnings.some(w => w.code === 'W008'),
-      `Should not have W008: ${JSON.stringify(output.warnings)}`
+      !output.warnings.some(w => w.code === 'W008' || w.code === 'W009'),
+      `Should not have Nyquist warnings: ${JSON.stringify(output.warnings)}`
     );
   });
 
@@ -424,7 +406,10 @@ describe('validate health command', () => {
     writeMinimalProjectMd(tmpDir);
     writeMinimalRoadmap(tmpDir, ['1']);
     writeMinimalStateMd(tmpDir, '# Session State\n\nPhase 1 in progress.\n');
-    writeValidConfigJson(tmpDir);
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'config.json'),
+      JSON.stringify({ model_profile: 'balanced', workflow: { nyquist_validation: true } }, null, 2)
+    );
     // Create phase dir with RESEARCH.md containing Validation Architecture
     const phaseDir = path.join(tmpDir, '.planning', 'phases', '01-setup');
     fs.mkdirSync(phaseDir, { recursive: true });
@@ -559,7 +544,7 @@ describe('validate health --repair command', () => {
     assert.strictEqual(diskConfig.workflow.research, true, 'workflow.research should default to true');
     assert.strictEqual(diskConfig.workflow.plan_check, true, 'workflow.plan_check should default to true');
     assert.strictEqual(diskConfig.workflow.verifier, true, 'workflow.verifier should default to true');
-    assert.strictEqual(diskConfig.workflow.nyquist_validation, true, 'workflow.nyquist_validation should default to true');
+    assert.strictEqual(diskConfig.workflow.nyquist_validation, false, 'workflow.nyquist_validation should default to false');
     // Verify branch templates are present
     assert.strictEqual(diskConfig.phase_branch_template, 'gsd/phase-{phase}-{slug}');
     assert.strictEqual(diskConfig.milestone_branch_template, 'gsd/{milestone}-{slug}');
@@ -639,7 +624,7 @@ describe('validate health --repair command', () => {
     assert.strictEqual(backupFile, undefined, `Did not expect backup file for non-destructive repair. Found: ${planningFiles.join(', ')}`);
   });
 
-  test('adds nyquist_validation key to config.json via addNyquistKey repair', () => {
+  test('does not add nyquist_validation key when the config omits it', () => {
     writeMinimalStateMd(tmpDir, '# Session State\n\nPhase 1 in progress.\n');
     // Config with workflow section but missing nyquist_validation
     const configPath = path.join(tmpDir, '.planning', 'config.json');
@@ -653,16 +638,17 @@ describe('validate health --repair command', () => {
 
     const output = JSON.parse(result.output);
     assert.ok(
-      Array.isArray(output.repairs_performed),
-      `Expected repairs_performed array: ${JSON.stringify(output)}`
+      output.repairs_performed === undefined || Array.isArray(output.repairs_performed),
+      `Expected repairs_performed to be omitted or an array: ${JSON.stringify(output)}`
     );
-    const addKeyAction = output.repairs_performed.find(r => r.action === 'addNyquistKey');
-    assert.ok(addKeyAction, `Expected addNyquistKey action: ${JSON.stringify(output.repairs_performed)}`);
-    assert.strictEqual(addKeyAction.success, true, 'addNyquistKey should succeed');
+    assert.ok(
+      !Array.isArray(output.repairs_performed) || !output.repairs_performed.some(r => r.action === 'addNyquistKey'),
+      `Did not expect addNyquistKey repair: ${JSON.stringify(output.repairs_performed)}`
+    );
 
-    // Read config.json and verify workflow.nyquist_validation is true
+    // Read config.json and verify workflow.nyquist_validation remains absent
     const diskConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-    assert.strictEqual(diskConfig.workflow.nyquist_validation, true, 'nyquist_validation should be true');
+    assert.strictEqual(diskConfig.workflow.nyquist_validation, undefined, 'nyquist_validation should remain unset');
   });
 
   test('reports repairable_count correctly', () => {

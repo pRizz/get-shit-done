@@ -25,7 +25,7 @@ GSD는 프로젝트 설정을 `.planning/config.json`에 저장합니다. `/gsd-
     "plan_check": true,
     "verifier": true,
     "auto_advance": false,
-    "nyquist_validation": true,
+    "nyquist_validation": false,
     "ui_phase": true,
     "ui_safety_gate": true,
     "node_repair": true,
@@ -87,7 +87,7 @@ GSD는 프로젝트 설정을 `.planning/config.json`에 저장합니다. `/gsd-
 
 ## 워크플로우 토글
 
-모든 워크플로우 토글은 **키가 없으면 활성화** 패턴을 따릅니다. 설정에서 키가 없으면 기본값은 `true`입니다.
+대부분의 워크플로우 토글은 키가 없으면 활성화됩니다. `workflow.nyquist_validation`은 주요 예외로, 명시적으로 `true`로 설정하지 않으면 기본값이 `false`입니다.
 
 | 설정 | 타입 | 기본값 | 설명 |
 |------|------|--------|------|
@@ -95,7 +95,7 @@ GSD는 프로젝트 설정을 `.planning/config.json`에 저장합니다. `/gsd-
 | `workflow.plan_check` | boolean | `true` | 플랜 검증 루프 (최대 3회 반복) |
 | `workflow.verifier` | boolean | `true` | 실행 후 단계 목표 대비 검증 |
 | `workflow.auto_advance` | boolean | `false` | discuss → plan → execute를 중단 없이 자동으로 연결 |
-| `workflow.nyquist_validation` | boolean | `true` | plan 단계 리서치 중 테스트 커버리지 매핑 |
+| `workflow.nyquist_validation` | boolean | `false` | plan 단계 리서치 중 테스트 커버리지 매핑 |
 | `workflow.ui_phase` | boolean | `true` | 프론트엔드 단계를 위한 UI 디자인 계약서 생성 |
 | `workflow.ui_safety_gate` | boolean | `true` | plan 단계에서 프론트엔드 단계에 대해 /gsd-ui-phase 실행 여부 확인 |
 | `workflow.node_repair` | boolean | `true` | 검증 실패 시 자율적 태스크 복구 |

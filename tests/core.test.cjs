@@ -64,7 +64,7 @@ describe('loadConfig', () => {
     assert.strictEqual(config.plan_checker, true);
     assert.strictEqual(config.brave_search, false);
     assert.strictEqual(config.parallelization, true);
-    assert.strictEqual(config.nyquist_validation, true);
+    assert.strictEqual(config.nyquist_validation, false);
     assert.strictEqual(config.text_mode, false);
   });
 
