@@ -705,7 +705,7 @@ describe('copyCommandsAsCopilotSkills', () => {
       'long wrapper skill name should be converted to flat format'
     );
     assert.ok(
-      skillContent.includes('argument-hint: "<phase | --from N | --to N | --only N>"'),
+      skillContent.includes('argument-hint: "[phase | --from N | --to N | --only N]"'),
       'long wrapper skill should preserve argument hint'
     );
     assert.ok(

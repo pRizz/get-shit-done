@@ -2234,13 +2234,14 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 **Commands:** `/gsd-recommended-discuss`, `/gsd-yolo-discuss`
 
-**Purpose:** Provide top-level single-phase entry points for the new discuss modes without requiring users to remember the underlying flags.
+**Purpose:** Provide top-level discuss entry points for the new discuss modes without requiring users to remember the underlying flags or always specify a phase number.
 
 **Requirements:**
 - REQ-WRAPDISC-01: `/gsd-recommended-discuss` MUST delegate to `/gsd-discuss-phase --recommended`
 - REQ-WRAPDISC-02: `/gsd-yolo-discuss` MUST delegate to `/gsd-discuss-phase --yolo`
-- REQ-WRAPDISC-03: Both wrappers MUST remain single-phase only
-- REQ-WRAPDISC-04: `/gsd-yolo-discuss` MUST preview the target phase and high-level step before delegation
+- REQ-WRAPDISC-03: `/gsd-yolo-discuss` MUST accept an optional phase argument and auto-select through shared yolo target resolution when omitted
+- REQ-WRAPDISC-04: `/gsd-yolo-discuss` MUST ask whether to discuss the current planned phase, switch to the next pending phase, or cancel when auto-selection lands on a phase that already has plans
+- REQ-WRAPDISC-05: `/gsd-yolo-discuss` MUST preview the target phase and high-level step before delegation
 
 ---
 
@@ -2253,8 +2254,10 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 **Requirements:**
 - REQ-YOLOCHAIN-01: Single-phase mode MUST delegate to `/gsd-discuss-phase --yolo --chain`
 - REQ-YOLOCHAIN-02: Multi-phase or range mode MUST delegate to `/gsd-autonomous --yolo`
-- REQ-YOLOCHAIN-03: Existing planning and execution gates MUST remain intact
-- REQ-YOLOCHAIN-04: The wrapper MUST preview the covered phase set and `discuss → plan → execute` steps before delegation
+- REQ-YOLOCHAIN-03: When no explicit phase or range is provided, the wrapper MUST auto-select the current incomplete phase first, then the next pending/discussed/researched phase
+- REQ-YOLOCHAIN-04: Auto-selection MUST treat executed phases without `status: passed` verification as still incomplete
+- REQ-YOLOCHAIN-05: Existing planning and execution gates MUST remain intact
+- REQ-YOLOCHAIN-06: The wrapper MUST preview the covered phase set and `discuss → plan → execute` steps before delegation
 
 ---
 
@@ -2269,7 +2272,9 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 - REQ-PUSHWRAP-02: Single-phase mode MUST inspect the worktree, create a deterministic final commit when dirty, and push the current branch
 - REQ-PUSHWRAP-03: Multi-phase mode MUST delegate to `/gsd-autonomous --yolo --push-after-phase`
 - REQ-PUSHWRAP-04: No commit or push MUST happen on `human_needed`, `gaps_found`, blockers, or inconclusive execution
-- REQ-PUSHWRAP-05: The wrapper MUST preview the covered phase set and `discuss → plan → execute → commit/push` steps before delegation
+- REQ-PUSHWRAP-05: When no explicit phase or range is provided, the wrapper MUST auto-select the current incomplete phase first, then the next pending/discussed/researched phase
+- REQ-PUSHWRAP-06: Auto-selection MUST treat executed phases without `status: passed` verification as still incomplete
+- REQ-PUSHWRAP-07: The wrapper MUST preview the covered phase set and `discuss → plan → execute → commit/push` steps before delegation
 
 ---
 

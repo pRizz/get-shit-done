@@ -33,6 +33,13 @@ describe('yolo skill audit document', () => {
       'audit should reject wrapper-level expansion for the audited yolo skills'
     );
   });
+
+  test('audit doc notes shared no-arg target resolution for the wrappers', () => {
+    assert.ok(
+      audit.includes('init yolo-target'),
+      'audit should mention shared init yolo-target resolution for thin wrappers'
+    );
+  });
 });
 
 describe('yolo wrapper wording reflects thin-wrapper audit conclusions', () => {

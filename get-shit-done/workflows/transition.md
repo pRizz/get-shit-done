@@ -487,6 +487,7 @@ Exit skill and invoke SlashCommand("/gsd-discuss-phase [X+1] --auto ${GSD_WS}")
 - `/gsd-yolo-discuss-plan-and-execute [X+1] ${GSD_WS}` — discuss, plan, and execute with minimal intervention
 - `/gsd-yolo-discuss-plan-execute-commit-and-push [X+1] ${GSD_WS}` — same flow, then commit/push only after clean verification
 - `/gsd-research-phase [X+1] ${GSD_WS}` — investigate unknowns
+- Omit `[X+1]` on the yolo wrappers to auto-select the current incomplete or next pending phase
 
 ---
 ```

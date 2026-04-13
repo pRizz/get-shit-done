@@ -274,6 +274,7 @@ PHASE_HAS_UI=$(echo "$PHASE_SECTION" | grep -qi "UI hint.*yes" && echo "true" ||
 - `/gsd-yolo-discuss-plan-and-execute {phase}` — discuss, plan, and execute with minimal intervention
 - `/gsd-yolo-discuss-plan-execute-commit-and-push {phase}` — same flow, then commit/push only after clean verification
 - `/gsd-list-phase-assumptions {phase}` — see Claude's assumptions
+- Omit `{phase}` on the yolo wrappers to auto-select the current incomplete or next pending phase
 
 ---
 ```
@@ -299,6 +300,7 @@ PHASE_HAS_UI=$(echo "$PHASE_SECTION" | grep -qi "UI hint.*yes" && echo "true" ||
 - `/gsd-yolo-discuss-plan-and-execute {phase} ${GSD_WS}` — discuss, plan, and execute with minimal intervention
 - `/gsd-yolo-discuss-plan-execute-commit-and-push {phase} ${GSD_WS}` — same flow, then commit/push only after clean verification
 - `/gsd-list-phase-assumptions {phase} ${GSD_WS}` — see Claude's assumptions
+- Omit `{phase}` on the yolo wrappers to auto-select the current incomplete or next pending phase
 
 ---
 ```

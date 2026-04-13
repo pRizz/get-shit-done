@@ -103,6 +103,7 @@ Add note that this is the last plan and what comes after:
 - `/gsd-yolo-discuss-plan-and-execute 2` — discuss, plan, and execute with minimal intervention
 - `/gsd-yolo-discuss-plan-execute-commit-and-push 2` — same flow, then commit/push only after clean verification
 - `/gsd-research-phase 2` — investigate unknowns
+- Omit the phase on the yolo wrappers to auto-select the current incomplete or next pending phase
 - Review roadmap
 
 ---
@@ -135,6 +136,7 @@ Show completion status before next action:
 - `/gsd-yolo-discuss-plan-and-execute 3` — discuss, plan, and execute with minimal intervention
 - `/gsd-yolo-discuss-plan-execute-commit-and-push 3` — same flow, then commit/push only after clean verification
 - `/gsd-research-phase 3` — investigate unknowns
+- Omit the phase on the yolo wrappers to auto-select the current incomplete or next pending phase
 - Review what Phase 2 built
 
 ---

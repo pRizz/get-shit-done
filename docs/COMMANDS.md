@@ -140,15 +140,16 @@ Run discuss-phase in recommended-review mode for a single phase.
 
 ### `/gsd-yolo-discuss`
 
-Run discuss-phase in yolo mode for a single phase.
+Run discuss-phase in yolo mode for a single phase, or auto-select the next appropriate phase.
 
 Prints a short preview of the target phase and planned step before delegating.
 
 | Argument | Required | Description |
 |----------|----------|-------------|
-| `phase` | Yes | Phase number to discuss |
+| `phase` | No | Phase number to discuss explicitly; omit it to auto-select |
 
 ```bash
+/gsd-yolo-discuss
 /gsd-yolo-discuss 4
 ```
 
@@ -169,6 +170,7 @@ Prints a short preview of the covered phases and planned steps before delegating
 | `--only N` | Run exactly one phase through autonomous yolo mode |
 
 ```bash
+/gsd-yolo-discuss-plan-and-execute
 /gsd-yolo-discuss-plan-and-execute 4
 /gsd-yolo-discuss-plan-and-execute --only 4
 /gsd-yolo-discuss-plan-and-execute --from 4 --to 6
@@ -191,6 +193,7 @@ Prints a short preview of the covered phases and planned steps before delegating
 | `--only N` | Run exactly one phase in autonomous strict-push mode |
 
 ```bash
+/gsd-yolo-discuss-plan-execute-commit-and-push
 /gsd-yolo-discuss-plan-execute-commit-and-push 4
 /gsd-yolo-discuss-plan-execute-commit-and-push --only 4
 /gsd-yolo-discuss-plan-execute-commit-and-push --from 4 --to 6

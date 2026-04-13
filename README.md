@@ -54,9 +54,9 @@ This fork currently adds skill-level workflow changes on top of upstream GSD. Th
 ### New Skills In This Fork
 
 - `/gsd-recommended-discuss` — Generates recommended discuss answers for a single phase, lets you review them once, then writes context.
-- `/gsd-yolo-discuss` — Generates recommended discuss answers for a single phase, previews the target phase and steps, and accepts the answers without an approval prompt.
-- `/gsd-yolo-discuss-plan-and-execute` — Previews the phases and steps it will run, then chains yolo discuss into plan and execute for one phase or a phase range.
-- `/gsd-yolo-discuss-plan-execute-commit-and-push` — Previews the phases and steps it will run, then chains yolo discuss into plan and execute with commit/push only after clean verification.
+- `/gsd-yolo-discuss` — Generates recommended discuss answers, previews the target phase and steps, auto-selects when you omit the phase, and accepts the answers without an approval prompt.
+- `/gsd-yolo-discuss-plan-and-execute` — Previews the phases and steps it will run, auto-selects the current incomplete or next pending phase when you omit the phase, then chains yolo discuss into plan and execute for one phase or a phase range.
+- `/gsd-yolo-discuss-plan-execute-commit-and-push` — Previews the phases and steps it will run, auto-selects the current incomplete or next pending phase when you omit the phase, then chains yolo discuss into plan and execute with commit/push only after clean verification.
 - `/gsd-yolo-discuss-plan-execute-commit-and-push-all` — Previews all remaining phases in the current milestone, then runs the same yolo discuss, plan, execute, commit, and push flow end-to-end.
 
 ### Changes To Existing Skills
@@ -448,7 +448,7 @@ Loop **discuss → plan → execute → verify → ship** until milestone comple
 
 If you want faster intake during discussion, use `/gsd-discuss-phase <n> --batch` to answer a small grouped set of questions at once instead of one-by-one. Use `--recommended` for one final review of AI-picked discuss answers, `--yolo` to accept those answers without a prompt, and `--chain` to auto-chain discuss into plan+execute without stopping between steps.
 
-For minimal-intervention wrappers, use `/gsd-recommended-discuss <n>`, `/gsd-yolo-discuss <n>`, `/gsd-yolo-discuss-plan-and-execute <n>`, `/gsd-yolo-discuss-plan-execute-commit-and-push <n>`, or `/gsd-yolo-discuss-plan-execute-commit-and-push-all`.
+For minimal-intervention wrappers, use `/gsd-recommended-discuss <n>`, `/gsd-yolo-discuss [n]`, `/gsd-yolo-discuss-plan-and-execute [n]`, `/gsd-yolo-discuss-plan-execute-commit-and-push [n]`, or `/gsd-yolo-discuss-plan-execute-commit-and-push-all`.
 
 Each phase gets your input (discuss), proper research (plan), clean execution (execute), and human verification (verify). Context stays fresh. Quality stays high.
 
@@ -585,9 +585,9 @@ You're never locked in. The system adapts.
 | `/gsd-new-project [--auto]` | Full initialization: questions → research → requirements → roadmap |
 | `/gsd-discuss-phase [N] [--auto] [--recommended] [--yolo] [--analyze] [--chain]` | Capture implementation decisions before planning (`--recommended` adds one final review, `--yolo` writes recommended picks without prompts, `--chain` auto-chains into plan+execute) |
 | `/gsd-recommended-discuss <N>` | Synthesize recommended discuss answers, review them once, then write context |
-| `/gsd-yolo-discuss <N>` | Preview the target phase, then synthesize recommended discuss answers and write context without approval prompts |
-| `/gsd-yolo-discuss-plan-and-execute <N \| --from N \| --to N \| --only N>` | Preview the covered phases, then run yolo discuss plus plan+execute for one phase or a range |
-| `/gsd-yolo-discuss-plan-execute-commit-and-push <N \| --from N \| --to N \| --only N>` | Preview the covered phases, then run yolo discuss plus plan+execute with commit/push after clean verification |
+| `/gsd-yolo-discuss [N]` | Preview the target phase, auto-selecting when omitted, then synthesize recommended discuss answers and write context without approval prompts |
+| `/gsd-yolo-discuss-plan-and-execute [N \| --from N \| --to N \| --only N]` | Preview the covered phases, auto-selecting the current incomplete or next pending phase when omitted, then run yolo discuss plus plan+execute |
+| `/gsd-yolo-discuss-plan-execute-commit-and-push [N \| --from N \| --to N \| --only N]` | Preview the covered phases, auto-selecting the current incomplete or next pending phase when omitted, then run yolo discuss plus plan+execute with commit/push after clean verification |
 | `/gsd-yolo-discuss-plan-execute-commit-and-push-all` | Preview all remaining phases, then run autonomous yolo strict-push mode for the current milestone |
 | `/gsd-plan-phase [N] [--auto] [--reviews]` | Research + plan + verify for a phase (`--reviews` loads codebase review findings) |
 | `/gsd-execute-phase <N>` | Execute all plans in parallel waves, verify when complete |

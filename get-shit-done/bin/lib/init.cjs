@@ -5,7 +5,8 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
-const { loadConfig, resolveModelInternal, findPhaseInternal, getRoadmapPhaseInternal, pathExistsInternal, generateSlugInternal, getMilestoneInfo, getMilestonePhaseFilter, stripShippedMilestones, extractCurrentMilestone, normalizePhaseName, planningPaths, planningDir, planningRoot, toPosixPath, output, error, checkAgentsInstalled, phaseTokenMatches } = require('./core.cjs');
+const { loadConfig, resolveModelInternal, findPhaseInternal, getRoadmapPhaseInternal, pathExistsInternal, generateSlugInternal, getMilestoneInfo, getMilestonePhaseFilter, stripShippedMilestones, extractCurrentMilestone, normalizePhaseName, comparePhaseNum, planningPaths, planningDir, planningRoot, toPosixPath, output, error, checkAgentsInstalled, phaseTokenMatches } = require('./core.cjs');
+const { analyzeRoadmapInternal } = require('./roadmap.cjs');
 
 function getLatestCompletedMilestone(cwd) {
   const milestonesPath = path.join(planningRoot(cwd), 'MILESTONES.md');
@@ -45,6 +46,175 @@ function withProjectRoot(cwd, result) {
     result.response_language = config.response_language;
   }
   return result;
+}
+
+function listCurrentMilestonePhaseDirs(cwd) {
+  const phasesDir = path.join(planningDir(cwd), 'phases');
+  const isDirInMilestone = getMilestonePhaseFilter(cwd);
+
+  try {
+    return fs.readdirSync(phasesDir, { withFileTypes: true })
+      .filter(entry => entry.isDirectory())
+      .map(entry => entry.name)
+      .filter(isDirInMilestone)
+      .map(name => ({
+        name,
+        full_path: path.join(phasesDir, name),
+        relative_path: toPosixPath(path.relative(cwd, path.join(planningDir(cwd), 'phases', name))),
+      }));
+  } catch {
+    return [];
+  }
+}
+
+function readPhaseVerificationStatus(phaseDirPath) {
+  try {
+    const files = fs.readdirSync(phaseDirPath);
+    const verificationFile = files.find(file => file === 'VERIFICATION.md' || file.endsWith('-VERIFICATION.md'));
+    if (!verificationFile) return 'missing';
+
+    const content = fs.readFileSync(path.join(phaseDirPath, verificationFile), 'utf-8');
+    const statusMatch = content.match(/^status:\s*([^\n]+)/im);
+    if (!statusMatch) return 'unknown';
+
+    return statusMatch[1].trim().toLowerCase() || 'unknown';
+  } catch {
+    return 'missing';
+  }
+}
+
+function resolveYoloSelectionReason(phase) {
+  if (!phase) return null;
+
+  switch (phase.yolo_state) {
+    case 'current_execute':
+      return phase.disk_status === 'partial'
+        ? 'Resuming the current phase because execution is already in progress.'
+        : 'Resuming the current phase because plans are already on disk.';
+    case 'current_verify':
+      if (phase.verification_status === 'human_needed') {
+        return 'Resuming the current phase because verification still needs human review.';
+      }
+      if (phase.verification_status === 'gaps_found') {
+        return 'Resuming the current phase because verification still has unresolved gaps.';
+      }
+      if (phase.verification_status === 'missing') {
+        return 'Resuming the current phase because execution finished without a passing verification result.';
+      }
+      return `Resuming the current phase because verification status is ${phase.verification_status}.`;
+    case 'next_plan':
+      return 'Selecting the next incomplete phase because context is already gathered and it is ready for planning.';
+    case 'next_discuss':
+      return 'Selecting the next pending phase because it is the first phase that still needs discussion.';
+    default:
+      return null;
+  }
+}
+
+function toYoloPhasePayload(phase) {
+  if (!phase) return null;
+
+  return {
+    number: phase.number,
+    name: phase.name,
+    phase_dir: phase.phase_dir,
+    disk_status: phase.disk_status,
+    plan_count: phase.plan_count,
+    summary_count: phase.summary_count,
+    verification_status: phase.verification_status,
+    yolo_state: phase.yolo_state,
+    selection_reason: resolveYoloSelectionReason(phase),
+  };
+}
+
+function buildYoloTargetState(cwd) {
+  const roadmap = analyzeRoadmapInternal(cwd);
+  const phaseDirs = listCurrentMilestonePhaseDirs(cwd);
+  const phases = (roadmap.phases || [])
+    .slice()
+    .sort((a, b) => comparePhaseNum(a.number, b.number))
+    .map(phase => {
+      const normalized = normalizePhaseName(phase.number);
+      const dirInfo = phaseDirs.find(entry => phaseTokenMatches(entry.name, normalized)) || null;
+      const hasExecutionArtifacts = !!dirInfo && (phase.plan_count > 0 || phase.summary_count > 0);
+      const verificationStatus = hasExecutionArtifacts
+        ? readPhaseVerificationStatus(dirInfo.full_path)
+        : null;
+
+      let yoloState = 'done';
+      if (phase.disk_status === 'partial' || phase.disk_status === 'planned') {
+        yoloState = 'current_execute';
+      } else if (
+        hasExecutionArtifacts &&
+        phase.summary_count >= phase.plan_count &&
+        phase.plan_count > 0 &&
+        verificationStatus !== 'passed'
+      ) {
+        yoloState = 'current_verify';
+      } else if (phase.disk_status === 'discussed' || phase.disk_status === 'researched') {
+        yoloState = 'next_plan';
+      } else if (phase.disk_status === 'empty' || phase.disk_status === 'no_directory') {
+        yoloState = 'next_discuss';
+      }
+
+      return {
+        ...phase,
+        phase_dir: dirInfo ? dirInfo.relative_path : null,
+        verification_status: verificationStatus,
+        yolo_state: yoloState,
+      };
+    });
+
+  const currentPhase = phases.find(phase =>
+    phase.yolo_state === 'current_execute' || phase.yolo_state === 'current_verify'
+  ) || null;
+  const nextPhase = phases.find(phase =>
+    phase.yolo_state === 'next_plan' || phase.yolo_state === 'next_discuss'
+  ) || null;
+
+  return {
+    roadmap,
+    phases,
+    current_phase: currentPhase,
+    next_phase: nextPhase,
+  };
+}
+
+function cmdInitYoloTarget(cwd, mode, raw) {
+  if (!mode) {
+    error('mode required for init yolo-target');
+  }
+  if (!['discuss', 'chain', 'push'].includes(mode)) {
+    error(`invalid yolo-target mode: ${mode}. Expected one of: discuss, chain, push`);
+  }
+
+  const config = loadConfig(cwd);
+  const milestone = getMilestoneInfo(cwd);
+  const { roadmap, current_phase: currentPhase, next_phase: nextPhase } = buildYoloTargetState(cwd);
+  const selectedPhase = currentPhase || nextPhase;
+  const requiresConfirmation = mode === 'discuss' && !!currentPhase && currentPhase.plan_count > 0;
+  const alternativePhase = requiresConfirmation ? nextPhase : null;
+  const selectedPayload = toYoloPhasePayload(selectedPhase);
+
+  const result = {
+    commit_docs: config.commit_docs,
+    milestone_version: milestone.version,
+    milestone_name: milestone.name,
+    selected_phase: selectedPhase ? selectedPhase.number : null,
+    selected_phase_name: selectedPhase ? selectedPhase.name : null,
+    selection_reason: selectedPayload ? selectedPayload.selection_reason : null,
+    current_phase: toYoloPhasePayload(currentPhase),
+    next_phase: toYoloPhasePayload(nextPhase),
+    requires_confirmation: requiresConfirmation,
+    alternative_phase: toYoloPhasePayload(alternativePhase),
+    nothing_to_do: !roadmap.error && !selectedPhase,
+    roadmap_exists: !roadmap.error,
+    state_exists: fs.existsSync(path.join(planningDir(cwd), 'STATE.md')),
+    project_exists: pathExistsInternal(cwd, '.planning/PROJECT.md'),
+    error: roadmap.error || null,
+  };
+
+  output(withProjectRoot(cwd, result), raw);
 }
 
 function cmdInitExecutePhase(cwd, phase, raw, options = {}) {
@@ -1549,6 +1719,7 @@ module.exports = {
   cmdInitResume,
   cmdInitVerifyWork,
   cmdInitPhaseOp,
+  cmdInitYoloTarget,
   cmdInitTodos,
   cmdInitMilestoneOp,
   cmdInitMapCodebase,

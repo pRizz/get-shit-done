@@ -908,6 +908,190 @@ describe('cmdInitProgress', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// cmdInitYoloTarget
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('cmdInitYoloTarget', () => {
+  let tmpDir;
+
+  beforeEach(() => {
+    tmpDir = createTempProject();
+  });
+
+  afterEach(() => {
+    cleanup(tmpDir);
+  });
+
+  test('chain mode selects the current phase when plans are already in progress', () => {
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      `# Roadmap
+
+### Phase 1: Setup
+**Goal:** Done
+
+### Phase 2: API
+**Goal:** In progress
+
+### Phase 3: UI
+**Goal:** Pending
+`
+    );
+
+    const phase1 = path.join(tmpDir, '.planning', 'phases', '01-setup');
+    fs.mkdirSync(phase1, { recursive: true });
+    fs.writeFileSync(path.join(phase1, '01-01-PLAN.md'), '# Plan');
+    fs.writeFileSync(path.join(phase1, '01-01-SUMMARY.md'), '# Summary');
+    fs.writeFileSync(path.join(phase1, '01-VERIFICATION.md'), '---\nstatus: passed\n---\n# Verification');
+
+    const phase2 = path.join(tmpDir, '.planning', 'phases', '02-api');
+    fs.mkdirSync(phase2, { recursive: true });
+    fs.writeFileSync(path.join(phase2, '02-01-PLAN.md'), '# Plan');
+
+    const result = runGsdTools('init yolo-target chain', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.selected_phase, '2');
+    assert.strictEqual(output.current_phase.number, '2');
+    assert.strictEqual(output.current_phase.yolo_state, 'current_execute');
+    assert.strictEqual(output.next_phase.number, '3');
+    assert.strictEqual(output.nothing_to_do, false);
+  });
+
+  test('push mode treats non-passing verification as the current incomplete phase', () => {
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      `# Roadmap
+
+### Phase 1: Setup
+**Goal:** Done
+
+### Phase 2: API
+**Goal:** Verify me
+
+### Phase 3: UI
+**Goal:** Pending
+`
+    );
+
+    const phase1 = path.join(tmpDir, '.planning', 'phases', '01-setup');
+    fs.mkdirSync(phase1, { recursive: true });
+    fs.writeFileSync(path.join(phase1, '01-01-PLAN.md'), '# Plan');
+    fs.writeFileSync(path.join(phase1, '01-01-SUMMARY.md'), '# Summary');
+    fs.writeFileSync(path.join(phase1, '01-VERIFICATION.md'), '---\nstatus: passed\n---\n# Verification');
+
+    const phase2 = path.join(tmpDir, '.planning', 'phases', '02-api');
+    fs.mkdirSync(phase2, { recursive: true });
+    fs.writeFileSync(path.join(phase2, '02-01-PLAN.md'), '# Plan');
+    fs.writeFileSync(path.join(phase2, '02-01-SUMMARY.md'), '# Summary');
+    fs.writeFileSync(path.join(phase2, '02-VERIFICATION.md'), '---\nstatus: gaps_found\n---\n# Verification');
+
+    const result = runGsdTools('init yolo-target push', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.selected_phase, '2');
+    assert.strictEqual(output.current_phase.number, '2');
+    assert.strictEqual(output.current_phase.yolo_state, 'current_verify');
+    assert.strictEqual(output.current_phase.verification_status, 'gaps_found');
+    assert.match(output.selection_reason, /unresolved gaps/i);
+  });
+
+  test('chain mode falls back to the next pending phase when no current phase is active', () => {
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      `# Roadmap
+
+### Phase 1: Setup
+**Goal:** Done
+
+### Phase 2: UI
+**Goal:** Pending
+`
+    );
+
+    const phase1 = path.join(tmpDir, '.planning', 'phases', '01-setup');
+    fs.mkdirSync(phase1, { recursive: true });
+    fs.writeFileSync(path.join(phase1, '01-01-PLAN.md'), '# Plan');
+    fs.writeFileSync(path.join(phase1, '01-01-SUMMARY.md'), '# Summary');
+    fs.writeFileSync(path.join(phase1, '01-VERIFICATION.md'), '---\nstatus: passed\n---\n# Verification');
+
+    const result = runGsdTools('init yolo-target chain', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.current_phase, null);
+    assert.strictEqual(output.selected_phase, '2');
+    assert.strictEqual(output.next_phase.number, '2');
+    assert.strictEqual(output.next_phase.yolo_state, 'next_discuss');
+    assert.match(output.selection_reason, /next pending phase/i);
+  });
+
+  test('discuss mode requires confirmation before reopening a planned current phase', () => {
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      `# Roadmap
+
+### Phase 1: Setup
+**Goal:** Done
+
+### Phase 2: API
+**Goal:** In progress
+
+### Phase 3: UI
+**Goal:** Pending
+`
+    );
+
+    const phase1 = path.join(tmpDir, '.planning', 'phases', '01-setup');
+    fs.mkdirSync(phase1, { recursive: true });
+    fs.writeFileSync(path.join(phase1, '01-01-PLAN.md'), '# Plan');
+    fs.writeFileSync(path.join(phase1, '01-01-SUMMARY.md'), '# Summary');
+    fs.writeFileSync(path.join(phase1, '01-VERIFICATION.md'), '---\nstatus: passed\n---\n# Verification');
+
+    const phase2 = path.join(tmpDir, '.planning', 'phases', '02-api');
+    fs.mkdirSync(phase2, { recursive: true });
+    fs.writeFileSync(path.join(phase2, '02-01-PLAN.md'), '# Plan');
+
+    const result = runGsdTools('init yolo-target discuss', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.selected_phase, '2');
+    assert.strictEqual(output.requires_confirmation, true);
+    assert.strictEqual(output.current_phase.number, '2');
+    assert.strictEqual(output.alternative_phase.number, '3');
+  });
+
+  test('returns nothing_to_do when all phases have passing verification', () => {
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      `# Roadmap
+
+### Phase 1: Setup
+**Goal:** Done
+`
+    );
+
+    const phase1 = path.join(tmpDir, '.planning', 'phases', '01-setup');
+    fs.mkdirSync(phase1, { recursive: true });
+    fs.writeFileSync(path.join(phase1, '01-01-PLAN.md'), '# Plan');
+    fs.writeFileSync(path.join(phase1, '01-01-SUMMARY.md'), '# Summary');
+    fs.writeFileSync(path.join(phase1, '01-VERIFICATION.md'), '---\nstatus: passed\n---\n# Verification');
+
+    const result = runGsdTools('init yolo-target push', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.selected_phase, null);
+    assert.strictEqual(output.current_phase, null);
+    assert.strictEqual(output.next_phase, null);
+    assert.strictEqual(output.nothing_to_do, true);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // cmdInitQuick (INIT-05)
 // ─────────────────────────────────────────────────────────────────────────────
 

@@ -74,13 +74,23 @@ describe('recommended and yolo wrapper commands', () => {
     }
   });
 
+  test('wrapper command hints advertise optional phase syntax', () => {
+    const yoloDiscuss = fs.readFileSync(path.join(COMMANDS_DIR, 'yolo-discuss.md'), 'utf8');
+    const yoloChain = fs.readFileSync(path.join(COMMANDS_DIR, 'yolo-discuss-plan-and-execute.md'), 'utf8');
+    const yoloPush = fs.readFileSync(path.join(COMMANDS_DIR, 'yolo-discuss-plan-execute-commit-and-push.md'), 'utf8');
+
+    assert.ok(yoloDiscuss.includes('argument-hint: "[phase]"'), 'yolo-discuss should make the phase optional');
+    assert.ok(yoloChain.includes('argument-hint: "[phase | --from N | --to N | --only N]"'), 'yolo chain should advertise optional phase syntax');
+    assert.ok(yoloPush.includes('argument-hint: "[phase | --from N | --to N | --only N]"'), 'strict push should advertise optional phase syntax');
+  });
+
   test('single-phase yolo chain wrapper delegates to discuss-phase --yolo --chain', () => {
     const content = fs.readFileSync(
       path.join(WORKFLOWS_DIR, 'yolo-discuss-plan-and-execute.md'),
       'utf8'
     );
     assert.ok(
-      content.includes('Skill(skill="gsd-discuss-phase", args="${ARGUMENTS} --yolo --chain --lifecycle-id ${PHASE_LIFECYCLE_ID} --lifecycle-mode yolo")'),
+      content.includes('Skill(skill="gsd-discuss-phase", args="${BASE_ARGS} --yolo --chain --lifecycle-id ${PHASE_LIFECYCLE_ID} --lifecycle-mode yolo")'),
       'single-phase yolo chain should delegate to discuss-phase --yolo --chain'
     );
   });
@@ -165,9 +175,19 @@ describe('recommended and yolo wrapper commands', () => {
     assert.ok(content.includes('GSD ► YOLO DISCUSS'), 'yolo-discuss should have a preview banner');
     assert.ok(content.includes('Steps: discuss'), 'yolo-discuss should preview the discuss step');
     assert.ok(
-      content.indexOf('Steps: discuss') < content.indexOf('Skill(skill="gsd-discuss-phase", args="${ARGUMENTS} --yolo")'),
+      content.indexOf('Steps: discuss') < content.indexOf('Skill(skill="gsd-discuss-phase", args="${BASE_ARGS} --yolo")'),
       'yolo-discuss preview should appear before delegation'
     );
+  });
+
+  test('yolo-discuss uses shared target resolution and planned-phase confirmation for no-arg runs', () => {
+    const content = fs.readFileSync(
+      path.join(WORKFLOWS_DIR, 'yolo-discuss.md'),
+      'utf8'
+    );
+    assert.ok(content.includes('init yolo-target discuss'), 'yolo-discuss should use shared yolo target resolution');
+    assert.ok(content.includes('requires_confirmation'), 'yolo-discuss should branch on planned-phase confirmation');
+    assert.ok(content.includes('Switch to next pending phase'), 'yolo-discuss should offer switching to the next pending phase');
   });
 
   test('yolo chain wrapper previews single-phase and range runs', () => {
@@ -177,6 +197,8 @@ describe('recommended and yolo wrapper commands', () => {
     );
     assert.ok(content.includes('GSD ► YOLO PLAN EXECUTE'), 'yolo chain wrapper should have a preview banner');
     assert.ok(content.includes('Steps: discuss → plan → execute'), 'yolo chain wrapper should preview discuss → plan → execute');
+    assert.ok(content.includes('init yolo-target chain'), 'yolo chain wrapper should use shared yolo target resolution');
+    assert.ok(content.includes('Reason: ${AUTO_SELECTION_REASON}'), 'yolo chain wrapper should explain auto-selected targets');
     assert.ok(content.includes('This run will cover phases ${FIRST_PHASE} through ${LAST_PHASE}.'), 'yolo chain wrapper should preview covered phase range');
     assert.ok(content.includes('No remaining incomplete phases match this run.'), 'yolo chain wrapper should document the early no-op case');
   });
@@ -188,6 +210,8 @@ describe('recommended and yolo wrapper commands', () => {
     );
     assert.ok(content.includes('GSD ► YOLO PLAN EXECUTE PUSH'), 'strict push wrapper should have a preview banner');
     assert.ok(content.includes('Steps: discuss → plan → execute → commit/push'), 'strict push wrapper should preview commit/push steps');
+    assert.ok(content.includes('init yolo-target push'), 'strict push wrapper should use shared yolo target resolution');
+    assert.ok(content.includes('Reason: ${AUTO_SELECTION_REASON}'), 'strict push wrapper should explain auto-selected targets');
     assert.ok(content.includes('commit/push only happens after clean verification'), 'strict push wrapper should mention strict push gating in the preview');
     assert.ok(content.includes('No remaining incomplete phases match this run.'), 'strict push wrapper should document the early no-op case');
   });
@@ -377,9 +401,13 @@ describe('docs reference recommended and yolo wrappers', () => {
 
   test('README and help mention the new commands', () => {
     assert.ok(readme.includes('/gsd-recommended-discuss <N>'), 'README should mention gsd-recommended-discuss');
+    assert.ok(readme.includes('/gsd-yolo-discuss [N]'), 'README should document optional phase syntax for yolo-discuss');
     assert.ok(readme.includes('/gsd-yolo-discuss-plan-execute-commit-and-push-all'), 'README should mention strict push all alias');
     assert.ok(readme.includes('Preview the covered phases'), 'README should mention wrapper previews');
     assert.ok(readme.includes('/gsd-autonomous [--yolo] [--push-after-phase]'), 'README should mention autonomous new flags');
+    assert.ok(help.includes('/gsd-yolo-discuss [number]'), 'help should include optional phase syntax for yolo-discuss');
+    assert.ok(help.includes('/gsd-yolo-discuss-plan-and-execute [phase | --from N | --to N | --only N]'), 'help should include optional phase syntax for the yolo chain wrapper');
+    assert.ok(help.includes('/gsd-yolo-discuss-plan-execute-commit-and-push [phase | --from N | --to N | --only N]'), 'help should include optional phase syntax for the strict push wrapper');
     assert.ok(help.includes('/gsd-recommended-discuss 2'), 'help should include gsd-recommended-discuss usage');
     assert.ok(help.includes('/gsd-yolo-discuss-plan-execute-commit-and-push-all'), 'help should include strict push all alias usage');
     assert.ok(help.includes('Prints a short preview of the phases and high-level steps before it runs'), 'help should mention wrapper previews');

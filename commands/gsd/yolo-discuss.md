@@ -1,7 +1,7 @@
 ---
 name: gsd:yolo-discuss
 description: Gather recommended discuss answers for one phase and auto-accept them without pausing for approval. Thin wrapper; relies on downstream discuss-phase orchestration.
-argument-hint: "<phase>"
+argument-hint: "[phase]"
 allowed-tools:
   - Read
   - Write
@@ -13,7 +13,7 @@ allowed-tools:
 ---
 
 <objective>
-Run discuss-phase in yolo mode for a single phase.
+Run discuss-phase in yolo mode for a single phase, or auto-select the next appropriate phase when no phase is provided.
 
 This is a thin wrapper over `/gsd-discuss-phase --yolo`.
 No wrapper-level sub-agent is needed because `gsd-discuss-phase` owns the real orchestration.
@@ -24,7 +24,7 @@ No wrapper-level sub-agent is needed because `gsd-discuss-phase` owns the real o
 </execution_context>
 
 <context>
-Phase number: $ARGUMENTS (required)
+Phase number: $ARGUMENTS (optional)
 </context>
 
 <process>
@@ -32,7 +32,7 @@ Execute the yolo-discuss workflow from @~/.claude/get-shit-done/workflows/yolo-d
 </process>
 
 <success_criteria>
-- Recommended answers synthesized for the requested phase
+- Recommended answers synthesized for the selected phase
 - CONTEXT.md and DISCUSSION-LOG.md are written without an approval pause
 - Wrapper delegates to the shared discuss-phase recommendation engine
 </success_criteria>

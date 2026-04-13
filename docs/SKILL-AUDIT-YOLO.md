@@ -22,19 +22,19 @@ Use this rubric for every target:
 
 - Verdict: No new wrapper-level sub-agent usage
 - Recommended action: Keep the wrapper thin
-- Rationale: This is a single-phase veneer over `gsd-discuss-phase --yolo`. The wrapper only validates arguments, previews the phase, and delegates. The real work happens in `gsd-discuss-phase`, which already performs the meaningful discussion-phase orchestration and can spawn advisor research tasks where applicable.
+- Rationale: This is a single-phase veneer over `gsd-discuss-phase --yolo`. The wrapper only resolves the phase through shared `init yolo-target` logic, previews it, and delegates. The real work happens in `gsd-discuss-phase`, which already performs the meaningful discussion-phase orchestration and can spawn advisor research tasks where applicable.
 
 ### `gsd-yolo-discuss-plan-and-execute`
 
 - Verdict: No new wrapper-level sub-agent usage
 - Recommended action: Keep the wrapper thin
-- Rationale: The single-phase path delegates to `gsd-discuss-phase --yolo --chain`. The range path delegates to `gsd-autonomous --yolo`. Both downstream flows already own planning and execution orchestration. Adding sub-agents at the wrapper layer would only duplicate routing behavior and complicate failure visibility.
+- Rationale: The single-phase path resolves no-arg targeting through shared `init yolo-target` logic, then delegates to `gsd-discuss-phase --yolo --chain`. The range path delegates to `gsd-autonomous --yolo`. Both downstream flows already own planning and execution orchestration. Adding sub-agents at the wrapper layer would only duplicate routing behavior and complicate failure visibility.
 
 ### `gsd-yolo-discuss-plan-execute-commit-and-push`
 
 - Verdict: No new wrapper-level sub-agent usage
 - Recommended action: Keep wrapper orchestration inline
-- Rationale: The wrapper is still thin on the orchestration side, and its one wrapper-owned heavy concern is final git gating. That commit/push path should stay deterministic and inline so verification status, branch checks, and push failures remain explicit and easy to reason about.
+- Rationale: The wrapper is still thin on the orchestration side: it resolves no-arg targeting through shared `init yolo-target` logic, then delegates and keeps its one wrapper-owned heavy concern, final git gating, inline. That commit/push path should stay deterministic and inline so verification status, branch checks, and push failures remain explicit and easy to reason about.
 
 ### `gsd-yolo-discuss-plan-execute-commit-and-push-all`
 

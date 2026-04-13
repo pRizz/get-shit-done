@@ -142,6 +142,7 @@
  *   init resume                        All context for resume-project workflow
  *   init verify-work <phase>           All context for verify-work workflow
  *   init phase-op <phase>              Generic phase operation context
+ *   init yolo-target <mode>            Resolve no-arg yolo wrapper target
  *   init todos [area]                  All context for todo workflows
  *   init milestone-op                  All context for milestone operations
  *   init map-codebase                  All context for map-codebase workflow
@@ -835,6 +836,9 @@ async function runCommand(command, args, cwd, raw, defaultValue) {
         case 'phase-op':
           init.cmdInitPhaseOp(cwd, args[2], raw);
           break;
+        case 'yolo-target':
+          init.cmdInitYoloTarget(cwd, args[2], raw);
+          break;
         case 'todos':
           init.cmdInitTodos(cwd, args[2], raw);
           break;
@@ -860,7 +864,7 @@ async function runCommand(command, args, cwd, raw, defaultValue) {
           init.cmdInitRemoveWorkspace(cwd, args[2], raw);
           break;
         default:
-          error(`Unknown init workflow: ${workflow}\nAvailable: execute-phase, plan-phase, new-project, new-milestone, quick, resume, verify-work, phase-op, todos, milestone-op, map-codebase, progress, manager, new-workspace, list-workspaces, remove-workspace`);
+          error(`Unknown init workflow: ${workflow}\nAvailable: execute-phase, plan-phase, new-project, new-milestone, quick, resume, verify-work, phase-op, yolo-target, todos, milestone-op, map-codebase, progress, manager, new-workspace, list-workspaces, remove-workspace`);
       }
       break;
     }

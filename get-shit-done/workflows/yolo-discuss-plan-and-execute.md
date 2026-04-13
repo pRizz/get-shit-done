@@ -20,10 +20,93 @@ fi
 </step>
 
 <step name="preview_single">
-Resolve the requested phase before delegating:
+Resolve the target phase before delegating:
 
 ```bash
 PHASE=$(echo "$ARGUMENTS" | awk '{print $1}')
+AUTO_SELECTION_REASON=""
+```
+
+**If `PHASE` is empty:** resolve the wrapper target from shared CLI logic:
+
+```bash
+TARGET=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init yolo-target chain)
+if [[ "$TARGET" == @file:* ]]; then TARGET=$(cat "${TARGET#@file:}"); fi
+```
+
+Parse from JSON: `error`, `selected_phase`, `selection_reason`, `nothing_to_do`.
+
+**If `error` is non-empty:** stop with:
+
+```
+${error}
+```
+
+**If `nothing_to_do` is true:** display:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ GSD ► YOLO PLAN EXECUTE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ Nothing to do.
+ No incomplete phases match this run.
+```
+
+Exit without delegating.
+
+**If a target phase was selected:** set:
+
+```bash
+PHASE="${selected_phase}"
+AUTO_SELECTION_REASON="${selection_reason}"
+```
+
+Resolve the selected phase:
+
+```bash
+PHASE_STATE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init phase-op "${PHASE}")
+if [[ "$PHASE_STATE" == @file:* ]]; then PHASE_STATE=$(cat "${PHASE_STATE#@file:}"); fi
+```
+
+Parse from JSON: `phase_found`, `phase_number`, `phase_name`.
+
+**If `phase_found` is false:** stop with:
+
+```
+Phase ${PHASE} not found in roadmap.
+
+Use /gsd-progress to see available phases.
+```
+
+**If `phase_found` is true:** display:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ GSD ► YOLO PLAN EXECUTE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ Phase: ${phase_number} — ${phase_name}
+ Steps: discuss → plan → execute
+ Reason: ${AUTO_SELECTION_REASON}
+```
+
+Then delegate:
+
+```bash
+PHASE_LIFECYCLE_ID="${phase_number}-$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" current-timestamp filename)"
+BASE_ARGS="${PHASE}"
+```
+
+```bash
+Skill(skill="gsd-discuss-phase", args="${BASE_ARGS} --yolo --chain --lifecycle-id ${PHASE_LIFECYCLE_ID} --lifecycle-mode yolo")
+```
+
+Stop after delegation.
+
+**If `PHASE` is non-empty:** resolve the requested phase before delegating:
+
+```bash
 PHASE_STATE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init phase-op "${PHASE}")
 if [[ "$PHASE_STATE" == @file:* ]]; then PHASE_STATE=$(cat "${PHASE_STATE#@file:}"); fi
 ```
@@ -53,10 +136,11 @@ Then delegate:
 
 ```bash
 PHASE_LIFECYCLE_ID="${phase_number}-$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" current-timestamp filename)"
+BASE_ARGS="$ARGUMENTS"
 ```
 
 ```bash
-Skill(skill="gsd-discuss-phase", args="${ARGUMENTS} --yolo --chain --lifecycle-id ${PHASE_LIFECYCLE_ID} --lifecycle-mode yolo")
+Skill(skill="gsd-discuss-phase", args="${BASE_ARGS} --yolo --chain --lifecycle-id ${PHASE_LIFECYCLE_ID} --lifecycle-mode yolo")
 ```
 </step>
 
@@ -118,10 +202,11 @@ This wrapper does not add wrapper-level sub-agents because the delegated workflo
 </process>
 
 <success_criteria>
-- Single-phase preview shows the phase and `discuss → plan → execute`
+- Explicit single-phase routing still uses `/gsd-discuss-phase --yolo --chain`
+- No-argument routing auto-selects the current incomplete phase or next pending phase
+- Auto-selected previews explain why the phase was chosen
 - Range preview shows the covered phases and `discuss → plan → execute`
 - Range mode exits early with a no-op message when no phases match
-- Single-phase routing uses `/gsd-discuss-phase --yolo --chain`
 - Range routing uses `/gsd-autonomous --yolo`
 - Existing plan/execute gates remain unchanged
 </success_criteria>
