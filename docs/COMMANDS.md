@@ -23,14 +23,20 @@ Initialize a new project with deep context gathering.
 | `--auto @file.md` | Auto-extract from document, skip interactive questions |
 
 **Prerequisites:** No existing `.planning/PROJECT.md`
-**Produces:** `PROJECT.md`, `REQUIREMENTS.md`, `ROADMAP.md`, `STATE.md`, `config.json`, `research/`, instruction file (`AGENTS.md` for Codex, `CLAUDE.md` otherwise)
+**Produces:** `PROJECT.md`, `REQUIREMENTS.md`, `ROADMAP.md`, `STATE.md`, `config.json`, `research/`, canonical instruction file `AGENTS.md`, and `CLAUDE.md` as a compatibility symlink when supported
 
 ```bash
 /gsd-new-project                    # Interactive mode
 /gsd-new-project --auto @prd.md     # Auto-extract from PRD
 ```
 
-If the instruction file already exists, GSD merges its marker-bounded sections and preserves non-GSD content outside those markers. When GSD appends managed sections into an already-populated root instruction file, the completion summary prompts you to audit that file.
+If `AGENTS.md` already exists, GSD merges its marker-bounded sections and preserves non-GSD content outside those markers. When GSD appends managed sections into an already-populated instruction file, the completion summary prompts you to audit the result.
+
+For older repos, `new-project` inspects `AGENTS.md` and `CLAUDE.md` before reconciling them:
+- Fresh setup: create `AGENTS.md`, then create `CLAUDE.md -> AGENTS.md`
+- Healthy existing link in either direction: leave it alone
+- Conflicting regular files: interactive mode offers a repair choice; `--auto` warns and does not rewrite the conflict
+- If symlink creation is unsupported, GSD stops instead of creating a second regular file and risking drift
 
 ---
 

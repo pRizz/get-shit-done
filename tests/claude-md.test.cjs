@@ -164,38 +164,48 @@ describe('generate-claude-md', () => {
   });
 });
 
-describe('new-project workflow includes instruction-file merge behavior', () => {
+describe('new-project workflow includes instruction-file linking behavior', () => {
   const workflowPath = path.join(__dirname, '..', 'get-shit-done', 'workflows', 'new-project.md');
   const commandsPath = path.join(__dirname, '..', 'docs', 'COMMANDS.md');
 
-  test('new-project workflow generates instruction file before final commit', () => {
+  test('new-project workflow generates AGENTS.md before final commit and reconciles CLAUDE.md', () => {
     const content = fs.readFileSync(workflowPath, 'utf-8');
-    assert.ok(content.includes('generate-claude-md'));
-    assert.ok(content.includes('INSTRUCTION_RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md --output "$INSTRUCTION_FILE")'));
-    assert.ok(content.includes('if [[ "$INSTRUCTION_RESULT" == @file:* ]]; then INSTRUCTION_RESULT=$(cat "${INSTRUCTION_RESULT#@file:}"); fi'));
-    assert.ok(content.includes('INSTRUCTION_AUDIT_RECOMMENDED=$(_gsd_field "$INSTRUCTION_RESULT" audit_recommended)'));
-    assert.ok(content.includes('INSTRUCTION_AUDIT_MESSAGE=$(_gsd_field "$INSTRUCTION_RESULT" audit_message)'));
-    assert.ok(content.includes('Create or merge project instruction file before final commit'));
-    // Codex fix: workflow now uses $INSTRUCTION_FILE (AGENTS.md for Codex, CLAUDE.md otherwise)
-    assert.ok(content.includes('--files .planning/ROADMAP.md .planning/STATE.md .planning/REQUIREMENTS.md "$INSTRUCTION_FILE"'));
+    assert.ok(content.includes('INSTRUCTION_FILE="AGENTS.md"'));
+    assert.ok(content.includes('COMPAT_INSTRUCTION_FILE="CLAUDE.md"'));
+    assert.ok(content.includes('instruction-files status --raw'));
+    assert.ok(content.includes('instruction-files ensure-link --real "$INSTRUCTION_FILE" --link "$COMPAT_INSTRUCTION_FILE"'));
+    assert.ok(content.includes('instruction-files ensure-link --real "$COMPAT_INSTRUCTION_FILE" --link "$INSTRUCTION_FILE"'));
+    assert.ok(content.includes('generate-claude-md --output "$INSTRUCTION_FILE"'));
+    assert.ok(content.includes('INSTRUCTION_FILES_TO_COMMIT="$INSTRUCTION_FILE $COMPAT_INSTRUCTION_FILE"'));
+    assert.ok(content.includes('--files .planning/ROADMAP.md .planning/STATE.md .planning/REQUIREMENTS.md $INSTRUCTION_FILES_TO_COMMIT'));
   });
 
-  test('new-project artifacts reference instruction file variable', () => {
+  test('new-project docs describe AGENTS canonical plus CLAUDE compatibility alias', () => {
     const workflowContent = fs.readFileSync(workflowPath, 'utf-8');
     const commandsContent = fs.readFileSync(commandsPath, 'utf-8');
 
-    assert.ok(workflowContent.includes('create or merge the default GSD workflow-enforcement guidance'));
-    assert.ok(workflowContent.includes('| Project guide  | `$INSTRUCTION_FILE`'));
-    assert.ok(workflowContent.includes('- `$INSTRUCTION_FILE`'));
-    assert.ok(workflowContent.includes('created or merged with GSD workflow guidance'));
-    assert.ok(workflowContent.includes('**Audit note:** [INSTRUCTION_AUDIT_MESSAGE] Review `$INSTRUCTION_FILE` before proceeding.'));
+    assert.ok(workflowContent.includes('single-source-of-truth setup'));
+    assert.ok(workflowContent.includes('| Compatibility alias | `${FINAL_INSTRUCTION_LINK_FILE}` → `${FINAL_INSTRUCTION_REAL_FILE}` |'));
+    assert.ok(workflowContent.includes('- `AGENTS.md` (canonical instruction file created or refreshed by `new-project`)'));
+    assert.ok(workflowContent.includes('- `CLAUDE.md` (compatibility symlink to `AGENTS.md` when supported'));
+    assert.ok(workflowContent.includes('**Audit note:** [INSTRUCTION_AUDIT_MESSAGE] Review the instruction-file pair before proceeding.'));
     assert.ok(
-      workflowContent.indexOf('**Audit note:** [INSTRUCTION_AUDIT_MESSAGE] Review `$INSTRUCTION_FILE` before proceeding.')
+      workflowContent.indexOf('**Audit note:** [INSTRUCTION_AUDIT_MESSAGE] Review the instruction-file pair before proceeding.')
       < workflowContent.indexOf('AUTO-ADVANCING → DISCUSS PHASE 1')
     );
-    assert.ok(commandsContent.includes('instruction file'));
-    assert.ok(commandsContent.includes('prompts you to audit that file'));
-    assert.ok(commandsContent.includes('`AGENTS.md` for Codex'));
+    assert.ok(commandsContent.includes('canonical instruction file `AGENTS.md`'));
+    assert.ok(commandsContent.includes('`CLAUDE.md` as a compatibility symlink'));
+    assert.ok(commandsContent.includes('interactive mode offers a repair choice; `--auto` warns and does not rewrite the conflict'));
+  });
+
+  test('new-project workflow distinguishes interactive repair from auto warn-only behavior', () => {
+    const content = fs.readFileSync(workflowPath, 'utf-8');
+    assert.ok(content.includes('If `--auto`:'));
+    assert.ok(content.includes('GSD left both files as regular files because `--auto` does not rewrite ambiguous existing setups.'));
+    assert.ok(content.includes('Use AskUserQuestion:'));
+    assert.ok(content.includes('Use AGENTS.md as canonical'));
+    assert.ok(content.includes('Keep CLAUDE.md as canonical'));
+    assert.ok(content.includes('Leave both as regular files'));
   });
 });
 

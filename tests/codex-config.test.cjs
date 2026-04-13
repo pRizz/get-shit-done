@@ -246,6 +246,33 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: resolve"`;
     assert.ok(result.includes('$HOME/.codex/get-shit-done/bin/gsd-tools.cjs'), 'replaces $HOME/.claude/ with $HOME/.codex/');
     assert.ok(!result.includes('$HOME/.claude/'), 'no .claude paths remain');
   });
+
+  test('adds AGENTS canonical lookup with CLAUDE compatibility fallback', () => {
+    const input = `---
+name: gsd-executor
+description: Executes plans
+tools: Read
+---
+
+<project_context>
+**Project instructions:** Read \`./CLAUDE.md\` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
+
+**Project skills:** Check \`.claude/skills/\` or \`.agents/skills/\` directory if either exists:
+1. List available skills (subdirectories)
+2. Read \`SKILL.md\` for each skill (lightweight index ~130 lines)
+3. Load specific \`rules/*.md\` files as needed during implementation
+4. Do NOT load full \`AGENTS.md\` files (100KB+ context cost)
+5. Follow skill rules relevant to your current task
+
+**CLAUDE.md enforcement:** If \`./CLAUDE.md\` exists, treat its directives as hard constraints during execution.
+</project_context>`;
+
+    const result = convertClaudeAgentToCodexAgent(input);
+    assert.ok(result.includes('Prefer `./AGENTS.md` in the working directory.'), 'uses AGENTS.md as canonical instruction file');
+    assert.ok(result.includes('read `./CLAUDE.md` for compatibility with older repos'), 'keeps CLAUDE.md compatibility fallback');
+    assert.ok(result.includes('**Instruction-file enforcement:**'), 'rewrites enforcement block to instruction-file wording');
+    assert.ok(!result.includes('Do NOT load full `AGENTS.md` files'), 'removes stale AGENTS.md load-blocking instruction');
+  });
 });
 
 // ─── generateCodexAgentToml ─────────────────────────────────────────────────────
@@ -843,6 +870,41 @@ describe('installCodexConfig (integration)', () => {
     assert.ok(checkerToml.includes('sandbox_mode = "read-only"'), 'plan-checker is read-only');
   });
 
+  (hasAgents ? test : test.skip)('uses converted instruction fallback text in generated agent TOMLs', () => {
+    const { installCodexConfig } = require('../bin/install.js');
+    installCodexConfig(tmpTarget, agentsSrc);
+
+    const agentsDir = path.join(tmpTarget, 'agents');
+    const affectedAgents = [
+      'gsd-executor',
+      'gsd-plan-checker',
+      'gsd-verifier',
+      'gsd-code-reviewer',
+    ];
+
+    for (const agentName of affectedAgents) {
+      const toml = fs.readFileSync(path.join(agentsDir, `${agentName}.toml`), 'utf8');
+      assert.ok(toml.includes('Prefer `./AGENTS.md` in the working directory.'), `${agentName} uses AGENTS.md as canonical instruction file`);
+      assert.ok(toml.includes('read `./CLAUDE.md` for compatibility with older repos'), `${agentName} keeps CLAUDE.md fallback`);
+      assert.ok(!toml.includes('Read `./CLAUDE.md` if it exists in the working directory.'), `${agentName} does not keep stale CLAUDE-only instruction text`);
+      assert.ok(!toml.includes('Do NOT load full `AGENTS.md` files'), `${agentName} does not keep stale AGENTS blocking text`);
+    }
+  });
+
+  (hasAgents ? test : test.skip)('markdown conversion and generated TOML stay aligned on instruction fallback wording', () => {
+    const { installCodexConfig } = require('../bin/install.js');
+    installCodexConfig(tmpTarget, agentsSrc);
+
+    const sourceAgent = fs.readFileSync(path.join(agentsSrc, 'gsd-executor.md'), 'utf8');
+    const convertedAgent = convertClaudeAgentToCodexAgent(sourceAgent);
+    const executorToml = fs.readFileSync(path.join(tmpTarget, 'agents', 'gsd-executor.toml'), 'utf8');
+
+    assert.ok(convertedAgent.includes('Prefer `./AGENTS.md` in the working directory.'), 'converted markdown has AGENTS canonical lookup');
+    assert.ok(convertedAgent.includes('read `./CLAUDE.md` for compatibility with older repos'), 'converted markdown has CLAUDE fallback');
+    assert.ok(executorToml.includes('Prefer `./AGENTS.md` in the working directory.'), 'generated TOML has AGENTS canonical lookup');
+    assert.ok(executorToml.includes('read `./CLAUDE.md` for compatibility with older repos'), 'generated TOML has CLAUDE fallback');
+  });
+
   (hasAgents ? test : test.skip)('generated Codex debugger agent is free of Claude runtime-root paths', () => {
     const { installCodexConfig } = require('../bin/install.js');
     installCodexConfig(tmpTarget, agentsSrc);
@@ -918,6 +980,24 @@ describe('Codex install hook configuration (e2e)', () => {
 
     const leaks = scanCodexManagedClaudeRuntimeLeaks(codexHome);
     assert.deepStrictEqual(leaks, [], 'managed Codex install output should not retain Claude runtime-root leaks');
+  });
+
+  test('installed Codex workflows warn when no root instruction file exists and avoid hardcoded instruction reads', () => {
+    runCodexInstall(codexHome);
+
+    const planWorkflow = fs.readFileSync(path.join(codexHome, 'get-shit-done', 'workflows', 'plan-phase.md'), 'utf8');
+    const executeWorkflow = fs.readFileSync(path.join(codexHome, 'get-shit-done', 'workflows', 'execute-phase.md'), 'utf8');
+
+    assert.ok(planWorkflow.includes('PROJECT_INSTRUCTION_FILE="./AGENTS.md"'), 'plan-phase resolves AGENTS.md first');
+    assert.ok(planWorkflow.includes('PROJECT_INSTRUCTION_FILE="./CLAUDE.md"'), 'plan-phase falls back to CLAUDE.md');
+    assert.ok(planWorkflow.includes('No root project instruction file found (expected AGENTS.md or CLAUDE.md).'), 'plan-phase warns when no root instruction file exists');
+    assert.ok(planWorkflow.includes('Prefer the root project instruction file resolved during preflight'), 'plan-phase passes generic instruction lookup guidance to subagents');
+
+    assert.ok(executeWorkflow.includes('PROJECT_INSTRUCTION_FILE="./AGENTS.md"'), 'execute-phase resolves AGENTS.md first');
+    assert.ok(executeWorkflow.includes('PROJECT_INSTRUCTION_FILE="./CLAUDE.md"'), 'execute-phase falls back to CLAUDE.md');
+    assert.ok(executeWorkflow.includes('No root project instruction file found (expected AGENTS.md or CLAUDE.md).'), 'execute-phase warns when no root instruction file exists');
+    assert.ok(executeWorkflow.includes('Prefer the root project instruction file resolved during preflight'), 'execute-phase passes generic instruction lookup guidance to executors');
+    assert.ok(!executeWorkflow.includes('- ./AGENTS.md (Project instructions, if exists'), 'execute-phase does not hardcode a possibly-missing instruction file into files_to_read');
   });
 
   test('re-install does not warn on stale managed leaks that are overwritten during install', () => {

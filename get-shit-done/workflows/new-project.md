@@ -66,28 +66,25 @@ AGENT_SKILLS_ROADMAPPER=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" a
 
 Parse JSON for: `researcher_model`, `synthesizer_model`, `roadmapper_model`, `commit_docs`, `project_exists`, `has_codebase_map`, `planning_exists`, `has_existing_code`, `has_package_file`, `is_brownfield`, `needs_codebase_map`, `has_git`, `project_path`.
 
-**Detect runtime and set instruction file name:**
+**Set canonical and compatibility instruction files:**
 
-Derive `RUNTIME` from the invoking prompt's `execution_context` path:
-- Path contains `/.codex/` → `RUNTIME=codex`
-- Path contains `/.gemini/` → `RUNTIME=gemini`
-- Path contains `/.config/opencode/` or `/.opencode/` → `RUNTIME=opencode`
-- Otherwise → `RUNTIME=claude`
+New projects always treat `AGENTS.md` as the canonical root instruction file.
+`CLAUDE.md` is the compatibility alias for older Claude-first repos and runtimes.
 
-If `execution_context` path is not available, fall back to env vars:
+Set instruction file variables:
 ```bash
-if [ -n "$CODEX_HOME" ]; then RUNTIME="codex"
-elif [ -n "$GEMINI_CONFIG_DIR" ]; then RUNTIME="gemini"
-elif [ -n "$OPENCODE_CONFIG_DIR" ] || [ -n "$OPENCODE_CONFIG" ]; then RUNTIME="opencode"
-else RUNTIME="claude"; fi
+INSTRUCTION_FILE="AGENTS.md"
+COMPAT_INSTRUCTION_FILE="CLAUDE.md"
+INSTRUCTION_FILES_TO_COMMIT="$INSTRUCTION_FILE"
 ```
 
-Set the instruction file variable:
+Inspect any pre-existing instruction file state before reconciliation:
 ```bash
-if [ "$RUNTIME" = "codex" ]; then INSTRUCTION_FILE="AGENTS.md"; else INSTRUCTION_FILE="CLAUDE.md"; fi
+INSTRUCTION_STATUS=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" instruction-files status --raw)
+if [[ "$INSTRUCTION_STATUS" == @file:* ]]; then INSTRUCTION_STATUS=$(cat "${INSTRUCTION_STATUS#@file:}"); fi
 ```
 
-All subsequent references to the project instruction file use `$INSTRUCTION_FILE`.
+Extract from JSON: `state`, `healthy`, `real_file`, `link_file`, `message`.
 
 **If `project_exists` is true:** Error — project already initialized. Use `/gsd-progress`.
 
@@ -1129,22 +1126,138 @@ Use AskUserQuestion:
 
 **If "Review full file":** Display raw `cat .planning/ROADMAP.md`, then re-ask.
 
-**Create or merge project instruction file before final commit:**
+**Create or merge the canonical instruction file and reconcile the compatibility alias before final commit:**
 
 ```bash
 _gsd_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
-INSTRUCTION_RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md --output "$INSTRUCTION_FILE")
+INSTRUCTION_STATUS=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" instruction-files status --raw)
+if [[ "$INSTRUCTION_STATUS" == @file:* ]]; then INSTRUCTION_STATUS=$(cat "${INSTRUCTION_STATUS#@file:}"); fi
+INSTRUCTION_STATE=$(_gsd_field "$INSTRUCTION_STATUS" state)
+INSTRUCTION_WARNING=""
+INSTRUCTION_LINK_NOTE=""
+```
+
+Handle each `INSTRUCTION_STATE` exactly as follows:
+
+**`none`**
+1. Run:
+   ```bash
+   INSTRUCTION_RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md --output "$INSTRUCTION_FILE")
+   node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" instruction-files ensure-link --real "$INSTRUCTION_FILE" --link "$COMPAT_INSTRUCTION_FILE"
+   ```
+2. If symlink creation fails: STOP with blocker text explaining that GSD will not create a duplicate regular file when the alias symlink cannot be created.
+
+**`agents_only`**
+1. Run:
+   ```bash
+   INSTRUCTION_RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md --output "$INSTRUCTION_FILE")
+   node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" instruction-files ensure-link --real "$INSTRUCTION_FILE" --link "$COMPAT_INSTRUCTION_FILE"
+   ```
+2. Same fail-closed rule as `none`.
+
+**`linked_ok`**
+1. Run:
+   ```bash
+   INSTRUCTION_RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md --output "$INSTRUCTION_FILE")
+   ```
+2. Do NOT rewrite the existing healthy link direction.
+3. Set `INSTRUCTION_LINK_NOTE` from the final status so the summary says which file is real and which is the alias.
+
+**`claude_only`**
+
+If `--auto`:
+- Run:
+  ```bash
+  INSTRUCTION_RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md --output "$INSTRUCTION_FILE")
+  ```
+- Set `INSTRUCTION_WARNING` to explain that `CLAUDE.md` already existed, `AGENTS.md` was created as the new canonical file, and GSD left both files as regular files because `--auto` does not rewrite ambiguous existing setups.
+
+If interactive:
+- Explain the benefits of a single-source-of-truth setup: one file to update, less rule drift, and both `AGENTS.md` and `CLAUDE.md` entrypoints remain available through a symlink.
+- Use AskUserQuestion:
+  - header: `Instruction Files`
+  - question: `CLAUDE.md exists but AGENTS.md does not. Which file should remain the real instruction file?`
+  - options:
+    - `Use AGENTS.md as canonical` — Create or refresh `AGENTS.md`, then replace `CLAUDE.md` with a symlink to `AGENTS.md` (Recommended)
+    - `Keep CLAUDE.md as canonical` — Create `AGENTS.md` as a symlink to `CLAUDE.md`; GSD will then write through `AGENTS.md` into `CLAUDE.md`
+    - `Leave both as regular files` — Create `AGENTS.md` but keep `CLAUDE.md` unchanged; warn that the two files can drift
+- Apply the choice:
+  - Option 1:
+    ```bash
+    INSTRUCTION_RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md --output "$INSTRUCTION_FILE")
+    node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" instruction-files ensure-link --real "$INSTRUCTION_FILE" --link "$COMPAT_INSTRUCTION_FILE" --replace-existing
+    ```
+  - Option 2:
+    ```bash
+    node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" instruction-files ensure-link --real "$COMPAT_INSTRUCTION_FILE" --link "$INSTRUCTION_FILE"
+    INSTRUCTION_RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md --output "$INSTRUCTION_FILE")
+    ```
+  - Option 3:
+    ```bash
+    INSTRUCTION_RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md --output "$INSTRUCTION_FILE")
+    ```
+    Set `INSTRUCTION_WARNING` to explain that both files were kept as regular files on purpose and may drift.
+
+**`dual_regular`** or **`broken_or_unexpected_link`**
+
+If `--auto`:
+- Run:
+  ```bash
+  INSTRUCTION_RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md --output "$INSTRUCTION_FILE")
+  ```
+- Set `INSTRUCTION_WARNING` to explain that GSD refreshed `AGENTS.md` but left the existing conflicting file setup unchanged because `--auto` does not rewrite ambiguous instruction-file states.
+
+If interactive:
+- Explain the same single-source-of-truth benefits as above.
+- Use AskUserQuestion:
+  - header: `Instruction Files`
+  - question: `AGENTS.md and CLAUDE.md already exist, but they are not a healthy symlink pair. Which file should remain the real instruction file?`
+  - options:
+    - `Keep AGENTS.md real` — Refresh `AGENTS.md`, then replace `CLAUDE.md` with a symlink to it (Recommended)
+    - `Keep CLAUDE.md real` — Replace `AGENTS.md` with a symlink to `CLAUDE.md`, then write through `AGENTS.md`
+    - `Leave both as regular files` — Refresh `AGENTS.md`, keep the other file unchanged, and warn about drift
+- Apply the choice:
+  - Option 1:
+    ```bash
+    INSTRUCTION_RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md --output "$INSTRUCTION_FILE")
+    node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" instruction-files ensure-link --real "$INSTRUCTION_FILE" --link "$COMPAT_INSTRUCTION_FILE" --replace-existing
+    ```
+  - Option 2:
+    ```bash
+    node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" instruction-files ensure-link --real "$COMPAT_INSTRUCTION_FILE" --link "$INSTRUCTION_FILE" --replace-existing
+    INSTRUCTION_RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md --output "$INSTRUCTION_FILE")
+    ```
+  - Option 3:
+    ```bash
+    INSTRUCTION_RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md --output "$INSTRUCTION_FILE")
+    ```
+    Set `INSTRUCTION_WARNING` to explain that both files were intentionally left unlinked.
+
+After the chosen path runs, normalize the result variables:
+
+```bash
 if [[ "$INSTRUCTION_RESULT" == @file:* ]]; then INSTRUCTION_RESULT=$(cat "${INSTRUCTION_RESULT#@file:}"); fi
 INSTRUCTION_AUDIT_RECOMMENDED=$(_gsd_field "$INSTRUCTION_RESULT" audit_recommended)
 INSTRUCTION_AUDIT_MESSAGE=$(_gsd_field "$INSTRUCTION_RESULT" audit_message)
+FINAL_INSTRUCTION_STATUS=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" instruction-files status --raw)
+if [[ "$FINAL_INSTRUCTION_STATUS" == @file:* ]]; then FINAL_INSTRUCTION_STATUS=$(cat "${FINAL_INSTRUCTION_STATUS#@file:}"); fi
+FINAL_INSTRUCTION_STATE=$(_gsd_field "$FINAL_INSTRUCTION_STATUS" state)
+FINAL_INSTRUCTION_REAL_FILE=$(_gsd_field "$FINAL_INSTRUCTION_STATUS" real_file)
+FINAL_INSTRUCTION_LINK_FILE=$(_gsd_field "$FINAL_INSTRUCTION_STATUS" link_file)
+if [[ "$FINAL_INSTRUCTION_STATE" == "linked_ok" ]]; then
+  INSTRUCTION_LINK_NOTE="${FINAL_INSTRUCTION_LINK_FILE} -> ${FINAL_INSTRUCTION_REAL_FILE}"
+fi
+if [[ -e "$COMPAT_INSTRUCTION_FILE" || -L "$COMPAT_INSTRUCTION_FILE" ]]; then
+  INSTRUCTION_FILES_TO_COMMIT="$INSTRUCTION_FILE $COMPAT_INSTRUCTION_FILE"
+fi
 ```
 
-This ensures new projects create or merge the default GSD workflow-enforcement guidance and current project context into `$INSTRUCTION_FILE`, while preserving non-GSD content already present in the file. If GSD appended managed sections into an already-populated root instruction file, the completion summary includes an audit prompt.
+This keeps `AGENTS.md` as the default GSD entrypoint for new projects, adds `CLAUDE.md` as a compatibility alias when safe, and avoids silently rewriting ambiguous existing setups. If GSD appended managed sections into an already-populated instruction file, the completion summary includes an audit prompt.
 
 **Commit roadmap (after approval or auto mode):**
 
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: create roadmap ([N] phases)" --files .planning/ROADMAP.md .planning/STATE.md .planning/REQUIREMENTS.md "$INSTRUCTION_FILE"
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: create roadmap ([N] phases)" --files .planning/ROADMAP.md .planning/STATE.md .planning/REQUIREMENTS.md $INSTRUCTION_FILES_TO_COMMIT
 ```
 
 ## 9. Done
@@ -1165,11 +1278,23 @@ Present completion summary:
 | Research       | `.planning/research/`       |
 | Requirements   | `.planning/REQUIREMENTS.md` |
 | Roadmap        | `.planning/ROADMAP.md`      |
-| Project guide  | `$INSTRUCTION_FILE`         |
+| Project guide  | `${FINAL_INSTRUCTION_REAL_FILE:-$INSTRUCTION_FILE}` |
+
+If `FINAL_INSTRUCTION_STATE` is `linked_ok`, include:
+
+| Compatibility alias | `${FINAL_INSTRUCTION_LINK_FILE}` → `${FINAL_INSTRUCTION_REAL_FILE}` |
 
 If `INSTRUCTION_AUDIT_RECOMMENDED` is `true`, include:
 
-**Audit note:** [INSTRUCTION_AUDIT_MESSAGE] Review `$INSTRUCTION_FILE` before proceeding.
+**Audit note:** [INSTRUCTION_AUDIT_MESSAGE] Review the instruction-file pair before proceeding.
+
+If `INSTRUCTION_LINK_NOTE` is non-empty, include:
+
+**Instruction link:** [INSTRUCTION_LINK_NOTE]
+
+If `INSTRUCTION_WARNING` is non-empty, include:
+
+**Instruction warning:** [INSTRUCTION_WARNING]
 
 **[N] phases** | **[X] requirements** | Ready to build ✓
 ```
@@ -1257,7 +1382,8 @@ PHASE1_HAS_UI=$(echo "$PHASE1_SECTION" | grep -qi "UI hint.*yes" && echo "true" 
 - `.planning/REQUIREMENTS.md`
 - `.planning/ROADMAP.md`
 - `.planning/STATE.md`
-- `$INSTRUCTION_FILE` (`AGENTS.md` for Codex, `CLAUDE.md` for all other runtimes)
+- `AGENTS.md` (canonical instruction file created or refreshed by `new-project`)
+- `CLAUDE.md` (compatibility symlink to `AGENTS.md` when supported, or pre-existing file left in place when the user or `--auto` chose not to reconcile)
 
 </output>
 
@@ -1279,7 +1405,8 @@ PHASE1_HAS_UI=$(echo "$PHASE1_SECTION" | grep -qi "UI hint.*yes" && echo "true" 
 - [ ] ROADMAP.md created with phases, requirement mappings, success criteria
 - [ ] STATE.md initialized
 - [ ] REQUIREMENTS.md traceability updated
-- [ ] `$INSTRUCTION_FILE` created or merged with GSD workflow guidance (AGENTS.md for Codex, CLAUDE.md otherwise)
+- [ ] `AGENTS.md` created or merged with GSD workflow guidance
+- [ ] `CLAUDE.md` symlinked to `AGENTS.md` when safe, or a clear warning emitted when the existing setup was intentionally left unlinked
 - [ ] User knows next step is `/gsd-discuss-phase 1`
 
 **Atomic commits:** Each phase commits its artifacts immediately. If context is lost, artifacts persist.

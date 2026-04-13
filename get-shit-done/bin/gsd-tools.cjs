@@ -26,6 +26,9 @@
  *   current-timestamp [format]         Get timestamp (full|date|filename)
  *   list-todos [area]                  Count and enumerate pending todos
  *   verify-path-exists <path>          Check file/directory existence
+ *   instruction-files status           Inspect AGENTS.md / CLAUDE.md state
+ *   instruction-files ensure-link      Create a safe compatibility symlink
+ *     --real AGENTS.md|CLAUDE.md --link AGENTS.md|CLAUDE.md [--replace-existing]
  *   config-ensure-section              Initialize .planning/config.json
  *   history-digest                     Aggregate all SUMMARY.md data
  *   summary-extract <path> [--fields]  Extract structured data from SUMMARY.md
@@ -177,6 +180,7 @@ const init = require('./lib/init.cjs');
 const frontmatter = require('./lib/frontmatter.cjs');
 const profilePipeline = require('./lib/profile-pipeline.cjs');
 const profileOutput = require('./lib/profile-output.cjs');
+const instructionFiles = require('./lib/instruction-files.cjs');
 const workstream = require('./lib/workstream.cjs');
 const docs = require('./lib/docs.cjs');
 const learnings = require('./lib/learnings.cjs');
@@ -314,7 +318,7 @@ async function main() {
   const command = args[0];
 
   if (!command) {
-    error('Usage: gsd-tools <command> [args] [--raw] [--pick <field>] [--cwd <path>] [--ws <name>]\nCommands: state, resolve-model, find-phase, commit, verify-summary, verify, frontmatter, template, generate-slug, current-timestamp, list-todos, verify-path-exists, config-ensure-section, config-new-project, init, yolo-ralph, workstream, docs-init');
+    error('Usage: gsd-tools <command> [args] [--raw] [--pick <field>] [--cwd <path>] [--ws <name>]\nCommands: state, resolve-model, find-phase, commit, verify-summary, verify, frontmatter, template, generate-slug, current-timestamp, list-todos, verify-path-exists, instruction-files, config-ensure-section, config-new-project, init, yolo-ralph, workstream, docs-init');
   }
 
   // Reject flags that are never valid for any gsd-tools command. AI agents
@@ -991,6 +995,26 @@ async function runCommand(command, args, cwd, raw, defaultValue) {
       const autoFlag = args.includes('--auto');
       const forceFlag = args.includes('--force');
       profileOutput.cmdGenerateClaudeMd(cwd, { output: outputPath, auto: autoFlag, force: forceFlag }, raw);
+      break;
+    }
+
+    case 'instruction-files': {
+      const subcommand = args[1];
+      if (subcommand === 'status') {
+        instructionFiles.cmdInstructionFilesStatus(cwd, raw);
+      } else if (subcommand === 'ensure-link') {
+        const parsed = parseNamedArgs(args, ['real', 'link'], ['replace-existing']);
+        if (!parsed.real || !parsed.link) {
+          error('Usage: gsd-tools instruction-files ensure-link --real AGENTS.md|CLAUDE.md --link AGENTS.md|CLAUDE.md [--replace-existing]');
+        }
+        instructionFiles.cmdInstructionFilesEnsureLink(cwd, {
+          real: parsed.real,
+          link: parsed.link,
+          replaceExisting: parsed['replace-existing'],
+        }, raw);
+      } else {
+        error('Unknown instruction-files subcommand. Available: status, ensure-link');
+      }
       break;
     }
 

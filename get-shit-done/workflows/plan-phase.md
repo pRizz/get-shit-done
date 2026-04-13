@@ -44,6 +44,21 @@ Parse JSON for: `researcher_model`, `planner_model`, `checker_model`, `research_
 
 **If `planning_exists` is false:** Error — run `/gsd-new-project` first.
 
+Resolve the root project instruction file once before spawning any subagents:
+
+```bash
+if [ -f ./AGENTS.md ]; then
+  PROJECT_INSTRUCTION_FILE="./AGENTS.md"
+elif [ -f ./CLAUDE.md ]; then
+  PROJECT_INSTRUCTION_FILE="./CLAUDE.md"
+else
+  PROJECT_INSTRUCTION_FILE=""
+fi
+```
+
+If `PROJECT_INSTRUCTION_FILE` is empty, warn:
+`No root project instruction file found (expected AGENTS.md or CLAUDE.md). Spawned agents will continue without repo-specific rules.`
+
 ## 2. Parse and Normalize Arguments
 
 Extract from $ARGUMENTS: phase number (integer or decimal like `2.1`), flags (`--research`, `--skip-research`, `--gaps`, `--skip-verify`, `--prd <filepath>`, `--reviews`, `--text`), and optional lifecycle flags (`--lifecycle-id <id>`, `--lifecycle-mode <mode>`).
@@ -353,7 +368,7 @@ ${AGENT_SKILLS_RESEARCHER}
 **Phase description:** {phase_description}
 **Phase requirement IDs (MUST address):** {phase_req_ids}
 
-**Project instructions:** Read ./CLAUDE.md if exists — follow project-specific guidelines
+**Project instructions:** Prefer the root project instruction file resolved during preflight (`./AGENTS.md` first, `./CLAUDE.md` fallback). If neither file exists, warn and continue without repo-specific rules. Follow project-specific guidelines from whichever file exists.
 **Project skills:** Check .claude/skills/ or .agents/skills/ directory (if either exists) — read SKILL.md files, research should account for project skill patterns
 </additional_context>
 
@@ -653,7 +668,7 @@ ${AGENT_SKILLS_PLANNER}
 
 **Phase requirement IDs (every ID MUST appear in a plan's `requirements` field):** {phase_req_ids}
 
-**Project instructions:** Read ./CLAUDE.md if exists — follow project-specific guidelines
+**Project instructions:** Prefer the root project instruction file resolved during preflight (`./AGENTS.md` first, `./CLAUDE.md` fallback). If neither file exists, warn and continue without repo-specific rules. Follow project-specific guidelines from whichever file exists.
 **Project skills:** Check .claude/skills/ or .agents/skills/ directory (if either exists) — read SKILL.md files, plans should account for project skill rules
 
 </planning_context>
@@ -786,7 +801,7 @@ ${AGENT_SKILLS_CHECKER}
 
 **Phase requirement IDs (MUST ALL be covered):** {phase_req_ids}
 
-**Project instructions:** Read ./CLAUDE.md if exists — verify plans honor project guidelines
+**Project instructions:** Prefer the root project instruction file resolved during preflight (`./AGENTS.md` first, `./CLAUDE.md` fallback). If neither file exists, warn and continue without repo-specific rules. Verify plans honor project guidelines from whichever file exists.
 **Project skills:** Check .claude/skills/ or .agents/skills/ directory (if either exists) — verify plans account for project skill rules
 </verification_context>
 

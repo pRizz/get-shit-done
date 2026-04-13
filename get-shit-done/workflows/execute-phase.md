@@ -97,6 +97,21 @@ When `CONTEXT_WINDOW >= 500000` (1M-class models), subagent prompts include rich
 **If `plan_count` is 0:** Error — no plans found in phase.
 **If `state_exists` is false but `.planning/` exists:** Offer reconstruct or continue.
 
+Resolve the root project instruction file once before spawning any subagents:
+
+```bash
+if [ -f ./AGENTS.md ]; then
+  PROJECT_INSTRUCTION_FILE="./AGENTS.md"
+elif [ -f ./CLAUDE.md ]; then
+  PROJECT_INSTRUCTION_FILE="./CLAUDE.md"
+else
+  PROJECT_INSTRUCTION_FILE=""
+fi
+```
+
+If `PROJECT_INSTRUCTION_FILE` is empty, warn:
+`No root project instruction file found (expected AGENTS.md or CLAUDE.md). Spawned agents will continue without repo-specific rules.`
+
 **Fail-closed lifecycle check (required before any execution):**
 
 Run the lifecycle validator:
@@ -416,14 +431,15 @@ Execute each selected wave in sequence. Within a wave: parallel if `PARALLELIZAT
        - ${phase_dir}/*-RESEARCH.md (Technical research — pitfalls and patterns to follow)
        - ${prior_wave_summaries} (SUMMARY.md files from earlier waves in this phase — what was already built)
        ` : ''}
-       - ./CLAUDE.md (Project instructions, if exists — follow project-specific guidelines and coding conventions)
        - .claude/skills/ or .agents/skills/ (Project skills, if either exists — list skills, read SKILL.md for each, follow relevant rules during implementation)
        </files_to_read>
+
+       **Project instructions:** Prefer the root project instruction file resolved during preflight (`./AGENTS.md` first, `./CLAUDE.md` fallback). If neither file exists, warn and continue without repo-specific rules. Follow project-specific guidelines from whichever file exists.
 
        ${AGENT_SKILLS}
 
        <mcp_tools>
-       If CLAUDE.md or project instructions reference MCP tools (e.g. jCodeMunch, context7,
+       If the root project instruction file or other project instructions reference MCP tools (e.g. jCodeMunch, context7,
        or other MCP servers), prefer those tools over Grep/Glob for code navigation when available.
        MCP tools often save significant tokens by providing structured code indexes.
        Check tool availability first — if MCP tools are not accessible, fall back to Grep/Glob.

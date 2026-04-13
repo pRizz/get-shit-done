@@ -1448,6 +1448,55 @@ function convertClaudeToTraeMarkdown(content) {
   return converted;
 }
 
+function addCodexInstructionFallback(content) {
+  let converted = content;
+  const projectInstructionFallback =
+    'Prefer `./AGENTS.md` in the working directory. If it does not exist, read `./CLAUDE.md` for compatibility with older repos. If neither file exists, warn that no root project instruction file was found and continue without repo-specific rules.';
+
+  converted = converted.replace(
+    /if \[ -f \.\/AGENTS\.md \]; then\s+PROJECT_INSTRUCTION_FILE="\.\/AGENTS\.md"\s+elif \[ -f \.\/AGENTS\.md \]; then\s+PROJECT_INSTRUCTION_FILE="\.\/AGENTS\.md"/g,
+    'if [ -f ./AGENTS.md ]; then\n  PROJECT_INSTRUCTION_FILE="./AGENTS.md"\nelif [ -f ./CLAUDE.md ]; then\n  PROJECT_INSTRUCTION_FILE="./CLAUDE.md"'
+  );
+  converted = converted.replace(
+    /expected AGENTS\.md or AGENTS\.md/g,
+    'expected AGENTS.md or CLAUDE.md'
+  );
+  converted = converted.replace(
+    /\(`\.\/AGENTS\.md` first, `\.\/AGENTS\.md` fallback\)/g,
+    '(`./AGENTS.md` first, `./CLAUDE.md` fallback)'
+  );
+  converted = converted.replace(
+    /\*\*Project instructions:\*\* Read `\.\/AGENTS\.md` if it exists in the working directory\. Follow all ([^\n]+)/g,
+    `**Project instructions:** ${projectInstructionFallback} Follow all $1`
+  );
+  converted = converted.replace(
+    /\*\*Project instructions:\*\* Read \.\/AGENTS\.md if exists — follow project-specific guidelines/g,
+    `**Project instructions:** ${projectInstructionFallback} Follow project-specific guidelines from whichever file exists.`
+  );
+  converted = converted.replace(
+    /\*\*Project instructions:\*\* Read \.\/AGENTS\.md if exists — verify plans honor project guidelines/g,
+    `**Project instructions:** ${projectInstructionFallback} Verify plans honor project guidelines from whichever file exists.`
+  );
+  converted = converted.replace(
+    /\*\*AGENTS\.md enforcement:\*\* If `\.\/AGENTS\.md` exists, /g,
+    '**Instruction-file enforcement:** Prefer `./AGENTS.md`. If it does not exist, use `./CLAUDE.md` for compatibility with older repos. If neither file exists, warn and continue without repo-specific rules. If either file exists, '
+  );
+  converted = converted.replace(
+    /If AGENTS\.md or project instructions reference MCP tools/g,
+    'If the root project instruction file or other project instructions reference MCP tools'
+  );
+  converted = converted.replace(
+    /\*\*DO consider project conventions\*\* from AGENTS\.md/g,
+    '**DO consider project conventions** from the root project instruction file'
+  );
+  converted = converted.replace(
+    /\*\*DO respect AGENTS\.md project conventions\*\*/g,
+    '**DO respect root project instruction file conventions**'
+  );
+
+  return converted;
+}
+
 function convertClaudeCommandToTraeSkill(content, skillName) {
   const converted = convertClaudeToTraeMarkdown(content);
   const { frontmatter, body } = extractFrontmatterAndBody(converted);
@@ -1494,6 +1543,7 @@ function convertClaudeToCodexMarkdown(content) {
   converted = converted.replace(/\.\/\.claude\//g, './.codex/');
   // Runtime-neutral agent name replacement (#766)
   converted = neutralizeAgentReferences(converted, 'AGENTS.md');
+  converted = addCodexInstructionFallback(converted);
   return converted;
 }
 
@@ -2914,6 +2964,9 @@ function installCodexConfig(targetDir, agentsSrc) {
     // Replace full .claude/get-shit-done prefix so path resolves to codex GSD install
     content = content.replace(/~\/\.claude\/get-shit-done\//g, codexGsdPath);
     content = content.replace(/\$HOME\/\.claude\/get-shit-done\//g, codexGsdPath);
+    content = processAttribution(content, getCommitAttribution('codex'));
+    content = convertClaudeAgentToCodexAgent(content);
+
     const { frontmatter } = extractFrontmatterAndBody(content);
     const name = extractFrontmatterField(frontmatter, 'name') || file.replace('.md', '');
     const description = extractFrontmatterField(frontmatter, 'description') || '';

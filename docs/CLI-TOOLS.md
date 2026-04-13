@@ -6,10 +6,10 @@
 
 ## Overview
 
-`gsd-tools.cjs` is a Node.js CLI utility that replaces repetitive inline bash patterns across GSD's ~50 command, workflow, and agent files. It centralizes: config parsing, model resolution, phase lookup, git commits, summary verification, state management, and template operations.
+`gsd-tools.cjs` is a Node.js CLI utility that replaces repetitive inline bash patterns across GSD's ~50 command, workflow, and agent files. It centralizes: config parsing, model resolution, phase lookup, git commits, summary verification, state management, template operations, and instruction-file reconciliation.
 
 **Location:** `get-shit-done/bin/gsd-tools.cjs`
-**Modules:** 16 domain modules in `get-shit-done/bin/lib/`
+**Modules:** 17 domain modules in `get-shit-done/bin/lib/`
 
 **Usage:**
 ```bash
@@ -330,6 +330,12 @@ node gsd-tools.cjs list-todos [area]
 
 # Check file/directory existence
 node gsd-tools.cjs verify-path-exists <path>
+
+# Inspect AGENTS.md / CLAUDE.md status
+node gsd-tools.cjs instruction-files status
+
+# Create a compatibility symlink safely
+node gsd-tools.cjs instruction-files ensure-link --real AGENTS.md --link CLAUDE.md [--replace-existing]
 
 # Aggregate all SUMMARY.md data
 node gsd-tools.cjs history-digest
