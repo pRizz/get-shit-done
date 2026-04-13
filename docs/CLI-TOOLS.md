@@ -9,7 +9,7 @@
 `gsd-tools.cjs` is a Node.js CLI utility that replaces repetitive inline bash patterns across GSD's ~50 command, workflow, and agent files. It centralizes: config parsing, model resolution, phase lookup, git commits, summary verification, state management, and template operations.
 
 **Location:** `get-shit-done/bin/gsd-tools.cjs`
-**Modules:** 15 domain modules in `get-shit-done/bin/lib/`
+**Modules:** 16 domain modules in `get-shit-done/bin/lib/`
 
 **Usage:**
 ```bash
@@ -144,6 +144,22 @@ node gsd-tools.cjs config-get <key>
 # Set model profile
 node gsd-tools.cjs config-set-model-profile <profile>
 ```
+
+## Loop Commands
+
+Drive higher-level orchestration loops from the low-level CLI layer.
+
+```bash
+# Launch repeated fresh Codex runs of the strict-push yolo wrapper
+node gsd-tools.cjs yolo-ralph [--max-iterations N] [--sleep-seconds N]
+```
+
+Behavior:
+- Requires a Git repo plus initialized GSD planning assets
+- Requires Codex CLI on `PATH` and the `gsd-yolo-discuss-plan-execute-commit-and-push` Codex skill
+- Launches `codex exec --dangerously-bypass-approvals-and-sandbox ... '$gsd-yolo-discuss-plan-execute-commit-and-push'`
+- Persists iteration logs under `.planning/tmp/yolo-ralph/run-<timestamp>/`
+- Stops on the first `failed` or `stalled` iteration, or when milestone lifecycle work is next
 
 ---
 

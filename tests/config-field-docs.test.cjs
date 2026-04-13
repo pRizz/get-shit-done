@@ -75,6 +75,8 @@ describe('config-field-docs', () => {
       nyquist_validation: 'workflow.nyquist_validation',
       text_mode: 'workflow.text_mode',
       subagent_timeout: 'workflow.subagent_timeout',
+      yolo_ralph_max_iterations: 'workflow.yolo_ralph_max_iterations',
+      yolo_ralph_sleep_seconds: 'workflow.yolo_ralph_sleep_seconds',
       branching_strategy: 'git.branching_strategy',
       phase_branch_template: 'git.phase_branch_template',
       milestone_branch_template: 'git.milestone_branch_template',

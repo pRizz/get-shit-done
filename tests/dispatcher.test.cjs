@@ -12,7 +12,7 @@ const { test, describe, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
-const { runGsdTools, createTempProject, cleanup } = require('./helpers.cjs');
+const { runGsdTools, createTempProject, createTempGitProject, cleanup } = require('./helpers.cjs');
 
 // ─── Dispatcher Error Paths ──────────────────────────────────────────────────
 
@@ -157,6 +157,28 @@ describe('dispatcher routing branches', () => {
 
   beforeEach(() => {
     tmpDir = createTempProject();
+  });
+
+  test('yolo-ralph routes to the dedicated command handler', () => {
+    const gitProject = createTempGitProject();
+    try {
+      const binDir = path.join(gitProject, 'bin-stub');
+      fs.mkdirSync(binDir, { recursive: true });
+      const fakeCodexPath = path.join(binDir, 'codex');
+      fs.writeFileSync(fakeCodexPath, '#!/usr/bin/env bash\nexit 0\n', 'utf8');
+      fs.chmodSync(fakeCodexPath, 0o755);
+
+      const result = runGsdTools(['yolo-ralph', '--max-iterations', '1'], gitProject, {
+        PATH: `${binDir}${path.delimiter}${process.env.PATH || ''}`,
+      });
+      assert.strictEqual(result.success, false, 'Expected preflight failure for missing planning assets');
+      assert.ok(
+        result.error.includes('/gsd-new-project'),
+        `Expected yolo-ralph to hit its planning-assets preflight, got: ${result.error}`
+      );
+    } finally {
+      cleanup(gitProject);
+    }
   });
 
   afterEach(() => {

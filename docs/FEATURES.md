@@ -2303,3 +2303,21 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 - REQ-PUSHALL-02: The command MUST delegate directly to `/gsd-autonomous --yolo --push-after-phase`
 - REQ-PUSHALL-03: "All" MUST mean all remaining incomplete phases in the current active milestone/ROADMAP context
 - REQ-PUSHALL-04: The command MUST preview the remaining incomplete phase range and `discuss → plan → execute → commit/push` steps before delegation
+
+---
+
+### 111. Yolo Ralph Codex Loop Driver
+
+**Command:** `/gsd-yolo-ralph`
+
+**Purpose:** Repeatedly launch fresh Codex runs of the strict-push yolo wrapper until milestone lifecycle work or a blocker is reached.
+
+**Requirements:**
+- REQ-RALPH-01: The real execution surface MUST be `gsd-tools.cjs yolo-ralph`; the slash command MUST stay a thin wrapper
+- REQ-RALPH-02: Each iteration MUST launch a fresh Codex process targeting `$gsd-yolo-discuss-plan-execute-commit-and-push`
+- REQ-RALPH-03: The spawned Codex process MUST use `--dangerously-bypass-approvals-and-sandbox`
+- REQ-RALPH-04: Default config MUST be `workflow.yolo_ralph_max_iterations = 20` and `workflow.yolo_ralph_sleep_seconds = 10`
+- REQ-RALPH-05: CLI flags MUST override the config defaults per run
+- REQ-RALPH-06: The loop MUST stop immediately on the first `failed` or `stalled` iteration
+- REQ-RALPH-07: The loop MUST stop immediately with guidance when milestone lifecycle work is next (`needs_audit` or `milestone_done`)
+- REQ-RALPH-08: Each run MUST persist logs and per-iteration records under `.planning/tmp/yolo-ralph/`

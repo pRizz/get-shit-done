@@ -740,6 +740,28 @@ describe('copyCommandsAsCopilotSkills', () => {
     );
   });
 
+  test('generates yolo-ralph skill from command', () => {
+    const srcFile = path.join(srcDir, 'yolo-ralph.md');
+    assert.ok(fs.existsSync(srcFile), 'yolo-ralph command must exist as source');
+
+    copyCommandsAsCopilotSkills(srcDir, tempDir, 'gsd');
+
+    const skillDir = path.join(tempDir, 'gsd-yolo-ralph');
+    const skillFile = path.join(skillDir, 'SKILL.md');
+    assert.ok(fs.existsSync(skillDir), 'yolo-ralph skill directory should exist');
+    assert.ok(fs.existsSync(skillFile), 'yolo-ralph SKILL.md should exist');
+
+    const skillContent = fs.readFileSync(skillFile, 'utf8');
+    assert.ok(
+      skillContent.startsWith('---\nname: gsd-yolo-ralph\n'),
+      'yolo-ralph skill name should be converted to flat format'
+    );
+    assert.ok(
+      skillContent.includes('argument-hint: "[--max-iterations N] [--sleep-seconds N]"'),
+      'yolo-ralph skill should preserve its argument hint'
+    );
+  });
+
   test('cleans up old skill directories on re-run', () => {
     // Create a fake old directory
     fs.mkdirSync(path.join(tempDir, 'gsd-fake-old'), { recursive: true });

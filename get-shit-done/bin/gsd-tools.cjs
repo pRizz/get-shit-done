@@ -31,6 +31,8 @@
  *   summary-extract <path> [--fields]  Extract structured data from SUMMARY.md
  *   state-snapshot                     Structured parse of STATE.md
  *   phase-plan-index <phase>           Index plans with waves and status
+ *   yolo-ralph [--max-iterations N] [--sleep-seconds N]
+ *                                      Loop Codex over the strict-push yolo wrapper
  *   websearch <query>                  Search web via Brave API (if configured)
  *     [--limit N] [--freshness day|week|month]
  *
@@ -178,6 +180,7 @@ const profileOutput = require('./lib/profile-output.cjs');
 const workstream = require('./lib/workstream.cjs');
 const docs = require('./lib/docs.cjs');
 const learnings = require('./lib/learnings.cjs');
+const yoloRalph = require('./lib/yolo-ralph.cjs');
 
 // ─── Arg parsing helpers ──────────────────────────────────────────────────────
 
@@ -311,7 +314,7 @@ async function main() {
   const command = args[0];
 
   if (!command) {
-    error('Usage: gsd-tools <command> [args] [--raw] [--pick <field>] [--cwd <path>] [--ws <name>]\nCommands: state, resolve-model, find-phase, commit, verify-summary, verify, frontmatter, template, generate-slug, current-timestamp, list-todos, verify-path-exists, config-ensure-section, config-new-project, init, workstream, docs-init');
+    error('Usage: gsd-tools <command> [args] [--raw] [--pick <field>] [--cwd <path>] [--ws <name>]\nCommands: state, resolve-model, find-phase, commit, verify-summary, verify, frontmatter, template, generate-slug, current-timestamp, list-todos, verify-path-exists, config-ensure-section, config-new-project, init, yolo-ralph, workstream, docs-init');
   }
 
   // Reject flags that are never valid for any gsd-tools command. AI agents
@@ -650,6 +653,11 @@ async function runCommand(command, args, cwd, raw, defaultValue) {
 
     case 'history-digest': {
       commands.cmdHistoryDigest(cwd, raw);
+      break;
+    }
+
+    case 'yolo-ralph': {
+      yoloRalph.cmdYoloRalph(cwd, args.slice(1), raw);
       break;
     }
 

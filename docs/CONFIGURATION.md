@@ -37,7 +37,9 @@ GSD stores project settings in `.planning/config.json`. Created during `/gsd-new
     "text_mode": false,
     "use_worktrees": true,
     "code_review": true,
-    "code_review_depth": "standard"
+    "code_review_depth": "standard",
+    "yolo_ralph_max_iterations": 20,
+    "yolo_ralph_sleep_seconds": 10
   },
   "hooks": {
     "context_warnings": true,
@@ -129,6 +131,8 @@ Most workflow toggles default to enabled when absent. `workflow.nyquist_validati
 | `workflow.use_worktrees` | boolean | `true` | When `false`, disables git worktree isolation for parallel execution. Users who prefer sequential execution or whose environment does not support worktrees can disable this. Added in v1.31 |
 | `workflow.code_review` | boolean | `true` | Enable `/gsd-code-review` and `/gsd-code-review-fix` commands. When `false`, the commands exit with a configuration gate message. Added in v1.34 |
 | `workflow.code_review_depth` | string | `standard` | Default review depth for `/gsd-code-review`: `quick` (pattern-matching only), `standard` (per-file analysis), or `deep` (cross-file with import graphs). Can be overridden per-run with `--depth=`. Added in v1.34 |
+| `workflow.yolo_ralph_max_iterations` | number | `20` | Default iteration cap for `/gsd-yolo-ralph` |
+| `workflow.yolo_ralph_sleep_seconds` | number | `10` | Default sleep interval between successful `/gsd-yolo-ralph` iterations; may be set to `0` for testing |
 
 ### Recommended Presets
 

@@ -119,6 +119,17 @@ Run autonomous yolo strict-push mode for all remaining phases in the current mil
 
 Usage: `/gsd-yolo-discuss-plan-execute-commit-and-push-all`
 
+**`/gsd-yolo-ralph [--max-iterations N] [--sleep-seconds N]`**
+Loop fresh Codex executions of the strict-push yolo wrapper until milestone lifecycle work or a blocker is reached.
+
+- Launches a fresh Codex process each iteration with dangerous mode enabled
+- Prints iteration stats after every return and persists logs under `.planning/tmp/yolo-ralph/`
+- Stops on milestone lifecycle handoff, the first blocker/failure, or the iteration cap
+
+Usage: `/gsd-yolo-ralph`
+Usage: `/gsd-yolo-ralph --max-iterations 5`
+Usage: `/gsd-yolo-ralph --sleep-seconds 0`
+
 **`/gsd-research-phase <number>`**
 Comprehensive ecosystem research for niche/complex domains.
 

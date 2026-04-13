@@ -259,6 +259,8 @@ Set via `workflow.*` namespace in config.json (e.g., `"workflow": { "research": 
 | `workflow.subagent_timeout` | number | `300000` | Any positive integer (ms) | Timeout for parallel subagent tasks (default: 5 minutes) |
 | `workflow.code_review` | boolean | `true` | `true`, `false` | Enable built-in code review step in the ship workflow |
 | `workflow.code_review_depth` | string | `"standard"` | `"light"`, `"standard"`, `"deep"` | Depth level for code review analysis in the ship workflow |
+| `workflow.yolo_ralph_max_iterations` | number | `20` | Any positive integer | Default iteration cap for the `yolo-ralph` loop driver |
+| `workflow.yolo_ralph_sleep_seconds` | number | `10` | Any non-negative integer | Default sleep interval between successful `yolo-ralph` iterations |
 | `workflow._auto_chain_active` | boolean | `false` | `true`, `false` | Internal: tracks whether autonomous chaining is active |
 
 ### Git Fields

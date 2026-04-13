@@ -212,6 +212,27 @@ Prints a short preview of the remaining phases and planned steps before delegati
 /gsd-yolo-discuss-plan-execute-commit-and-push-all
 ```
 
+### `/gsd-yolo-ralph`
+
+Loop fresh Codex executions of the strict-push yolo wrapper until milestone lifecycle work or a blocker is reached.
+
+This is a loop driver over:
+`$gsd-yolo-discuss-plan-execute-commit-and-push`
+
+| Flag | Description |
+|------|-------------|
+| `--max-iterations N` | Override the default iteration cap (defaults to `20`) |
+| `--sleep-seconds N` | Override the sleep interval between successful iterations (defaults to `10`, may be `0` for testing) |
+
+**Prerequisites:** Git repo, `.planning/PROJECT.md`, `.planning/STATE.md`, Codex CLI on `PATH`, and Codex skill assets installed locally or globally
+**Produces:** `.planning/tmp/yolo-ralph/run-<timestamp>/` logs and summaries
+
+```bash
+/gsd-yolo-ralph
+/gsd-yolo-ralph --max-iterations 5
+/gsd-yolo-ralph --sleep-seconds 0
+```
+
 ---
 
 ### `/gsd-ui-phase`
