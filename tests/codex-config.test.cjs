@@ -967,8 +967,14 @@ describe('Codex install hook configuration (e2e)', () => {
     runCodexInstall(codexHome);
 
     const content = readCodexConfig(codexHome);
+    const checkUpdateHook = path.join(codexHome, 'hooks', 'gsd-check-update.js');
     assert.ok(content.includes('[features]\ncodex_hooks = true\n'), 'writes codex_hooks feature');
     assert.ok(content.includes('# GSD Hooks\n[[hooks]]\nevent = "SessionStart"\n'), 'writes GSD SessionStart hook block');
+    assert.ok(
+      content.includes(`command = "node ${checkUpdateHook.replace(/\\\\/g, '/')}"`),
+      'writes the GSD SessionStart hook command using the installed hooks directory'
+    );
+    assert.ok(fs.existsSync(checkUpdateHook), 'installs the Codex update hook file before registering it');
     assert.strictEqual(countMatches(content, /^codex_hooks = true$/gm), 1, 'writes one codex_hooks key');
     assert.strictEqual(countMatches(content, /gsd-check-update\.js/g), 1, 'writes one GSD update hook');
     assertNoDraftRootKeys(content);

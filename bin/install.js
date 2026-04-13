@@ -5620,7 +5620,9 @@ function install(isGlobal, runtime = 'claude') {
     const pkgJsonDest = path.join(targetDir, 'package.json');
     fs.writeFileSync(pkgJsonDest, '{"type":"commonjs"}\n');
     console.log(`  ${green}✓${reset} Wrote package.json (CommonJS mode)`);
+  }
 
+  if (!isCopilot && !isCursor && !isWindsurf && !isTrae) {
     // Copy hooks from dist/ (bundled with dependencies)
     // Template paths for the target runtime (replaces '.claude' with correct config dir)
     const hooksSrc = path.join(src, 'hooks', 'dist');
@@ -5712,7 +5714,9 @@ function install(isGlobal, runtime = 'claude') {
         configContent = configContent.replace(/\r\n# GSD Hooks\r\n\[\[hooks\]\]\r\nevent = "SessionStart"\r\ncommand = "node [^\r\n]*gsd-update-check\.js"\r\n/g, '\r\n');
       }
 
-      if (hasEnabledCodexHooksFeature(configContent) && !configContent.includes('gsd-check-update')) {
+      if (hasEnabledCodexHooksFeature(configContent) &&
+          !configContent.includes('gsd-check-update') &&
+          fs.existsSync(path.join(targetDir, 'hooks', 'gsd-check-update.js'))) {
         configContent += hookBlock;
       }
 
