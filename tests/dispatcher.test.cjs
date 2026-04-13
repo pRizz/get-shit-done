@@ -164,11 +164,15 @@ describe('dispatcher routing branches', () => {
     try {
       const binDir = path.join(gitProject, 'bin-stub');
       fs.mkdirSync(binDir, { recursive: true });
+      const skillDir = path.join(gitProject, '.codex', 'skills', 'gsd-yolo-discuss-plan-execute-commit-and-push');
+      fs.mkdirSync(skillDir, { recursive: true });
+      fs.writeFileSync(path.join(skillDir, 'SKILL.md'), '# Skill\n', 'utf8');
       const fakeCodexPath = path.join(binDir, 'codex');
       fs.writeFileSync(fakeCodexPath, '#!/usr/bin/env bash\nexit 0\n', 'utf8');
       fs.chmodSync(fakeCodexPath, 0o755);
 
       const result = runGsdTools(['yolo-ralph', '--max-iterations', '1'], gitProject, {
+        CODEX_HOME: path.join(gitProject, 'empty-codex-home'),
         PATH: `${binDir}${path.delimiter}${process.env.PATH || ''}`,
       });
       assert.strictEqual(result.success, false, 'Expected preflight failure for missing planning assets');
