@@ -152,11 +152,15 @@ Drive higher-level orchestration loops from the low-level CLI layer.
 ```bash
 # Launch repeated fresh Codex runs of the strict-push yolo wrapper
 node gsd-tools.cjs yolo-ralph [--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]
+
+# After a global install that includes Codex, use the shared shell shim
+gsd-yolo-ralph [--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]
 ```
 
 Behavior:
 - Requires a Git repo plus initialized GSD planning assets
 - Requires Codex CLI on `PATH` and the `gsd-yolo-discuss-plan-execute-commit-and-push` Codex skill
+- Global installs manage `~/.gsd/bin` on `PATH` with marked shell blocks; `gsd-yolo-ralph` is published there only when a global Codex install is active
 - Launches `codex exec --dangerously-bypass-approvals-and-sandbox ... '$gsd-yolo-discuss-plan-execute-commit-and-push'`
 - Emits periodic heartbeat summaries and a live stage timer in TTY sessions unless disabled via config or flags
 - Persists iteration logs under `.planning/tmp/yolo-ralph/run-<timestamp>/`

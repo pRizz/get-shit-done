@@ -214,6 +214,7 @@ npx get-shit-done-cc --all --global      # Install to all directories
 Use `--global` (`-g`) or `--local` (`-l`) to skip the location prompt.
 Use `--claude`, `--opencode`, `--gemini`, `--kilo`, `--codex`, `--copilot`, `--cursor`, `--windsurf`, `--antigravity`, `--augment`, `--trae`, `--cline`, or `--all` to skip the runtime prompt.
 Use `--sdk` to also install the GSD SDK CLI (`gsd-sdk`) for headless autonomous execution.
+Global installs also manage a marked PATH block for `~/.gsd/bin` in supported shell startup files (`.zshrc`, the primary bash profile file, and `config.fish` when present). When Codex is included in a global install, GSD publishes `gsd-yolo-ralph` into that shared bin so you can run it directly from the shell.
 
 </details>
 

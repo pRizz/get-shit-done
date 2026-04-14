@@ -21,6 +21,10 @@ const GSD_CODEX_HOOKS_OWNERSHIP_PREFIX = '# GSD codex_hooks ownership: ';
 // Copilot instructions marker constants
 const GSD_COPILOT_INSTRUCTIONS_MARKER = '<!-- GSD Configuration \u2014 managed by get-shit-done installer -->';
 const GSD_COPILOT_INSTRUCTIONS_CLOSE_MARKER = '<!-- /GSD Configuration -->';
+const GSD_SHELL_PATH_MARKER_START = '# >>> GSD PATH >>> managed by get-shit-done installer';
+const GSD_SHELL_PATH_MARKER_END = '# <<< GSD PATH <<< managed by get-shit-done installer';
+const GSD_SHARED_INSTALL_STATE_NAME = 'install-state.json';
+const GSD_YOLO_RALPH_COMMAND = 'gsd-yolo-ralph';
 
 const CODEX_AGENT_SANDBOX = {
   'gsd-executor': 'workspace-write',
@@ -1829,6 +1833,370 @@ function detectLineEnding(content) {
     return '\n';
   }
   return firstNewlineIndex > 0 && content[firstNewlineIndex - 1] === '\r' ? '\r\n' : '\n';
+}
+
+function getSharedGsdDir() {
+  return path.join(os.homedir(), '.gsd');
+}
+
+function getSharedBinDir() {
+  return path.join(getSharedGsdDir(), 'bin');
+}
+
+function getSharedInstallStatePath() {
+  return path.join(getSharedGsdDir(), GSD_SHARED_INSTALL_STATE_NAME);
+}
+
+function normalizeSharedInstallState(rawState) {
+  const state = rawState && typeof rawState === 'object' ? rawState : {};
+  const globalInstalls = {};
+  const inputInstalls = state.global_installs && typeof state.global_installs === 'object'
+    ? state.global_installs
+    : {};
+
+  for (const [runtime, installInfo] of Object.entries(inputInstalls)) {
+    if (!installInfo || typeof installInfo !== 'object') {
+      continue;
+    }
+    const configDir = typeof installInfo.config_dir === 'string' && installInfo.config_dir.trim()
+      ? installInfo.config_dir
+      : null;
+    if (!configDir) {
+      continue;
+    }
+    globalInstalls[runtime] = {
+      config_dir: configDir,
+      updated_at: typeof installInfo.updated_at === 'string' ? installInfo.updated_at : null,
+    };
+  }
+
+  return {
+    schema_version: 1,
+    updated_at: typeof state.updated_at === 'string' ? state.updated_at : null,
+    global_installs: globalInstalls,
+    shell_files: Array.isArray(state.shell_files)
+      ? [...new Set(state.shell_files.filter(filePath => typeof filePath === 'string' && filePath.trim()))]
+      : [],
+    shared_bin_artifacts: Array.isArray(state.shared_bin_artifacts)
+      ? [...new Set(state.shared_bin_artifacts.filter(name => typeof name === 'string' && name.trim()))]
+      : [],
+  };
+}
+
+function readSharedInstallState() {
+  const statePath = getSharedInstallStatePath();
+  if (!fs.existsSync(statePath)) {
+    return normalizeSharedInstallState({});
+  }
+  try {
+    return normalizeSharedInstallState(JSON.parse(fs.readFileSync(statePath, 'utf8')));
+  } catch {
+    return normalizeSharedInstallState({});
+  }
+}
+
+function writeSharedInstallState(state) {
+  const normalized = normalizeSharedInstallState(state);
+  normalized.updated_at = new Date().toISOString();
+  const statePath = getSharedInstallStatePath();
+  fs.mkdirSync(path.dirname(statePath), { recursive: true });
+  fs.writeFileSync(statePath, `${JSON.stringify(normalized, null, 2)}\n`, 'utf8');
+  return normalized;
+}
+
+function removeSharedInstallState() {
+  const statePath = getSharedInstallStatePath();
+  if (fs.existsSync(statePath)) {
+    fs.rmSync(statePath, { force: true });
+  }
+}
+
+function hasAnySharedGlobalInstalls(state) {
+  return Object.keys(normalizeSharedInstallState(state).global_installs).length > 0;
+}
+
+function getActiveCodexGlobalInstall(state) {
+  const normalized = normalizeSharedInstallState(state);
+  const codexInstall = normalized.global_installs.codex;
+  return codexInstall && codexInstall.config_dir ? codexInstall : null;
+}
+
+function hasCommandOnPath(commandName) {
+  const pathValue = process.env.PATH || '';
+  if (!pathValue) {
+    return false;
+  }
+  const candidates = process.platform === 'win32'
+    ? [commandName, `${commandName}.exe`, `${commandName}.cmd`, `${commandName}.bat`]
+    : [commandName];
+
+  for (const segment of pathValue.split(path.delimiter)) {
+    if (!segment) {
+      continue;
+    }
+    for (const candidate of candidates) {
+      if (fs.existsSync(path.join(segment, candidate))) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function getManagedShellTargets() {
+  if (process.platform === 'win32') {
+    return [];
+  }
+
+  const homeDir = os.homedir();
+  const targets = [
+    { path: path.join(homeDir, '.zshrc'), format: 'posix' },
+  ];
+  const bashCandidates = [
+    path.join(homeDir, '.bash_profile'),
+    path.join(homeDir, '.bash_login'),
+    path.join(homeDir, '.profile'),
+  ];
+  const bashPath = bashCandidates.find(candidate => fs.existsSync(candidate)) || bashCandidates[0];
+  targets.push({ path: bashPath, format: 'posix' });
+
+  const fishConfigPath = path.join(homeDir, '.config', 'fish', 'config.fish');
+  if (fs.existsSync(fishConfigPath) || hasCommandOnPath('fish')) {
+    targets.push({ path: fishConfigPath, format: 'fish' });
+  }
+
+  return targets;
+}
+
+function buildManagedShellPathBlock(format = 'posix', eol = '\n') {
+  const sharedBinPath = '$HOME/.gsd/bin';
+  const lines = format === 'fish'
+    ? [
+        GSD_SHELL_PATH_MARKER_START,
+        '# Adds the shared GSD global bin directory from ~/.gsd/bin.',
+        'if test -d "$HOME/.gsd/bin"',
+        `    if not contains -- "${sharedBinPath}" $PATH`,
+        `        set -gx PATH "${sharedBinPath}" $PATH`,
+        '    end',
+        'end',
+        GSD_SHELL_PATH_MARKER_END,
+      ]
+    : [
+        GSD_SHELL_PATH_MARKER_START,
+        '# Adds the shared GSD global bin directory from ~/.gsd/bin.',
+        'if [ -d "$HOME/.gsd/bin" ]; then',
+        '  case ":$PATH:" in',
+        `    *:${sharedBinPath}:*) ;;`,
+        `    *) export PATH="${sharedBinPath}:$PATH" ;;`,
+        '  esac',
+        'fi',
+        GSD_SHELL_PATH_MARKER_END,
+      ];
+  return lines.join(eol);
+}
+
+function mergeManagedBlockContent(existingContent, blockContent, startMarker, endMarker) {
+  const eol = detectLineEnding(existingContent);
+  const normalizedBlock = blockContent.split(/\r?\n/).join(eol);
+  const openIndex = existingContent.indexOf(startMarker);
+  const closeIndex = existingContent.indexOf(endMarker);
+
+  if (openIndex !== -1) {
+    const closeEnd = closeIndex === -1 ? existingContent.length : closeIndex + endMarker.length;
+    const before = existingContent.slice(0, openIndex).trimEnd();
+    const after = existingContent.slice(closeEnd).trimStart();
+    let merged = '';
+    if (before) {
+      merged += before + eol + eol;
+    }
+    merged += normalizedBlock;
+    if (after) {
+      merged += eol + eol + after;
+    }
+    return merged + eol;
+  }
+
+  const trimmed = existingContent.trimEnd();
+  if (!trimmed) {
+    return normalizedBlock + eol;
+  }
+  return trimmed + eol + eol + normalizedBlock + eol;
+}
+
+function stripManagedBlockContent(content, startMarker, endMarker) {
+  const eol = detectLineEnding(content);
+  const openIndex = content.indexOf(startMarker);
+  const closeIndex = content.indexOf(endMarker);
+  if (openIndex === -1) {
+    return content;
+  }
+
+  const closeEnd = closeIndex === -1 ? content.length : closeIndex + endMarker.length;
+  const before = content.slice(0, openIndex).trimEnd();
+  const after = content.slice(closeEnd).trimStart();
+  const cleaned = (before + (before && after ? '\n\n' : '') + after).trim();
+  if (!cleaned) {
+    return null;
+  }
+  return cleaned.split(/\r?\n/).join(eol) + eol;
+}
+
+function writeExecutableShellScript(filePath, content) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, content, 'utf8');
+  try {
+    fs.chmodSync(filePath, 0o755);
+  } catch {
+    // Best-effort on platforms that ignore POSIX modes.
+  }
+}
+
+function getCodexYoloRalphWrapperPath(configDir) {
+  return path.join(configDir, 'get-shit-done', 'bin', GSD_YOLO_RALPH_COMMAND);
+}
+
+function buildCodexYoloRalphWrapper(configDir) {
+  const gsdToolsPath = path.resolve(configDir, 'get-shit-done', 'bin', 'gsd-tools.cjs').replace(/\\/g, '/');
+  return [
+    '#!/usr/bin/env sh',
+    'set -eu',
+    `node "${gsdToolsPath}" yolo-ralph "$@"`,
+    '',
+  ].join('\n');
+}
+
+function buildSharedYoloRalphShim(wrapperPath) {
+  const normalizedWrapperPath = path.resolve(wrapperPath).replace(/\\/g, '/');
+  return [
+    '#!/usr/bin/env sh',
+    'set -eu',
+    `"${normalizedWrapperPath}" "$@"`,
+    '',
+  ].join('\n');
+}
+
+function installManagedShellPathBlocks() {
+  const managedFiles = [];
+  for (const target of getManagedShellTargets()) {
+    const existing = fs.existsSync(target.path) ? fs.readFileSync(target.path, 'utf8') : '';
+    const eol = detectLineEnding(existing);
+    const merged = mergeManagedBlockContent(
+      existing,
+      buildManagedShellPathBlock(target.format, eol),
+      GSD_SHELL_PATH_MARKER_START,
+      GSD_SHELL_PATH_MARKER_END,
+    );
+    if (existing !== merged) {
+      fs.mkdirSync(path.dirname(target.path), { recursive: true });
+      fs.writeFileSync(target.path, merged, 'utf8');
+    }
+    managedFiles.push(target.path);
+  }
+  return managedFiles;
+}
+
+function removeManagedShellPathBlocks(filePaths = []) {
+  const knownFiles = new Set([
+    ...filePaths,
+    ...getManagedShellTargets().map(target => target.path),
+  ]);
+
+  for (const filePath of knownFiles) {
+    if (!filePath || !fs.existsSync(filePath)) {
+      continue;
+    }
+    const existing = fs.readFileSync(filePath, 'utf8');
+    const cleaned = stripManagedBlockContent(
+      existing,
+      GSD_SHELL_PATH_MARKER_START,
+      GSD_SHELL_PATH_MARKER_END,
+    );
+    if (cleaned === null) {
+      fs.rmSync(filePath, { force: true });
+      continue;
+    }
+    if (cleaned !== existing) {
+      fs.writeFileSync(filePath, cleaned, 'utf8');
+    }
+  }
+}
+
+function reconcileSharedGlobalInstallState(state) {
+  const normalized = normalizeSharedInstallState(state);
+  const hasGlobalInstalls = hasAnySharedGlobalInstalls(normalized);
+  const sharedBinDir = getSharedBinDir();
+  const sharedCommandPath = path.join(sharedBinDir, GSD_YOLO_RALPH_COMMAND);
+
+  if (hasGlobalInstalls) {
+    fs.mkdirSync(sharedBinDir, { recursive: true });
+    normalized.shell_files = installManagedShellPathBlocks();
+  } else {
+    removeManagedShellPathBlocks(normalized.shell_files);
+    normalized.shell_files = [];
+  }
+
+  const activeCodexInstall = getActiveCodexGlobalInstall(normalized);
+  normalized.shared_bin_artifacts = [];
+
+  if (activeCodexInstall) {
+    const codexWrapperPath = getCodexYoloRalphWrapperPath(activeCodexInstall.config_dir);
+    if (fs.existsSync(codexWrapperPath)) {
+      writeExecutableShellScript(sharedCommandPath, buildSharedYoloRalphShim(codexWrapperPath));
+      normalized.shared_bin_artifacts.push(GSD_YOLO_RALPH_COMMAND);
+    } else if (fs.existsSync(sharedCommandPath)) {
+      fs.rmSync(sharedCommandPath, { force: true });
+    }
+  } else if (fs.existsSync(sharedCommandPath)) {
+    fs.rmSync(sharedCommandPath, { force: true });
+  }
+
+  if (!hasGlobalInstalls && fs.existsSync(sharedBinDir) && fs.readdirSync(sharedBinDir).length === 0) {
+    fs.rmSync(sharedBinDir, { recursive: true, force: true });
+  }
+
+  return normalized;
+}
+
+function registerSharedGlobalInstall(runtime, configDir) {
+  const state = readSharedInstallState();
+  state.global_installs[runtime] = {
+    config_dir: path.resolve(configDir),
+    updated_at: new Date().toISOString(),
+  };
+  const reconciled = reconcileSharedGlobalInstallState(state);
+  writeSharedInstallState(reconciled);
+  return reconciled;
+}
+
+function unregisterSharedGlobalInstall(runtime) {
+  const state = readSharedInstallState();
+  delete state.global_installs[runtime];
+  const reconciled = reconcileSharedGlobalInstallState(state);
+  if (hasAnySharedGlobalInstalls(reconciled)) {
+    writeSharedInstallState(reconciled);
+    return reconciled;
+  }
+  removeSharedInstallState();
+  return reconciled;
+}
+
+function applySharedGlobalInstall(runtime, configDir) {
+  const state = registerSharedGlobalInstall(runtime, configDir);
+  console.log(`  ${green}✓${reset} Managed shared global PATH via ~/.gsd/bin`);
+  if (state.shared_bin_artifacts.includes(GSD_YOLO_RALPH_COMMAND)) {
+    console.log(`  ${green}✓${reset} Installed shared global command ${GSD_YOLO_RALPH_COMMAND}`);
+  }
+  return state;
+}
+
+function removeSharedGlobalInstall(runtime) {
+  const state = unregisterSharedGlobalInstall(runtime);
+  if (hasAnySharedGlobalInstalls(state)) {
+    console.log(`  ${green}✓${reset} Updated shared global PATH state in ~/.gsd/`);
+  } else {
+    console.log(`  ${green}✓${reset} Removed shared global PATH integration from ~/.gsd/`);
+  }
+  return state;
 }
 
 function splitTomlLines(content) {
@@ -4315,6 +4683,9 @@ function uninstall(isGlobal, runtime = 'claude') {
 
   // Check if target directory exists
   if (!fs.existsSync(targetDir)) {
+    if (isGlobal) {
+      removeSharedGlobalInstall(runtime);
+    }
     console.log(`  ${yellow}⚠${reset} Directory does not exist: ${locationLabel}`);
     console.log(`  Nothing to uninstall.\n`);
     return;
@@ -4751,6 +5122,10 @@ function uninstall(isGlobal, runtime = 'claude') {
     fs.rmSync(manifestPath, { force: true });
     removedCount++;
     console.log(`  ${green}✓${reset} Removed ${MANIFEST_NAME}`);
+  }
+
+  if (isGlobal) {
+    removeSharedGlobalInstall(runtime);
   }
 
   if (removedCount === 0) {
@@ -5613,6 +5988,16 @@ function install(isGlobal, runtime = 'claude') {
     failures.push(RELEASE_METADATA_NAME);
   }
 
+  if (isGlobal && isCodex) {
+    const codexWrapperPath = getCodexYoloRalphWrapperPath(targetDir);
+    writeExecutableShellScript(codexWrapperPath, buildCodexYoloRalphWrapper(targetDir));
+    if (verifyFileInstalled(codexWrapperPath, GSD_YOLO_RALPH_COMMAND)) {
+      console.log(`  ${green}✓${reset} Installed ${GSD_YOLO_RALPH_COMMAND} to get-shit-done/bin/`);
+    } else {
+      failures.push(GSD_YOLO_RALPH_COMMAND);
+    }
+  }
+
   if (!isCodex && !isCopilot && !isCursor && !isWindsurf && !isTrae) {
     // Write package.json to force CommonJS mode for GSD scripts
     // Prevents "require is not defined" errors when project has "type": "module"
@@ -5739,6 +6124,9 @@ function install(isGlobal, runtime = 'claude') {
       console.warn(`  ${dim}These managed Claude runtime-root paths may not resolve correctly for ${runtimeLabel}.${reset}`);
     }
 
+    if (isGlobal) {
+      applySharedGlobalInstall(runtime, targetDir);
+    }
     return { settingsPath: null, settings: null, statuslineCommand: null, runtime, configDir: targetDir };
   }
 
@@ -5752,21 +6140,33 @@ function install(isGlobal, runtime = 'claude') {
       console.log(`  ${green}✓${reset} Generated copilot-instructions.md`);
     }
     // Copilot: no settings.json, no hooks, no statusline (like Codex)
+    if (isGlobal) {
+      applySharedGlobalInstall(runtime, targetDir);
+    }
     return { settingsPath: null, settings: null, statuslineCommand: null, runtime, configDir: targetDir };
   }
 
   if (isCursor) {
     // Cursor uses skills — no config.toml, no settings.json hooks needed
+    if (isGlobal) {
+      applySharedGlobalInstall(runtime, targetDir);
+    }
     return { settingsPath: null, settings: null, statuslineCommand: null, runtime, configDir: targetDir };
   }
 
   if (isWindsurf) {
     // Windsurf uses skills — no config.toml, no settings.json hooks needed
+    if (isGlobal) {
+      applySharedGlobalInstall(runtime, targetDir);
+    }
     return { settingsPath: null, settings: null, statuslineCommand: null, runtime, configDir: targetDir };
   }
 
   if (isTrae) {
     // Trae uses skills — no settings.json hooks needed
+    if (isGlobal) {
+      applySharedGlobalInstall(runtime, targetDir);
+    }
     return { settingsPath: null, settings: null, statuslineCommand: null, runtime, configDir: targetDir };
   }
 
@@ -6046,6 +6446,9 @@ function install(isGlobal, runtime = 'claude') {
     }
   }
 
+  if (isGlobal) {
+    applySharedGlobalInstall(runtime, targetDir);
+  }
   return { settingsPath, settings, statuslineCommand, runtime, configDir: targetDir };
 }
 
@@ -6413,6 +6816,24 @@ if (process.env.GSD_TEST_MODE) {
     writeManifest,
     reportLocalPatches,
     validateHookFields,
+    buildManagedShellPathBlock,
+    mergeManagedBlockContent,
+    stripManagedBlockContent,
+    getManagedShellTargets,
+    getSharedGsdDir,
+    getSharedBinDir,
+    getSharedInstallStatePath,
+    readSharedInstallState,
+    writeSharedInstallState,
+    registerSharedGlobalInstall,
+    unregisterSharedGlobalInstall,
+    reconcileSharedGlobalInstallState,
+    getCodexYoloRalphWrapperPath,
+    buildCodexYoloRalphWrapper,
+    buildSharedYoloRalphShim,
+    GSD_SHELL_PATH_MARKER_START,
+    GSD_SHELL_PATH_MARKER_END,
+    GSD_YOLO_RALPH_COMMAND,
     preserveUserArtifacts,
     restoreUserArtifacts,
   };
