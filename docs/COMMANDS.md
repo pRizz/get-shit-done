@@ -229,6 +229,8 @@ This is a loop driver over:
 |------|-------------|
 | `--max-iterations N` | Override the default iteration cap (defaults to `20`) |
 | `--sleep-seconds N` | Override the sleep interval between successful iterations (defaults to `10`, may be `0` for testing) |
+| `--heartbeat-seconds N` | Override the heartbeat summary interval (defaults to `60`, may be `0` to disable) |
+| `--stage-tick-seconds N` | Override the live stage timer interval for TTY runs (defaults to `1`, may be `0` to disable) |
 
 **Prerequisites:** Git repo, `.planning/PROJECT.md`, `.planning/STATE.md`, Codex CLI on `PATH`, and Codex skill assets installed locally or globally
 **Produces:** `.planning/tmp/yolo-ralph/run-<timestamp>/` logs and summaries
@@ -237,6 +239,7 @@ This is a loop driver over:
 /gsd-yolo-ralph
 /gsd-yolo-ralph --max-iterations 5
 /gsd-yolo-ralph --sleep-seconds 0
+/gsd-yolo-ralph --heartbeat-seconds 30 --stage-tick-seconds 2
 ```
 
 ---

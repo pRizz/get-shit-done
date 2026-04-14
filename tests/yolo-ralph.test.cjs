@@ -59,6 +59,12 @@ const repoRoot = cdIndex !== -1 ? args[cdIndex + 1] : process.cwd();
 const outIndex = args.indexOf('-o');
 const outputPath = outIndex !== -1 ? args[outIndex + 1] : null;
 const behavior = process.env.GSD_TEST_CODEX_BEHAVIOR || 'advance';
+const sleep = milliseconds => {
+  if (milliseconds <= 0) return;
+  const buffer = new SharedArrayBuffer(4);
+  const view = new Int32Array(buffer);
+  Atomics.wait(view, 0, 0, milliseconds);
+};
 
 if (args.includes('--version')) {
   process.stdout.write('codex-test\\n');
@@ -73,7 +79,15 @@ const messages = {
   last_message_blocker: 'Phase 1: verification status is gaps_found. Skipping commit/push.',
   needs_audit: 'Completed all phase work.',
   milestone_done: 'No active roadmap remains.',
+  slow_stage_markers: 'Advanced the strict-push wrapper.',
+  slow_ambiguous: 'Advanced the strict-push wrapper.',
 };
+
+const phaseDir = path.join(repoRoot, '.planning', 'phases', '01-build');
+const contextPath = path.join(phaseDir, '01-CONTEXT.md');
+const planPath = path.join(phaseDir, '01-01-PLAN.md');
+const summaryPath = path.join(phaseDir, '01-01-SUMMARY.md');
+const verificationPath = path.join(phaseDir, '01-VERIFICATION.md');
 
 if (outputPath) {
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
@@ -89,6 +103,42 @@ if (behavior === 'stdout_false_blocker') {
 if (behavior === 'fail') {
   process.stderr.write('simulated codex failure\\n');
   process.exit(2);
+}
+
+if (behavior === 'slow_stage_markers') {
+  fs.mkdirSync(phaseDir, { recursive: true });
+  process.stdout.write('Launching gsd-discuss-phase 1\\n');
+  sleep(1100);
+  fs.writeFileSync(contextPath, '# Context\\n', 'utf8');
+  process.stdout.write('Created: .planning/phases/01-build/01-CONTEXT.md\\n');
+  sleep(1100);
+  fs.writeFileSync(planPath, '# Plan\\nupdated\\n', 'utf8');
+  process.stdout.write('Created: .planning/phases/01-build/01-01-PLAN.md\\n');
+  sleep(1100);
+  fs.writeFileSync(summaryPath, '# Summary\\n', 'utf8');
+  process.stdout.write('Created: .planning/phases/01-build/01-01-SUMMARY.md\\n');
+  sleep(1100);
+  fs.writeFileSync(verificationPath, '---\\nstatus: passed\\n---\\n# Verification\\n', 'utf8');
+  process.stdout.write('Verification passed. Wrote 01-VERIFICATION.md\\n');
+  sleep(1100);
+  fs.writeFileSync(path.join(repoRoot, 'advance.txt'), String(Date.now()), 'utf8');
+  execSync('git add -A', { cwd: repoRoot, stdio: 'pipe' });
+  execSync('git commit -m "test: yolo-ralph advanced"', { cwd: repoRoot, stdio: 'pipe' });
+  process.stdout.write('git commit -m "test: yolo-ralph advanced"\\n');
+  process.exit(0);
+}
+
+if (behavior === 'slow_ambiguous') {
+  process.stdout.write('Working through the wrapper...\\n');
+  sleep(1100);
+  process.stdout.write('Still making progress...\\n');
+  sleep(1100);
+  process.stdout.write('No explicit phase marker yet.\\n');
+  sleep(1100);
+  fs.writeFileSync(path.join(repoRoot, 'advance.txt'), String(Date.now()), 'utf8');
+  execSync('git add -A', { cwd: repoRoot, stdio: 'pipe' });
+  execSync('git commit -m "test: yolo-ralph advanced"', { cwd: repoRoot, stdio: 'pipe' });
+  process.exit(0);
 }
 
 if (behavior === 'advance') {
@@ -173,7 +223,7 @@ describe('yolo-ralph command surfaces', () => {
   test('command file exists with expected frontmatter', () => {
     const content = fs.readFileSync(COMMAND_PATH, 'utf8');
     assert.ok(content.startsWith('---\nname: gsd:yolo-ralph\n'));
-    assert.ok(content.includes('argument-hint: "[--max-iterations N] [--sleep-seconds N]"'));
+    assert.ok(content.includes('argument-hint: "[--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]"'));
   });
 
   test('workflow file exists and shells out to gsd-tools', () => {
@@ -187,7 +237,7 @@ describe('yolo-ralph command surfaces', () => {
     assert.ok(fs.readFileSync(COMMANDS_DOC_PATH, 'utf8').includes('### `/gsd-yolo-ralph`'));
     assert.ok(fs.readFileSync(CLI_TOOLS_DOC_PATH, 'utf8').includes('node gsd-tools.cjs yolo-ralph'));
     assert.ok(fs.readFileSync(CONFIG_DOC_PATH, 'utf8').includes('workflow.yolo_ralph_max_iterations'));
-    assert.ok(fs.readFileSync(HELP_PATH, 'utf8').includes('`/gsd-yolo-ralph [--max-iterations N] [--sleep-seconds N]`'));
+    assert.ok(fs.readFileSync(HELP_PATH, 'utf8').includes('`/gsd-yolo-ralph [--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]`'));
   });
 });
 
@@ -246,6 +296,8 @@ describe('yolo-ralph CLI behavior', () => {
     const output = JSON.parse(result.output);
     assert.strictEqual(output.max_iterations, 20);
     assert.strictEqual(output.sleep_seconds, 10);
+    assert.strictEqual(output.heartbeat_seconds, 60);
+    assert.strictEqual(output.stage_tick_seconds, 1);
     assert.strictEqual(output.status, 'needs_audit');
   });
 
@@ -255,16 +307,18 @@ describe('yolo-ralph CLI behavior', () => {
     installLocalSkill(tmpDir);
     fs.writeFileSync(
       path.join(tmpDir, '.planning', 'config.json'),
-      JSON.stringify({ workflow: { yolo_ralph_max_iterations: 9, yolo_ralph_sleep_seconds: 4 } }, null, 2),
+      JSON.stringify({ workflow: { yolo_ralph_max_iterations: 9, yolo_ralph_sleep_seconds: 4, yolo_ralph_heartbeat_seconds: 45, yolo_ralph_stage_tick_seconds: 8 } }, null, 2),
       'utf8'
     );
 
-    const result = runGsdTools(['yolo-ralph', '--raw', '--max-iterations', '3', '--sleep-seconds', '0'], tmpDir, installFakeCodex(tmpDir, 'advance'));
+    const result = runGsdTools(['yolo-ralph', '--raw', '--max-iterations', '3', '--sleep-seconds', '0', '--heartbeat-seconds', '1', '--stage-tick-seconds', '2'], tmpDir, installFakeCodex(tmpDir, 'advance'));
 
     assert.ok(result.success, `Command failed: ${result.error}`);
     const output = JSON.parse(result.output);
     assert.strictEqual(output.max_iterations, 3);
     assert.strictEqual(output.sleep_seconds, 0);
+    assert.strictEqual(output.heartbeat_seconds, 1);
+    assert.strictEqual(output.stage_tick_seconds, 2);
   });
 
   test('successful advanced iterations continue until the cap is reached', () => {
@@ -374,5 +428,60 @@ describe('yolo-ralph CLI behavior', () => {
     assert.ok(fs.existsSync(path.join(runDir, 'iter-01', 'stdout.log')), 'stdout log should exist');
     assert.ok(fs.existsSync(path.join(runDir, 'iter-01', 'stderr.log')), 'stderr log should exist');
     assert.ok(fs.existsSync(path.join(runDir, 'iter-01', 'last-message.txt')), 'last message file should exist');
+  });
+
+  test('non-raw runs emit heartbeat lines and one stage transition per detected stage', () => {
+    tmpDir = createTempGitProject();
+    writePlanningFiles(tmpDir);
+    installLocalSkill(tmpDir);
+
+    const result = runGsdTools(
+      ['yolo-ralph', '--max-iterations', '1', '--sleep-seconds', '0', '--heartbeat-seconds', '1', '--stage-tick-seconds', '1'],
+      tmpDir,
+      installFakeCodex(tmpDir, 'slow_stage_markers')
+    );
+
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    assert.match(result.output, /Heartbeat: iter 1\/1/);
+    assert.strictEqual((result.output.match(/Stage -> discuss/g) || []).length, 1);
+    assert.strictEqual((result.output.match(/Stage -> plan/g) || []).length, 1);
+    assert.strictEqual((result.output.match(/Stage -> execute/g) || []).length, 1);
+    assert.strictEqual((result.output.match(/Stage -> verify/g) || []).length, 1);
+    assert.strictEqual((result.output.match(/Stage -> commit\/push/g) || []).length, 1);
+  });
+
+  test('raw mode stays JSON-only even when heartbeat flags are provided', () => {
+    tmpDir = createTempGitProject();
+    writePlanningFiles(tmpDir);
+    installLocalSkill(tmpDir);
+
+    const result = runGsdTools(
+      ['yolo-ralph', '--raw', '--max-iterations', '1', '--sleep-seconds', '0', '--heartbeat-seconds', '1', '--stage-tick-seconds', '1'],
+      tmpDir,
+      installFakeCodex(tmpDir, 'slow_stage_markers')
+    );
+
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.status, 'max_iterations_reached');
+    assert.ok(!result.output.includes('Heartbeat:'), 'raw output should not include heartbeat text');
+    assert.ok(!result.output.includes('Stage ->'), 'raw output should not include live stage text');
+  });
+
+  test('ambiguous live output falls back to running stage instead of guessing', () => {
+    tmpDir = createTempGitProject();
+    writePlanningFiles(tmpDir);
+    installLocalSkill(tmpDir);
+
+    const result = runGsdTools(
+      ['yolo-ralph', '--max-iterations', '1', '--sleep-seconds', '0', '--heartbeat-seconds', '1', '--stage-tick-seconds', '0'],
+      tmpDir,
+      installFakeCodex(tmpDir, 'slow_ambiguous')
+    );
+
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    assert.match(result.output, /Heartbeat: iter 1\/1 \| phase 1 \(Build\) \| stage running/);
+    assert.ok(!result.output.includes('Stage -> discuss'));
+    assert.ok(!result.output.includes('Stage -> plan'));
   });
 });

@@ -27,6 +27,8 @@ const VALID_CONFIG_KEYS = new Set([
   'workflow.code_review_depth',
   'workflow.yolo_ralph_max_iterations',
   'workflow.yolo_ralph_sleep_seconds',
+  'workflow.yolo_ralph_heartbeat_seconds',
+  'workflow.yolo_ralph_stage_tick_seconds',
   'git.branching_strategy', 'git.base_branch', 'git.phase_branch_template', 'git.milestone_branch_template', 'git.quick_branch_template',
   'planning.commit_docs', 'planning.search_gitignored',
   'workflow.subagent_timeout',
@@ -153,6 +155,8 @@ function buildNewProjectConfig(userChoices) {
       code_review_depth: 'standard',
       yolo_ralph_max_iterations: CONFIG_DEFAULTS.yolo_ralph_max_iterations,
       yolo_ralph_sleep_seconds: CONFIG_DEFAULTS.yolo_ralph_sleep_seconds,
+      yolo_ralph_heartbeat_seconds: CONFIG_DEFAULTS.yolo_ralph_heartbeat_seconds,
+      yolo_ralph_stage_tick_seconds: CONFIG_DEFAULTS.yolo_ralph_stage_tick_seconds,
     },
     hooks: {
       context_warnings: true,

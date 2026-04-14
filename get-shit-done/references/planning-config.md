@@ -261,6 +261,8 @@ Set via `workflow.*` namespace in config.json (e.g., `"workflow": { "research": 
 | `workflow.code_review_depth` | string | `"standard"` | `"light"`, `"standard"`, `"deep"` | Depth level for code review analysis in the ship workflow |
 | `workflow.yolo_ralph_max_iterations` | number | `20` | Any positive integer | Default iteration cap for the `yolo-ralph` loop driver |
 | `workflow.yolo_ralph_sleep_seconds` | number | `10` | Any non-negative integer | Default sleep interval between successful `yolo-ralph` iterations |
+| `workflow.yolo_ralph_heartbeat_seconds` | number | `60` | Any non-negative integer | Default interval for `yolo-ralph` heartbeat summary lines; `0` disables the heartbeat |
+| `workflow.yolo_ralph_stage_tick_seconds` | number | `1` | Any non-negative integer | Default interval for the `yolo-ralph` live stage timer in TTY sessions; `0` disables the timer |
 | `workflow._auto_chain_active` | boolean | `false` | `true`, `false` | Internal: tracks whether autonomous chaining is active |
 
 ### Git Fields

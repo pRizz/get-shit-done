@@ -454,6 +454,8 @@ describe('config-new-project command', () => {
     assert.strictEqual(config.workflow.ui_safety_gate, true);
     assert.strictEqual(config.workflow.yolo_ralph_max_iterations, 20);
     assert.strictEqual(config.workflow.yolo_ralph_sleep_seconds, 10);
+    assert.strictEqual(config.workflow.yolo_ralph_heartbeat_seconds, 60);
+    assert.strictEqual(config.workflow.yolo_ralph_stage_tick_seconds, 1);
 
     // hooks section present
     assert.ok(config.hooks && typeof config.hooks === 'object', 'hooks section should exist');
@@ -507,6 +509,8 @@ describe('config-new-project command', () => {
     assert.strictEqual(config.workflow.ui_safety_gate, true);
     assert.strictEqual(config.workflow.yolo_ralph_max_iterations, 20);
     assert.strictEqual(config.workflow.yolo_ralph_sleep_seconds, 10);
+    assert.strictEqual(config.workflow.yolo_ralph_heartbeat_seconds, 60);
+    assert.strictEqual(config.workflow.yolo_ralph_stage_tick_seconds, 1);
     assert.ok(config.hooks && typeof config.hooks === 'object');
     assert.strictEqual(config.hooks.context_warnings, true);
   });
@@ -870,6 +874,22 @@ describe('config-set workflow.yolo_ralph_*', () => {
     assert.strictEqual(config.workflow.yolo_ralph_sleep_seconds, 3);
   });
 
+  test('workflow.yolo_ralph_heartbeat_seconds is a valid config key', () => {
+    const result = runGsdTools('config-set workflow.yolo_ralph_heartbeat_seconds 30', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const config = readConfig(tmpDir);
+    assert.strictEqual(config.workflow.yolo_ralph_heartbeat_seconds, 30);
+  });
+
+  test('workflow.yolo_ralph_stage_tick_seconds is a valid config key', () => {
+    const result = runGsdTools('config-set workflow.yolo_ralph_stage_tick_seconds 2', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const config = readConfig(tmpDir);
+    assert.strictEqual(config.workflow.yolo_ralph_stage_tick_seconds, 2);
+  });
+
   test('config-get returns yolo-ralph defaults from new configs', () => {
     let result = runGsdTools('config-get workflow.yolo_ralph_max_iterations', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
@@ -878,6 +898,14 @@ describe('config-set workflow.yolo_ralph_*', () => {
     result = runGsdTools('config-get workflow.yolo_ralph_sleep_seconds', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
     assert.strictEqual(result.output, '10');
+
+    result = runGsdTools('config-get workflow.yolo_ralph_heartbeat_seconds', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    assert.strictEqual(result.output, '60');
+
+    result = runGsdTools('config-get workflow.yolo_ralph_stage_tick_seconds', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    assert.strictEqual(result.output, '1');
   });
 });
 

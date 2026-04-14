@@ -590,7 +590,7 @@ You're never locked in. The system adapts.
 | `/gsd-yolo-discuss-plan-and-execute [N \| --from N \| --to N \| --only N]` | Preview the covered phases, auto-selecting the current incomplete or next pending phase when omitted, then run yolo discuss plus plan+execute |
 | `/gsd-yolo-discuss-plan-execute-commit-and-push [N \| --from N \| --to N \| --only N]` | Preview the covered phases, auto-selecting the current incomplete or next pending phase when omitted, then run yolo discuss plus plan+execute with commit/push after clean verification |
 | `/gsd-yolo-discuss-plan-execute-commit-and-push-all` | Preview all remaining phases, then run autonomous yolo strict-push mode for the current milestone |
-| `/gsd-yolo-ralph [--max-iterations N] [--sleep-seconds N]` | Loop fresh Codex executions of the strict-push yolo wrapper until milestone lifecycle work or a blocker is reached |
+| `/gsd-yolo-ralph [--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]` | Loop fresh Codex executions of the strict-push yolo wrapper until milestone lifecycle work or a blocker is reached |
 | `/gsd-plan-phase [N] [--auto] [--reviews]` | Research + plan + verify for a phase (`--reviews` loads codebase review findings) |
 | `/gsd-execute-phase <N>` | Execute all plans in parallel waves, verify when complete |
 | `/gsd-verify-work [N]` | Manual user acceptance testing ¹ |

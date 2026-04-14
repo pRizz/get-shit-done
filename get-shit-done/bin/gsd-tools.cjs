@@ -34,7 +34,7 @@
  *   summary-extract <path> [--fields]  Extract structured data from SUMMARY.md
  *   state-snapshot                     Structured parse of STATE.md
  *   phase-plan-index <phase>           Index plans with waves and status
- *   yolo-ralph [--max-iterations N] [--sleep-seconds N]
+ *   yolo-ralph [--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]
  *                                      Loop Codex over the strict-push yolo wrapper
  *   websearch <query>                  Search web via Brave API (if configured)
  *     [--limit N] [--freshness day|week|month]
@@ -661,7 +661,7 @@ async function runCommand(command, args, cwd, raw, defaultValue) {
     }
 
     case 'yolo-ralph': {
-      yoloRalph.cmdYoloRalph(cwd, args.slice(1), raw);
+      await yoloRalph.cmdYoloRalph(cwd, args.slice(1), raw);
       break;
     }
 

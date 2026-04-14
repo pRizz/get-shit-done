@@ -757,7 +757,7 @@ describe('copyCommandsAsCopilotSkills', () => {
       'yolo-ralph skill name should be converted to flat format'
     );
     assert.ok(
-      skillContent.includes('argument-hint: "[--max-iterations N] [--sleep-seconds N]"'),
+      skillContent.includes('argument-hint: "[--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]"'),
       'yolo-ralph skill should preserve its argument hint'
     );
   });

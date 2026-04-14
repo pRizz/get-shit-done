@@ -252,6 +252,8 @@ const CONFIG_DEFAULTS = {
   subagent_timeout: 300000, // 5 min default; increase for large codebases or slower models (ms)
   yolo_ralph_max_iterations: 20,
   yolo_ralph_sleep_seconds: 10,
+  yolo_ralph_heartbeat_seconds: 60,
+  yolo_ralph_stage_tick_seconds: 1,
 };
 
 function loadConfig(cwd) {
@@ -373,6 +375,8 @@ function loadConfig(cwd) {
       subagent_timeout: get('subagent_timeout', { section: 'workflow', field: 'subagent_timeout' }) ?? defaults.subagent_timeout,
       yolo_ralph_max_iterations: get('yolo_ralph_max_iterations', { section: 'workflow', field: 'yolo_ralph_max_iterations' }) ?? defaults.yolo_ralph_max_iterations,
       yolo_ralph_sleep_seconds: get('yolo_ralph_sleep_seconds', { section: 'workflow', field: 'yolo_ralph_sleep_seconds' }) ?? defaults.yolo_ralph_sleep_seconds,
+      yolo_ralph_heartbeat_seconds: get('yolo_ralph_heartbeat_seconds', { section: 'workflow', field: 'yolo_ralph_heartbeat_seconds' }) ?? defaults.yolo_ralph_heartbeat_seconds,
+      yolo_ralph_stage_tick_seconds: get('yolo_ralph_stage_tick_seconds', { section: 'workflow', field: 'yolo_ralph_stage_tick_seconds' }) ?? defaults.yolo_ralph_stage_tick_seconds,
       model_overrides: parsed.model_overrides || null,
       agent_skills: parsed.agent_skills || {},
       manager: parsed.manager || {},
@@ -404,6 +408,8 @@ function loadConfig(cwd) {
         subagent_timeout: globalDefaults.subagent_timeout ?? defaults.subagent_timeout,
         yolo_ralph_max_iterations: globalDefaults.yolo_ralph_max_iterations ?? defaults.yolo_ralph_max_iterations,
         yolo_ralph_sleep_seconds: globalDefaults.yolo_ralph_sleep_seconds ?? defaults.yolo_ralph_sleep_seconds,
+        yolo_ralph_heartbeat_seconds: globalDefaults.yolo_ralph_heartbeat_seconds ?? defaults.yolo_ralph_heartbeat_seconds,
+        yolo_ralph_stage_tick_seconds: globalDefaults.yolo_ralph_stage_tick_seconds ?? defaults.yolo_ralph_stage_tick_seconds,
         model_overrides: globalDefaults.model_overrides || null,
         agent_skills: globalDefaults.agent_skills || {},
         response_language: globalDefaults.response_language || null,

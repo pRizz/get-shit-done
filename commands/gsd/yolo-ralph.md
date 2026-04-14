@@ -1,7 +1,7 @@
 ---
 name: gsd:yolo-ralph
 description: Loop fresh Codex runs over the strict-push yolo wrapper until milestone phase work is exhausted or a blocker occurs.
-argument-hint: "[--max-iterations N] [--sleep-seconds N]"
+argument-hint: "[--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]"
 allowed-tools:
   - Read
   - Write

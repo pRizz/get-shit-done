@@ -2316,7 +2316,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 - REQ-RALPH-01: The real execution surface MUST be `gsd-tools.cjs yolo-ralph`; the slash command MUST stay a thin wrapper
 - REQ-RALPH-02: Each iteration MUST launch a fresh Codex process targeting `$gsd-yolo-discuss-plan-execute-commit-and-push`
 - REQ-RALPH-03: The spawned Codex process MUST use `--dangerously-bypass-approvals-and-sandbox`
-- REQ-RALPH-04: Default config MUST be `workflow.yolo_ralph_max_iterations = 20` and `workflow.yolo_ralph_sleep_seconds = 10`
+- REQ-RALPH-04: Default config MUST be `workflow.yolo_ralph_max_iterations = 20`, `workflow.yolo_ralph_sleep_seconds = 10`, `workflow.yolo_ralph_heartbeat_seconds = 60`, and `workflow.yolo_ralph_stage_tick_seconds = 1`
 - REQ-RALPH-05: CLI flags MUST override the config defaults per run
 - REQ-RALPH-06: The loop MUST stop immediately on the first `failed` or `stalled` iteration
 - REQ-RALPH-07: The loop MUST stop immediately with guidance when milestone lifecycle work is next (`needs_audit` or `milestone_done`)

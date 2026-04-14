@@ -39,7 +39,9 @@ GSD stores project settings in `.planning/config.json`. Created during `/gsd-new
     "code_review": true,
     "code_review_depth": "standard",
     "yolo_ralph_max_iterations": 20,
-    "yolo_ralph_sleep_seconds": 10
+    "yolo_ralph_sleep_seconds": 10,
+    "yolo_ralph_heartbeat_seconds": 60,
+    "yolo_ralph_stage_tick_seconds": 1
   },
   "hooks": {
     "context_warnings": true,
@@ -133,6 +135,8 @@ Most workflow toggles default to enabled when absent. `workflow.nyquist_validati
 | `workflow.code_review_depth` | string | `standard` | Default review depth for `/gsd-code-review`: `quick` (pattern-matching only), `standard` (per-file analysis), or `deep` (cross-file with import graphs). Can be overridden per-run with `--depth=`. Added in v1.34 |
 | `workflow.yolo_ralph_max_iterations` | number | `20` | Default iteration cap for `/gsd-yolo-ralph` |
 | `workflow.yolo_ralph_sleep_seconds` | number | `10` | Default sleep interval between successful `/gsd-yolo-ralph` iterations; may be set to `0` for testing |
+| `workflow.yolo_ralph_heartbeat_seconds` | number | `60` | Default heartbeat summary interval for `/gsd-yolo-ralph`; set to `0` to disable heartbeat summaries |
+| `workflow.yolo_ralph_stage_tick_seconds` | number | `1` | Default in-place stage timer interval for `/gsd-yolo-ralph` TTY runs; set to `0` to disable the live timer |
 
 ### Recommended Presets
 
