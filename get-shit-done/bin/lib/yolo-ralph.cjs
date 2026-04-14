@@ -208,14 +208,8 @@ function buildSnapshot(cwd, repoRoot) {
   };
 }
 
-function hasExplicitBlocker(processResult) {
-  const haystack = [
-    processResult.lastMessage,
-    processResult.stdout,
-    processResult.stderr,
-  ].filter(Boolean).join('\n');
-
-  return BLOCKER_PATTERNS.some(pattern => pattern.test(haystack));
+function lastMessageHasExplicitBlocker(lastMessage) {
+  return Boolean(lastMessage) && BLOCKER_PATTERNS.some(pattern => pattern.test(lastMessage));
 }
 
 function classifyIteration(before, after, processResult) {
@@ -240,7 +234,7 @@ function classifyIteration(before, after, processResult) {
     };
   }
 
-  if (hasExplicitBlocker(processResult)) {
+  if (lastMessageHasExplicitBlocker(processResult.lastMessage)) {
     return {
       status: 'failed',
       reason: 'The spawned Codex run reported a blocker or non-clean outcome.',

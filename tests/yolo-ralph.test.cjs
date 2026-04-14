@@ -69,6 +69,8 @@ const messages = {
   advance: 'Advanced the strict-push wrapper.',
   stalled: 'Returned successfully without changing anything.',
   blocker: 'Phase 1: verification status is gaps_found. Skipping commit/push.',
+  stdout_false_blocker: 'Returned successfully without changing anything.',
+  last_message_blocker: 'Phase 1: verification status is gaps_found. Skipping commit/push.',
   needs_audit: 'Completed all phase work.',
   milestone_done: 'No active roadmap remains.',
 };
@@ -79,6 +81,10 @@ if (outputPath) {
 }
 
 process.stdout.write(JSON.stringify({ type: 'message', behavior }) + '\\n');
+
+if (behavior === 'stdout_false_blocker') {
+  process.stdout.write('Workflow note: Skipping commit/push until audit is complete.\\n');
+}
 
 if (behavior === 'fail') {
   process.stderr.write('simulated codex failure\\n');
@@ -286,6 +292,32 @@ describe('yolo-ralph CLI behavior', () => {
     const output = JSON.parse(result.output);
     assert.strictEqual(output.status, 'stalled');
     assert.strictEqual(output.iterations_completed, 1);
+  });
+
+  test('blocker-like phrases in stdout do not fail a successful run when last message is clean', () => {
+    tmpDir = createTempGitProject();
+    writePlanningFiles(tmpDir);
+    installLocalSkill(tmpDir);
+
+    const result = runGsdTools(['yolo-ralph', '--raw', '--sleep-seconds', '0'], tmpDir, installFakeCodex(tmpDir, 'stdout_false_blocker'));
+
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.status, 'stalled');
+    assert.strictEqual(output.failed_iterations, 0);
+  });
+
+  test('blocker phrases in the last message still classify the iteration as failed', () => {
+    tmpDir = createTempGitProject();
+    writePlanningFiles(tmpDir);
+    installLocalSkill(tmpDir);
+
+    const result = runGsdTools(['yolo-ralph', '--raw', '--sleep-seconds', '0'], tmpDir, installFakeCodex(tmpDir, 'last_message_blocker'));
+
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.status, 'failed');
+    assert.strictEqual(output.failed_iterations, 1);
   });
 
   test('non-zero Codex exit is classified as failed', () => {
