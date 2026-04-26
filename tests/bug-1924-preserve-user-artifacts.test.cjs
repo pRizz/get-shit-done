@@ -55,7 +55,12 @@ function cleanup(dir) {
  * (not just the export block). Uses --yes to suppress interactive prompts.
  */
 function runInstaller(configDir) {
-  const env = { ...process.env, CLAUDE_CONFIG_DIR: configDir };
+  const env = {
+    ...process.env,
+    CLAUDE_CONFIG_DIR: configDir,
+    HOME: configDir,
+    USERPROFILE: configDir,
+  };
   delete env.GSD_TEST_MODE;
   execFileSync(process.execPath, [INSTALL_SCRIPT, '--claude', '--global', '--yes'], {
     encoding: 'utf-8',

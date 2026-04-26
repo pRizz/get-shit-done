@@ -325,8 +325,12 @@ async function main() {
   // sometimes hallucinate --help or --version on tool invocations; silently
   // ignoring them can cause destructive operations to proceed unchecked.
   const NEVER_VALID_FLAGS = new Set(['-h', '--help', '-?', '--h', '--version', '-v', '--usage']);
+  const COMMANDS_ALLOW_LOCAL_HELP = new Set(['yolo-ralph']);
   for (const arg of args) {
-    if (NEVER_VALID_FLAGS.has(arg)) {
+    const helpAllowedForCommand =
+      COMMANDS_ALLOW_LOCAL_HELP.has(command) &&
+      (arg === '--help' || arg === '-h');
+    if (NEVER_VALID_FLAGS.has(arg) && !helpAllowedForCommand) {
       error(`Unknown flag: ${arg}\ngsd-tools does not accept help or version flags. Run "gsd-tools" with no arguments for usage.`);
     }
   }

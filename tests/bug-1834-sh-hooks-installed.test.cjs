@@ -64,6 +64,8 @@ function runInstaller(configDir) {
     env: {
       ...process.env,
       CLAUDE_CONFIG_DIR: configDir,
+      HOME: configDir,
+      USERPROFILE: configDir,
     },
   });
   return path.join(configDir, 'hooks');

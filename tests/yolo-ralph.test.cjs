@@ -2,6 +2,7 @@ const { test, describe, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const { execSync } = require('child_process');
 const { createTempGitProject, cleanup, runGsdTools } = require('./helpers.cjs');
 
@@ -260,6 +261,26 @@ describe('yolo-ralph CLI behavior', () => {
 
     assert.strictEqual(result.success, false);
     assert.ok(result.error.includes('Codex CLI is not available on PATH'));
+  });
+
+  test('--help succeeds outside a git repo', () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-yolo-help-'));
+
+    const result = runGsdTools(['yolo-ralph', '--help'], tmpDir);
+
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    assert.match(result.output, /Usage: gsd-tools yolo-ralph/);
+    assert.match(result.output, /Help succeeds from any directory/);
+  });
+
+  test('unknown flags still fail with usage guidance', () => {
+    tmpDir = createTempGitProject();
+
+    const result = runGsdTools(['yolo-ralph', '--bogus-flag'], tmpDir);
+
+    assert.strictEqual(result.success, false);
+    assert.match(result.error, /Unknown yolo-ralph argument: --bogus-flag/);
+    assert.match(result.error, /Usage: gsd-tools yolo-ralph/);
   });
 
   test('preflight fails when the GSD project is uninitialized', () => {

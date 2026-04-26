@@ -16,6 +16,7 @@ const {
   getManagedShellTargets,
   getSharedBinDir,
   getSharedInstallStatePath,
+  writeSharedInstallState,
   getCodexYoloRalphWrapperPath,
   GSD_SHELL_PATH_MARKER_START,
   GSD_SHELL_PATH_MARKER_END,
@@ -23,6 +24,8 @@ const {
   install,
   uninstall,
 } = require('../bin/install.js');
+
+const REAL_SHARED_INSTALL_STATE_PATH = path.join(os.homedir(), '.gsd', 'install-state.json');
 
 function setHomeDir(homeDir) {
   const previous = {
@@ -175,6 +178,14 @@ describe('shared global PATH + shim integration', () => {
       'utf8',
     );
 
+    writeSharedInstallState({
+      global_installs: {
+        codex: {
+          config_dir: path.join(tempHome, 'stale-codex-home'),
+        },
+      },
+    });
+
     let commandError = null;
     try {
       execFileSync(sharedShimPath, ['--sleep-seconds', '0'], { encoding: 'utf8' });
@@ -190,6 +201,8 @@ describe('shared global PATH + shim integration', () => {
       JSON.stringify(['yolo-ralph', '--sleep-seconds', '0']),
       'shared shim forwards arguments through the Codex wrapper',
     );
+    const repairedState = JSON.parse(readUtf8(statePath));
+    assert.strictEqual(repairedState.global_installs.codex.config_dir, codexHome, 'shared shim repairs stale Codex paths');
 
     uninstall(true, 'codex');
 
@@ -224,5 +237,72 @@ describe('shared global PATH + shim integration', () => {
     assert.ok(!fs.existsSync(sharedShimPath), 'shared shim removed when Codex is removed');
     assert.ok(!fs.existsSync(getSharedInstallStatePath()), 'shared state removed after the last global uninstall');
     assert.strictEqual(readUtf8(path.join(tempHome, '.zshrc')), '# zsh setup\n');
+  });
+
+  test('shared shim --help works outside a repo even when no live Codex wrapper exists', () => {
+    const codexHome = path.join(tempHome, '.codex');
+    install(true, 'codex');
+
+    const sharedShimPath = path.join(getSharedBinDir(), GSD_YOLO_RALPH_COMMAND);
+    fs.rmSync(getCodexYoloRalphWrapperPath(codexHome), { force: true });
+    writeSharedInstallState({
+      global_installs: {
+        codex: {
+          config_dir: path.join(tempHome, 'stale-codex-home'),
+        },
+      },
+    });
+
+    const help = execFileSync(sharedShimPath, ['--help'], {
+      cwd: tempHome,
+      encoding: 'utf8',
+    });
+
+    assert.match(help, /Usage: gsd-yolo-ralph/);
+    assert.match(help, /Resolution order:/);
+  });
+
+  test('shared shim prints actionable guidance when no usable Codex wrapper exists', () => {
+    const codexHome = path.join(tempHome, '.codex');
+    install(true, 'codex');
+
+    const sharedShimPath = path.join(getSharedBinDir(), GSD_YOLO_RALPH_COMMAND);
+    fs.rmSync(getCodexYoloRalphWrapperPath(codexHome), { force: true });
+    writeSharedInstallState({
+      global_installs: {
+        codex: {
+          config_dir: path.join(tempHome, 'stale-codex-home'),
+        },
+      },
+    });
+
+    let commandError = null;
+    try {
+      execFileSync(sharedShimPath, [], {
+        cwd: tempHome,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      assert.fail('shared shim should fail when no usable Codex wrapper exists');
+    } catch (error) {
+      commandError = error;
+    }
+
+    assert.ok(commandError, 'expected shared shim to fail');
+    assert.match(commandError.stderr, /could not find a usable global Codex yolo-ralph wrapper/i);
+    assert.match(commandError.stderr, /npx get-shit-done-cc --codex --global/);
+  });
+
+  test('global install tests do not mutate the real shared install state path', () => {
+    const beforeExists = fs.existsSync(REAL_SHARED_INSTALL_STATE_PATH);
+    const beforeContent = beforeExists ? readUtf8(REAL_SHARED_INSTALL_STATE_PATH) : null;
+
+    install(true, 'codex');
+
+    const afterExists = fs.existsSync(REAL_SHARED_INSTALL_STATE_PATH);
+    const afterContent = afterExists ? readUtf8(REAL_SHARED_INSTALL_STATE_PATH) : null;
+
+    assert.strictEqual(afterExists, beforeExists, 'real shared install-state presence should remain unchanged');
+    assert.strictEqual(afterContent, beforeContent, 'real shared install-state content should remain unchanged');
   });
 });

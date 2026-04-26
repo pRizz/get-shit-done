@@ -17,6 +17,7 @@ const reset = '\x1b[0m';
 // Codex config.toml constants
 const GSD_CODEX_MARKER = '# GSD Agent Configuration \u2014 managed by get-shit-done installer';
 const GSD_CODEX_HOOKS_OWNERSHIP_PREFIX = '# GSD codex_hooks ownership: ';
+const GSD_CODEX_HOOKS_MARKER = '# GSD Hooks';
 
 // Copilot instructions marker constants
 const GSD_COPILOT_INSTRUCTIONS_MARKER = '<!-- GSD Configuration \u2014 managed by get-shit-done installer -->';
@@ -1783,48 +1784,128 @@ function stripCodexGsdAgentSections(content) {
   return content.replace(/^\[agents\.gsd-[^\]]+\]\n(?:(?!\[)[^\n]*\n?)*/gm, '');
 }
 
+function stripManagedCodexAgentMarkers(content) {
+  return content.replace(
+    /^\s*# GSD Agent Configuration \u2014 managed by get-shit-done installer\r?\n(?:# GSD codex_hooks ownership: (?:section|root_dotted)\r?\n)?/m,
+    ''
+  );
+}
+
+function stripManagedCodexHookBlocks(content) {
+  const lineRecords = getTomlLineRecords(content);
+  const removalRanges = [];
+  const hookSections = getTomlTableSections(content)
+    .filter((section) => section.path === 'hooks' || section.path.startsWith('hooks.'));
+
+  for (let index = 0; index < lineRecords.length; index += 1) {
+    const record = lineRecords[index];
+    if (record.text.trim() !== GSD_CODEX_HOOKS_MARKER) {
+      continue;
+    }
+
+    let sawHookContent = false;
+    let end = record.end + record.eol.length;
+
+    for (let cursor = index + 1; cursor < lineRecords.length; cursor += 1) {
+      const candidate = lineRecords[cursor];
+      const trimmed = candidate.text.trim();
+      const dottedPath = candidate.tableHeader
+        ? candidate.tableHeader.path
+        : candidate.keySegments
+          ? `${candidate.tablePath ? `${candidate.tablePath}.` : ''}${candidate.keySegments.join('.')}`
+          : null;
+      const isHookRecord = Boolean(dottedPath) && (dottedPath === 'hooks' || dottedPath.startsWith('hooks.'));
+      const isBlankOrComment = trimmed === '' || trimmed.startsWith('#');
+
+      if (isHookRecord) {
+        sawHookContent = true;
+        end = candidate.end + candidate.eol.length;
+        continue;
+      }
+
+      if (isBlankOrComment) {
+        end = candidate.end + candidate.eol.length;
+        continue;
+      }
+
+      break;
+    }
+
+    if (sawHookContent) {
+      removalRanges.push({
+        start: record.start,
+        end,
+      });
+    }
+  }
+
+  for (const section of hookSections) {
+    const body = content.slice(section.start, section.end);
+    if (!/gsd-(?:check-update|update-check)\.js/.test(body)) {
+      continue;
+    }
+
+    let start = section.start;
+    for (let index = lineRecords.length - 1; index >= 0; index -= 1) {
+      const record = lineRecords[index];
+      if (record.start >= section.start) {
+        continue;
+      }
+      const trimmed = record.text.trim();
+      if (trimmed === GSD_CODEX_HOOKS_MARKER) {
+        start = record.start;
+      }
+      if (trimmed && !trimmed.startsWith('#') && trimmed !== GSD_CODEX_HOOKS_MARKER) {
+        break;
+      }
+    }
+
+    removalRanges.push({
+      start,
+      end: section.end,
+    });
+  }
+
+  return removeContentRanges(content, removalRanges);
+}
+
+function finalizeCodexConfigContent(cleaned, eol) {
+  let normalized = collapseTomlBlankLines(cleaned);
+  normalized = normalized.replace(/^(?:\r?\n)+/, '').trimEnd();
+  if (!normalized) return null;
+  return normalized + eol;
+}
+
+function resolveManagedCodexHooksOwnership(content) {
+  return getManagedCodexHooksOwnership(content) ||
+    (content.includes(GSD_CODEX_MARKER) ? 'all' : null) ||
+    (/gsd-(?:check-update|update-check)\.js/.test(content) ? 'all' : null) ||
+    (content.includes(GSD_CODEX_HOOKS_MARKER) ? 'all' : null);
+}
+
+function repairGsdManagedCodexHookConfig(content) {
+  const eol = detectLineEnding(content);
+  const ownership = resolveManagedCodexHooksOwnership(content);
+  let cleaned = stripManagedCodexHookBlocks(content);
+  cleaned = stripCodexHooksFeatureAssignments(cleaned, ownership);
+  cleaned = cleaned.replace(/^multi_agent\s*=\s*true\s*(?:\r?\n)?/m, '');
+  cleaned = cleaned.replace(/^default_mode_request_user_input\s*=\s*true\s*(?:\r?\n)?/m, '');
+  cleaned = cleaned.replace(/^\[features\]\s*\n(?=\[|$)/m, '');
+  cleaned = cleaned.replace(/^\[agents\]\s*\n(?=\[|$)/m, '');
+  return finalizeCodexConfigContent(cleaned, eol);
+}
+
 /**
  * Strip GSD sections from Codex config.toml content.
  * Returns cleaned content, or null if file would be empty.
  */
 function stripGsdFromCodexConfig(content) {
   const eol = detectLineEnding(content);
-  const markerIndex = content.indexOf(GSD_CODEX_MARKER);
-  const codexHooksOwnership = getManagedCodexHooksOwnership(content);
-
-  if (markerIndex !== -1) {
-    // Has GSD marker — remove everything from marker to EOF
-    let before = content.substring(0, markerIndex);
-    before = stripCodexHooksFeatureAssignments(before, codexHooksOwnership);
-    // Also strip GSD-injected feature keys above the marker (Case 3 inject)
-    before = before.replace(/^multi_agent\s*=\s*true\s*(?:\r?\n)?/m, '');
-    before = before.replace(/^default_mode_request_user_input\s*=\s*true\s*(?:\r?\n)?/m, '');
-    before = before.replace(/^\[features\]\s*\n(?=\[|$)/m, '');
-    before = before.replace(/^\[agents\]\s*\n(?=\[|$)/m, '');
-    before = before.replace(/^(?:\r?\n)+/, '').trimEnd();
-    if (!before) return null;
-    return before + eol;
-  }
-
-  // No marker but may have GSD-injected feature keys
-  let cleaned = content;
-  cleaned = stripCodexHooksFeatureAssignments(cleaned, codexHooksOwnership);
-  cleaned = cleaned.replace(/^multi_agent\s*=\s*true\s*(?:\r?\n)?/m, '');
-  cleaned = cleaned.replace(/^default_mode_request_user_input\s*=\s*true\s*(?:\r?\n)?/m, '');
-
-  // Remove [agents.gsd-*] sections (from header to next section or EOF)
+  let cleaned = repairGsdManagedCodexHookConfig(content) ?? '';
   cleaned = stripCodexGsdAgentSections(cleaned);
-
-  // Remove [features] section if now empty (only header, no keys before next section)
-  cleaned = cleaned.replace(/^\[features\]\s*\n(?=\[|$)/m, '');
-
-  // Remove [agents] section if now empty
+  cleaned = stripManagedCodexAgentMarkers(cleaned);
   cleaned = cleaned.replace(/^\[agents\]\s*\n(?=\[|$)/m, '');
-
-  cleaned = cleaned.replace(/^(?:\r?\n)+/, '').trimEnd();
-
-  if (!cleaned) return null;
-  return cleaned + eol;
+  return finalizeCodexConfigContent(cleaned, eol);
 }
 
 function detectLineEnding(content) {
@@ -2055,22 +2136,152 @@ function getCodexYoloRalphWrapperPath(configDir) {
   return path.join(configDir, 'get-shit-done', 'bin', GSD_YOLO_RALPH_COMMAND);
 }
 
+function getYoloRalphUsageLines(commandName = GSD_YOLO_RALPH_COMMAND) {
+  return [
+    `Usage: ${commandName} [--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]`,
+    '',
+    'Runs the GSD Codex yolo-ralph wrapper.',
+    'Help works from any directory. Actual execution still requires a git repo with initialized GSD planning assets.',
+  ];
+}
+
+function shellSingleQuote(value) {
+  return `'${String(value).replace(/'/g, `'\"'\"'`)}'`;
+}
+
 function buildCodexYoloRalphWrapper(configDir) {
   const gsdToolsPath = path.resolve(configDir, 'get-shit-done', 'bin', 'gsd-tools.cjs').replace(/\\/g, '/');
+  const helpText = getYoloRalphUsageLines();
   return [
     '#!/usr/bin/env sh',
     'set -eu',
+    '',
+    'if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then',
+    `  printf '%s\\n' ${helpText.map(shellSingleQuote).join(' ')}`,
+    '  exit 0',
+    'fi',
+    '',
+    `if [ ! -f "${gsdToolsPath}" ]; then`,
+    `  printf '%s\\n' ${JSON.stringify('GSD Codex assets are missing from this install.')} ${JSON.stringify('Reinstall with: npx get-shit-done-cc --codex --global')} >&2`,
+    '  exit 1',
+    'fi',
+    '',
     `node "${gsdToolsPath}" yolo-ralph "$@"`,
     '',
   ].join('\n');
 }
 
-function buildSharedYoloRalphShim(wrapperPath) {
-  const normalizedWrapperPath = path.resolve(wrapperPath).replace(/\\/g, '/');
+function buildSharedYoloRalphShim() {
+  const helpText = getYoloRalphUsageLines().concat([
+    '',
+    'Resolution order:',
+    '1. $CODEX_HOME',
+    '2. ~/.gsd/install-state.json (codex entry)',
+    '3. ~/.codex',
+  ]);
+  const stateReadScript = [
+    'const fs = require("fs");',
+    'const statePath = process.argv[1];',
+    'try {',
+    '  const parsed = JSON.parse(fs.readFileSync(statePath, "utf8"));',
+    '  const configDir = parsed && parsed.global_installs && parsed.global_installs.codex && typeof parsed.global_installs.codex.config_dir === "string"',
+    '    ? parsed.global_installs.codex.config_dir.trim()',
+    '    : "";',
+    '  if (configDir) process.stdout.write(configDir);',
+    '} catch {}',
+  ].join(' ');
+  const stateWriteScript = [
+    'const fs = require("fs");',
+    'const path = require("path");',
+    'const statePath = process.argv[1];',
+    'const configDir = process.argv[2];',
+    'let state = {};',
+    'try { state = JSON.parse(fs.readFileSync(statePath, "utf8")); } catch {}',
+    'if (!state || typeof state !== "object") state = {};',
+    'if (!state.global_installs || typeof state.global_installs !== "object") state.global_installs = {};',
+    'if (!Array.isArray(state.shell_files)) state.shell_files = [];',
+    'if (!Array.isArray(state.shared_bin_artifacts)) state.shared_bin_artifacts = [];',
+    'const now = new Date().toISOString();',
+    'state.schema_version = 1;',
+    'state.updated_at = now;',
+    'state.global_installs.codex = { config_dir: configDir, updated_at: now };',
+    `if (!state.shared_bin_artifacts.includes(${JSON.stringify(GSD_YOLO_RALPH_COMMAND)})) state.shared_bin_artifacts.push(${JSON.stringify(GSD_YOLO_RALPH_COMMAND)});`,
+    'fs.mkdirSync(path.dirname(statePath), { recursive: true });',
+    'fs.writeFileSync(statePath, JSON.stringify(state, null, 2) + "\\n", "utf8");',
+  ].join(' ');
   return [
     '#!/usr/bin/env sh',
     'set -eu',
-    `"${normalizedWrapperPath}" "$@"`,
+    '',
+    'STATE_PATH="${HOME}/.gsd/install-state.json"',
+    'STATE_CODEX_HOME=""',
+    'RESOLVED_CONFIG_DIR=""',
+    'RESOLVED_WRAPPER=""',
+    'DEFAULT_CODEX_HOME="${HOME}/.codex"',
+    '',
+    'print_help() {',
+    `  printf '%s\\n' ${helpText.map(shellSingleQuote).join(' ')}`,
+    '}',
+    '',
+    'read_state_codex_home() {',
+    '  if ! command -v node >/dev/null 2>&1 || [ ! -f "$STATE_PATH" ]; then',
+    '    return 0',
+    '  fi',
+    `  node -e ${JSON.stringify(stateReadScript)} "$STATE_PATH" 2>/dev/null || true`,
+    '}',
+    '',
+    'repair_shared_state() {',
+    '  desired_dir="${1:-}"',
+    '  current_dir="${2:-}"',
+    '  if [ -z "$desired_dir" ] || [ "$desired_dir" = "$current_dir" ] || ! command -v node >/dev/null 2>&1; then',
+    '    return 0',
+    '  fi',
+    `  node -e ${JSON.stringify(stateWriteScript)} "$STATE_PATH" "$desired_dir" >/dev/null 2>&1 || true`,
+    '}',
+    '',
+    'if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then',
+    '  print_help',
+    '  exit 0',
+    'fi',
+    '',
+    'if [ -n "${CODEX_HOME:-}" ]; then',
+    '  candidate_home="${CODEX_HOME%/}"',
+    `  candidate_wrapper="\${candidate_home}/get-shit-done/bin/${GSD_YOLO_RALPH_COMMAND}"`,
+    '  if [ -x "$candidate_wrapper" ]; then',
+    '    RESOLVED_CONFIG_DIR="$candidate_home"',
+    '    RESOLVED_WRAPPER="$candidate_wrapper"',
+    '  fi',
+    'fi',
+    '',
+    'STATE_CODEX_HOME="$(read_state_codex_home)"',
+    'if [ -z "$RESOLVED_WRAPPER" ] && [ -n "$STATE_CODEX_HOME" ]; then',
+    '  candidate_home="${STATE_CODEX_HOME%/}"',
+    `  candidate_wrapper="\${candidate_home}/get-shit-done/bin/${GSD_YOLO_RALPH_COMMAND}"`,
+    '  if [ -x "$candidate_wrapper" ]; then',
+    '    RESOLVED_CONFIG_DIR="$candidate_home"',
+    '    RESOLVED_WRAPPER="$candidate_wrapper"',
+    '  fi',
+    'fi',
+    '',
+    'if [ -z "$RESOLVED_WRAPPER" ]; then',
+    '  candidate_home="${DEFAULT_CODEX_HOME%/}"',
+    `  candidate_wrapper="\${candidate_home}/get-shit-done/bin/${GSD_YOLO_RALPH_COMMAND}"`,
+    '  if [ -x "$candidate_wrapper" ]; then',
+    '    RESOLVED_CONFIG_DIR="$candidate_home"',
+    '    RESOLVED_WRAPPER="$candidate_wrapper"',
+    '  fi',
+    'fi',
+    '',
+    'if [ -z "$RESOLVED_WRAPPER" ]; then',
+    '  printf \'%s\\n\' ' +
+      `${JSON.stringify('GSD could not find a usable global Codex yolo-ralph wrapper.')} '' ${JSON.stringify('Looked in:')} ` +
+      '"  - ${CODEX_HOME:-<unset>}" "  - ${STATE_CODEX_HOME:-<missing from ~/.gsd/install-state.json>}" "  - ${DEFAULT_CODEX_HOME}" ' +
+      `'' ${JSON.stringify('Install or repair the Codex global assets with:')} ${JSON.stringify('  npx get-shit-done-cc --codex --global')} ${JSON.stringify('Or set CODEX_HOME to a valid Codex config root and retry.')} >&2`,
+    '  exit 1',
+    'fi',
+    '',
+    'repair_shared_state "$RESOLVED_CONFIG_DIR" "$STATE_CODEX_HOME"',
+    'exec "$RESOLVED_WRAPPER" "$@"',
     '',
   ].join('\n');
 }
@@ -2141,7 +2352,7 @@ function reconcileSharedGlobalInstallState(state) {
   if (activeCodexInstall) {
     const codexWrapperPath = getCodexYoloRalphWrapperPath(activeCodexInstall.config_dir);
     if (fs.existsSync(codexWrapperPath)) {
-      writeExecutableShellScript(sharedCommandPath, buildSharedYoloRalphShim(codexWrapperPath));
+      writeExecutableShellScript(sharedCommandPath, buildSharedYoloRalphShim());
       normalized.shared_bin_artifacts.push(GSD_YOLO_RALPH_COMMAND);
     } else if (fs.existsSync(sharedCommandPath)) {
       fs.rmSync(sharedCommandPath, { force: true });
@@ -3021,12 +3232,10 @@ function mergeCodexConfig(configPath, gsdBlock) {
 
   // Case 2: Has GSD marker — truncate and re-append
   if (markerIndex !== -1) {
-    let before = existing.substring(0, markerIndex).trimEnd();
-    if (before) {
-      // Strip any GSD-managed sections that leaked above the marker from previous installs
-      before = stripLeakedGsdCodexSections(before).trimEnd();
-
-      fs.writeFileSync(configPath, before + eol + eol + normalizedGsdBlock + eol);
+    let cleaned = stripLeakedGsdCodexSections(existing);
+    cleaned = stripManagedCodexAgentMarkers(cleaned).trimEnd();
+    if (cleaned) {
+      fs.writeFileSync(configPath, cleaned + eol + eol + normalizedGsdBlock + eol);
     } else {
       fs.writeFileSync(configPath, normalizedGsdBlock + eol);
     }
@@ -3034,7 +3243,7 @@ function mergeCodexConfig(configPath, gsdBlock) {
   }
 
   // Case 3: No marker — append GSD block
-  let content = stripLeakedGsdCodexSections(existing).trimEnd();
+  let content = stripManagedCodexAgentMarkers(stripLeakedGsdCodexSections(existing)).trimEnd();
   if (content) {
     content = content + eol + eol + normalizedGsdBlock + eol;
   } else {
@@ -6076,39 +6285,19 @@ function install(isGlobal, runtime = 'claude') {
     console.log(`  ${green}✓${reset} Generated config.toml with ${agentCount} agent roles`);
     console.log(`  ${green}✓${reset} Generated ${agentCount} agent .toml config files`);
 
-    // Add Codex hooks (SessionStart for update checking) — requires codex_hooks feature flag
+    // Remove any legacy GSD-managed Codex hook state; current GSD installs do not
+    // register Codex hooks until we have a verified supported schema again.
     const configPath = path.join(targetDir, 'config.toml');
     try {
       let configContent = fs.existsSync(configPath) ? fs.readFileSync(configPath, 'utf-8') : '';
-      const eol = detectLineEnding(configContent);
-      const codexHooksFeature = ensureCodexHooksFeature(configContent);
-      configContent = setManagedCodexHooksOwnership(codexHooksFeature.content, codexHooksFeature.ownership);
-
-      // Add SessionStart hook for update checking
-      const updateCheckScript = path.resolve(targetDir, 'hooks', 'gsd-check-update.js').replace(/\\/g, '/');
-      const hookBlock =
-        `${eol}# GSD Hooks${eol}` +
-        `[[hooks]]${eol}` +
-        `event = "SessionStart"${eol}` +
-        `command = "node ${updateCheckScript}"${eol}`;
-
-      // Migrate legacy gsd-update-check entries from prior installs (#1755 followup)
-      // Remove stale hook blocks that used the inverted filename or wrong path
-      if (configContent.includes('gsd-update-check')) {
-        configContent = configContent.replace(/\n# GSD Hooks\n\[\[hooks\]\]\nevent = "SessionStart"\ncommand = "node [^\n]*gsd-update-check\.js"\n/g, '\n');
-        configContent = configContent.replace(/\r\n# GSD Hooks\r\n\[\[hooks\]\]\r\nevent = "SessionStart"\r\ncommand = "node [^\r\n]*gsd-update-check\.js"\r\n/g, '\r\n');
+      const repaired = repairGsdManagedCodexHookConfig(configContent);
+      const normalized = repaired ?? '';
+      if (normalized !== configContent) {
+        fs.writeFileSync(configPath, normalized, 'utf-8');
+        console.log(`  ${green}✓${reset} Removed legacy GSD-managed Codex hook config`);
       }
-
-      if (hasEnabledCodexHooksFeature(configContent) &&
-          !configContent.includes('gsd-check-update') &&
-          fs.existsSync(path.join(targetDir, 'hooks', 'gsd-check-update.js'))) {
-        configContent += hookBlock;
-      }
-
-      fs.writeFileSync(configPath, configContent, 'utf-8');
-      console.log(`  ${green}✓${reset} Configured Codex hooks (SessionStart)`);
     } catch (e) {
-      console.warn(`  ${yellow}⚠${reset}  Could not configure Codex hooks: ${e.message}`);
+      console.warn(`  ${yellow}⚠${reset}  Could not repair legacy Codex hook config: ${e.message}`);
     }
 
     const leakedPaths = scanCodexManagedClaudeRuntimeLeaks(targetDir);
@@ -6828,6 +7017,8 @@ if (process.env.GSD_TEST_MODE) {
     registerSharedGlobalInstall,
     unregisterSharedGlobalInstall,
     reconcileSharedGlobalInstallState,
+    repairGsdManagedCodexHookConfig,
+    stripManagedCodexHookBlocks,
     getCodexYoloRalphWrapperPath,
     buildCodexYoloRalphWrapper,
     buildSharedYoloRalphShim,

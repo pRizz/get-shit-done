@@ -18,7 +18,7 @@ const { execFileSync } = require('child_process');
 const { cleanup, createTempDir } = require('./helpers.cjs');
 
 const INSTALL_SRC = path.join(__dirname, '..', 'bin', 'install.js');
-const { writeManifest, validateHookFields } = require(INSTALL_SRC);
+const { writeManifest, validateHookFields, repairGsdManagedCodexHookConfig } = require(INSTALL_SRC);
 const BUILD_SCRIPT = path.join(__dirname, '..', 'scripts', 'build-hooks.js');
 const HOOKS_DIST = path.join(__dirname, '..', 'hooks', 'dist');
 
@@ -409,15 +409,7 @@ describe('uninstall settings cleanup preserves user hooks', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('Codex legacy gsd-update-check migration', () => {
-  test('install.js strips legacy gsd-update-check hook blocks from config', () => {
-    const src = fs.readFileSync(INSTALL_SRC, 'utf-8');
-    assert.ok(
-      src.includes('gsd-update-check') && src.includes('replace('),
-      'install.js should have migration logic to strip legacy gsd-update-check entries'
-    );
-  });
-
-  test('migration regex removes LF legacy hook block', () => {
+  test('repair helper strips LF legacy hook blocks from config', () => {
     const legacyBlock = [
       '[features]',
       'codex_hooks = true',
@@ -429,13 +421,11 @@ describe('Codex legacy gsd-update-check migration', () => {
       '',
     ].join('\n');
 
-    let content = legacyBlock;
-    content = content.replace(/\n# GSD Hooks\n\[\[hooks\]\]\nevent = "SessionStart"\ncommand = "node [^\n]*gsd-update-check\.js"\n/g, '\n');
-    assert.ok(!content.includes('gsd-update-check'), 'legacy hook block should be removed');
-    assert.ok(content.includes('[features]'), 'non-hook content should be preserved');
+    const content = repairGsdManagedCodexHookConfig(legacyBlock);
+    assert.strictEqual(content, null, 'only GSD-managed legacy hook content should be removed entirely');
   });
 
-  test('migration regex removes CRLF legacy hook block', () => {
+  test('repair helper strips CRLF legacy hook block', () => {
     const legacyBlock = [
       '[features]',
       'codex_hooks = true',
@@ -447,9 +437,7 @@ describe('Codex legacy gsd-update-check migration', () => {
       '',
     ].join('\r\n');
 
-    let content = legacyBlock;
-    content = content.replace(/\r\n# GSD Hooks\r\n\[\[hooks\]\]\r\nevent = "SessionStart"\r\ncommand = "node [^\r\n]*gsd-update-check\.js"\r\n/g, '\r\n');
-    assert.ok(!content.includes('gsd-update-check'), 'legacy CRLF hook block should be removed');
-    assert.ok(content.includes('[features]'), 'non-hook content should be preserved');
+    const content = repairGsdManagedCodexHookConfig(legacyBlock);
+    assert.strictEqual(content, null, 'only GSD-managed CRLF hook content should be removed entirely');
   });
 });

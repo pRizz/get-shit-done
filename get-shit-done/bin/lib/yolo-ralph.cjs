@@ -19,6 +19,12 @@ const HEARTBEAT_SNIPPET_MAX = 120;
 const LIVE_POLL_INTERVAL_MS = 1000;
 const RECENT_LINE_LIMIT = 8;
 const USAGE = 'Usage: gsd-tools yolo-ralph [--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]';
+const HELP_TEXT = [
+  USAGE,
+  '',
+  'Launch repeated fresh Codex runs of the strict-push yolo wrapper.',
+  'Help succeeds from any directory. Actual execution still requires a git repo, Codex on PATH, and initialized GSD planning assets.',
+].join('\n');
 const BLOCKER_PATTERNS = [
   /verification status is human_needed/i,
   /verification status is gaps_found/i,
@@ -171,6 +177,7 @@ function parseNonNegativeInteger(value, flagName, allowZero = false) {
 
 function parseArgs(args) {
   const options = {
+    helpRequested: false,
     maxIterations: null,
     sleepSeconds: null,
     heartbeatSeconds: null,
@@ -179,6 +186,11 @@ function parseArgs(args) {
 
   for (let i = 0; i < args.length; i++) {
     const token = args[i];
+
+    if (token === '--help' || token === '-h') {
+      options.helpRequested = true;
+      continue;
+    }
 
     if (token === '--max-iterations') {
       const value = args[i + 1];
@@ -916,6 +928,10 @@ function buildRunSummary(runMeta, iterations, finalStatus, finalReason, finalSna
 
 async function cmdYoloRalph(cwd, args, raw) {
   const parsedArgs = parseArgs(args);
+  if (parsedArgs.helpRequested) {
+    writeStdout(`${HELP_TEXT}\n`);
+    return;
+  }
   const config = loadConfig(cwd);
   const maxIterations = parsedArgs.maxIterations ?? config.yolo_ralph_max_iterations;
   const sleepSeconds = parsedArgs.sleepSeconds ?? config.yolo_ralph_sleep_seconds;

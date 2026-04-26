@@ -53,6 +53,29 @@ function cleanup(dir) {
   try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
 }
 
+function setHomeDir(homeDir) {
+  const previous = {
+    HOME: process.env.HOME,
+    USERPROFILE: process.env.USERPROFILE,
+  };
+  process.env.HOME = homeDir;
+  process.env.USERPROFILE = homeDir;
+  return previous;
+}
+
+function restoreHomeDir(previous) {
+  if (previous.HOME === undefined) {
+    delete process.env.HOME;
+  } else {
+    process.env.HOME = previous.HOME;
+  }
+  if (previous.USERPROFILE === undefined) {
+    delete process.env.USERPROFILE;
+  } else {
+    process.env.USERPROFILE = previous.USERPROFILE;
+  }
+}
+
 // ─── tests ────────────────────────────────────────────────────────────────────
 
 describe('uninstall — manifest cleanup (#1908)', () => {
@@ -78,10 +101,12 @@ describe('uninstall — manifest cleanup (#1908)', () => {
     // Run uninstall against tmpDir (pass it via CLAUDE_CONFIG_DIR so getGlobalDir()
     // resolves to our temp directory; pass isGlobal=true)
     const savedEnv = process.env.CLAUDE_CONFIG_DIR;
+    const previousHome = setHomeDir(tmpDir);
     process.env.CLAUDE_CONFIG_DIR = tmpDir;
     try {
       uninstall(true, 'claude');
     } finally {
+      restoreHomeDir(previousHome);
       if (savedEnv === undefined) {
         delete process.env.CLAUDE_CONFIG_DIR;
       } else {
