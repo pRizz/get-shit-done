@@ -220,26 +220,27 @@ Prints a short preview of the remaining phases and planned steps before delegati
 
 ### `/gsd-yolo-ralph`
 
-Loop fresh Codex executions of the strict-push yolo wrapper until milestone lifecycle work or a blocker is reached.
+Loop fresh launcher-specific executions of the strict-push yolo wrapper until milestone lifecycle work or a blocker is reached.
 
 This is a loop driver over:
 `$gsd-yolo-discuss-plan-execute-commit-and-push`
 
 | Flag | Description |
 |------|-------------|
+| `--agent-cli <selector>` | Required launcher selector: `codex`, `claude`, `cursor-agent`, or `agent` (alias for Cursor) |
 | `--max-iterations N` | Override the default iteration cap (defaults to `20`) |
 | `--sleep-seconds N` | Override the sleep interval between successful iterations (defaults to `10`, may be `0` for testing) |
 | `--heartbeat-seconds N` | Override the heartbeat summary interval (defaults to `60`, may be `0` to disable) |
 | `--stage-tick-seconds N` | Override the live stage timer interval for TTY runs (defaults to `1`, may be `0` to disable) |
 
-**Prerequisites:** Git repo, `.planning/PROJECT.md`, `.planning/STATE.md`, Codex CLI on `PATH`, and Codex skill assets installed locally or globally
+**Prerequisites:** Git repo, `.planning/PROJECT.md`, `.planning/STATE.md`, explicit `--agent-cli`, the selected launcher CLI on `PATH`, and matching GSD assets installed locally or globally
 **Produces:** `.planning/tmp/yolo-ralph/run-<timestamp>/` logs and summaries
 
 ```bash
-/gsd-yolo-ralph
-/gsd-yolo-ralph --max-iterations 5
-/gsd-yolo-ralph --sleep-seconds 0
-/gsd-yolo-ralph --heartbeat-seconds 30 --stage-tick-seconds 2
+/gsd-yolo-ralph --agent-cli codex
+/gsd-yolo-ralph --agent-cli claude --max-iterations 5
+/gsd-yolo-ralph --agent-cli cursor-agent --sleep-seconds 0
+/gsd-yolo-ralph --agent-cli agent --heartbeat-seconds 30 --stage-tick-seconds 2
 ```
 
 ---

@@ -20,7 +20,14 @@ const MANAGED_HOOKS = [
   'gsd-read-guard.js',
   'gsd-statusline.js',
   'gsd-workflow-guard.js',
+  'gsd-session-state.sh',
+  'gsd-validate-commit.sh',
+  'gsd-phase-boundary.sh',
 ];
+
+function emitHookSuccess() {
+  process.stdout.write(JSON.stringify({ continue: true }));
+}
 
 const homeDir = os.homedir();
 const cwd = process.cwd();
@@ -224,7 +231,7 @@ function collectStaleHooks(configDir, installedVersion) {
     for (const hookFile of hookFiles) {
       try {
         const content = fs.readFileSync(path.join(hooksDir, hookFile), 'utf8');
-        const versionMatch = content.match(/\/\/ gsd-hook-version:\s*(.+)/);
+        const versionMatch = content.match(/(?:\/\/|#)\s*gsd-hook-version:\s*(.+)/);
         if (versionMatch) {
           const hookVersion = versionMatch[1].trim();
           if (isNewer(installedVersion, hookVersion) && !hookVersion.includes('{{')) {
@@ -288,6 +295,7 @@ if (require.main === module) {
     runBackgroundCheck().catch(() => {});
   } else {
     spawnBackgroundCheck();
+    emitHookSuccess();
   }
 }
 

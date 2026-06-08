@@ -442,27 +442,34 @@ describe('gsd-context-monitor session_id path traversal', () => {
   const monitorPath = path.join(__dirname, '..', 'hooks', 'gsd-context-monitor.js');
   const tmpDir = os.tmpdir();
 
-  test('exits silently for session_id with ../ traversal', () => {
+  function assertNeutralHookJson(result) {
+    assert.notStrictEqual(result.stdout.trim(), '', 'hook should emit neutral JSON');
+    const output = JSON.parse(result.stdout);
+    assert.strictEqual(output.continue, true);
+    assert.strictEqual(output.hookSpecificOutput, undefined);
+  }
+
+  test('exits with neutral JSON for session_id with ../ traversal', () => {
     const maliciousId = '../../../etc/passwd';
     const result = runHook(monitorPath, { session_id: maliciousId });
     assert.strictEqual(result.exitCode, 0, 'hook should exit 0 for malicious session_id');
-    assert.strictEqual(result.stdout.trim(), '', 'hook should produce no output for malicious session_id');
+    assertNeutralHookJson(result);
     const escapedPath = path.join(tmpDir, 'claude-ctx-' + maliciousId + '.json');
     assert.ok(!fs.existsSync(escapedPath), 'traversal file must not be created');
   });
 
-  test('exits silently for session_id with / separator', () => {
+  test('exits with neutral JSON for session_id with / separator', () => {
     const maliciousId = 'foo/bar';
     const result = runHook(monitorPath, { session_id: maliciousId });
     assert.strictEqual(result.exitCode, 0);
-    assert.strictEqual(result.stdout.trim(), '');
+    assertNeutralHookJson(result);
   });
 
-  test('exits silently for session_id with backslash', () => {
+  test('exits with neutral JSON for session_id with backslash', () => {
     const maliciousId = 'foo\\bar';
     const result = runHook(monitorPath, { session_id: maliciousId });
     assert.strictEqual(result.exitCode, 0);
-    assert.strictEqual(result.stdout.trim(), '');
+    assertNeutralHookJson(result);
   });
 });
 

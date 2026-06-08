@@ -30,6 +30,18 @@ function spawnHook(hookPath, options) {
   return spawnSync('bash', [hookPath], { ...options, env: hookEnv });
 }
 
+function parseHookJson(result, label) {
+  assert.notStrictEqual(result.stdout.trim(), '', `${label} should emit JSON`);
+  assert.doesNotThrow(() => JSON.parse(result.stdout), `${label} stdout should be valid JSON: ${result.stdout}`);
+  return JSON.parse(result.stdout);
+}
+
+function assertNeutralSuccessJson(result, label) {
+  const output = parseHookJson(result, label);
+  assert.strictEqual(output.continue, true, `${label} should continue`);
+  return output;
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function createTempProject(prefix = 'gsd-hook-test-') {
@@ -117,8 +129,8 @@ describe('installer hook registration', () => {
       'install.js should contain gsd-validate-commit hook registration'
     );
     assert.ok(
-      installSource.includes('validateCommitCommand'),
-      'install.js should define validateCommitCommand variable'
+      installSource.includes('validateCommitHookPath'),
+      'install.js should define validateCommitHookPath variable'
     );
     assert.ok(
       installSource.includes('hasValidateCommitHook'),
@@ -172,6 +184,16 @@ describe('installer hook registration', () => {
     assert.ok(
       validateCommitBlock.includes('preToolEvent'),
       'validate-commit hook should register on preToolEvent (PreToolUse)'
+    );
+    assert.ok(
+      validateCommitBlock.includes('buildBashHookHandler(validateCommitHookPath, 5)') &&
+        installSource.includes("command: 'bash'"),
+      'validate-commit hook should use exec-form bash command'
+    );
+    assert.ok(
+      validateCommitBlock.includes('args: [scriptPath]') ||
+        validateCommitBlock.includes('...validateCommitHandler'),
+      'validate-commit hook should pass the script path through args'
     );
   });
 
@@ -232,6 +254,7 @@ describe('opt-in gating behavior', { skip: isWindows ? 'bash hooks require unix 
 
     // Should exit 0 (no-op) even with a bad commit message
     assert.strictEqual(result.status, 0, `Should be no-op when disabled, got ${result.status}`);
+    assertNeutralSuccessJson(result, 'validate-commit disabled');
   });
 
   test('validate-commit is a no-op when config.json is absent', (t) => {
@@ -250,6 +273,7 @@ describe('opt-in gating behavior', { skip: isWindows ? 'bash hooks require unix 
     });
 
     assert.strictEqual(result.status, 0, `Should be no-op without config.json, got ${result.status}`);
+    assertNeutralSuccessJson(result, 'validate-commit missing config');
   });
 
   test('session-state is a no-op when hooks.community is false', () => {
@@ -264,11 +288,8 @@ describe('opt-in gating behavior', { skip: isWindows ? 'bash hooks require unix 
     });
 
     assert.strictEqual(result.status, 0, `Should exit 0: ${result.stderr}`);
-    // Should NOT output state info when disabled
-    assert.ok(
-      !result.stdout.includes('Project State Reminder'),
-      `Should not output state reminder when disabled: ${result.stdout}`
-    );
+    const output = assertNeutralSuccessJson(result, 'session-state disabled');
+    assert.strictEqual(output.hookSpecificOutput, undefined, 'disabled session-state should not inject context');
   });
 
   test('phase-boundary is a no-op when hooks.community is false', () => {
@@ -285,10 +306,8 @@ describe('opt-in gating behavior', { skip: isWindows ? 'bash hooks require unix 
     });
 
     assert.strictEqual(result.status, 0, `Should exit 0: ${result.stderr}`);
-    assert.ok(
-      !result.stdout.includes('.planning/ file modified'),
-      `Should not output warning when disabled: ${result.stdout}`
-    );
+    const output = assertNeutralSuccessJson(result, 'phase-boundary disabled');
+    assert.strictEqual(output.hookSpecificOutput, undefined, 'disabled phase-boundary should not inject context');
   });
 });
 
@@ -321,6 +340,7 @@ describe('hook execution when enabled', { skip: isWindows ? 'bash hooks require 
     });
 
     assert.strictEqual(result.status, 0, `Valid commit should exit 0, got ${result.status}. stderr: ${result.stderr}`);
+    assertNeutralSuccessJson(result, 'validate-commit valid commit');
   });
 
   test('validate-commit blocks non-conventional commit', () => {
@@ -335,9 +355,10 @@ describe('hook execution when enabled', { skip: isWindows ? 'bash hooks require 
       cwd: tmpDir,
     });
 
-    assert.strictEqual(result.status, 2, `Non-conventional commit should exit 2, got ${result.status}`);
-    assert.ok(result.stdout.includes('block'), `stdout should contain "block": ${result.stdout}`);
-    assert.ok(result.stdout.includes('Conventional Commits'), `stdout should mention "Conventional Commits": ${result.stdout}`);
+    assert.strictEqual(result.status, 0, `Non-conventional commit should emit JSON deny and exit 0, got ${result.status}`);
+    const output = assertNeutralSuccessJson(result, 'validate-commit invalid commit');
+    assert.strictEqual(output.hookSpecificOutput?.permissionDecision, 'deny');
+    assert.match(output.hookSpecificOutput?.permissionDecisionReason || '', /Conventional Commits/);
   });
 
   test('validate-commit allows non-commit commands', () => {
@@ -353,6 +374,7 @@ describe('hook execution when enabled', { skip: isWindows ? 'bash hooks require 
     });
 
     assert.strictEqual(result.status, 0, `Non-commit command should exit 0, got ${result.status}`);
+    assertNeutralSuccessJson(result, 'validate-commit non-commit command');
   });
 
   test('session-state outputs state info when enabled', () => {
@@ -366,10 +388,8 @@ describe('hook execution when enabled', { skip: isWindows ? 'bash hooks require 
     });
 
     assert.strictEqual(result.status, 0, `Should exit 0: ${result.stderr}`);
-    assert.ok(
-      result.stdout.includes('STATE.md exists'),
-      `stdout should contain "STATE.md exists": ${result.stdout}`
-    );
+    const output = assertNeutralSuccessJson(result, 'session-state enabled');
+    assert.match(output.hookSpecificOutput?.additionalContext || '', /STATE\.md exists/);
   });
 
   test('session-state exits 0 without .planning/ (in enabled project)', (t) => {
@@ -387,10 +407,8 @@ describe('hook execution when enabled', { skip: isWindows ? 'bash hooks require 
     });
 
     assert.strictEqual(result.status, 0, `Should exit 0: ${result.stderr}`);
-    assert.ok(
-      result.stdout.includes('No .planning/ found') || result.stdout.includes('Project State'),
-      `Should handle missing STATE.md gracefully: ${result.stdout}`
-    );
+    const output = assertNeutralSuccessJson(result, 'session-state missing STATE');
+    assert.match(output.hookSpecificOutput?.additionalContext || '', /Project State|No \.planning/);
   });
 
   test('phase-boundary detects .planning/ writes when enabled', () => {
@@ -406,10 +424,8 @@ describe('hook execution when enabled', { skip: isWindows ? 'bash hooks require 
     });
 
     assert.strictEqual(result.status, 0, `Should exit 0: ${result.stderr}`);
-    assert.ok(
-      result.stdout.includes('.planning/ file modified'),
-      `stdout should contain ".planning/ file modified": ${result.stdout}`
-    );
+    const output = assertNeutralSuccessJson(result, 'phase-boundary enabled');
+    assert.match(output.hookSpecificOutput?.additionalContext || '', /\.planning\/ file modified/);
   });
 });
 
@@ -441,8 +457,9 @@ describe('hook security tests', { skip: isWindows ? 'bash hooks require unix she
       cwd: tmpDir,
     });
 
-    assert.strictEqual(result.status, 2, `Shell metacharacter message should be blocked: ${result.status}`);
-    assert.ok(result.stdout.includes('block'), `stdout should contain "block": ${result.stdout}`);
+    assert.strictEqual(result.status, 0, `Shell metacharacter message should be denied via JSON: ${result.status}`);
+    const output = assertNeutralSuccessJson(result, 'validate-commit shell metacharacter');
+    assert.strictEqual(output.hookSpecificOutput?.permissionDecision, 'deny');
   });
 
   test('validate-commit blocks message with backtick injection', () => {
@@ -457,8 +474,9 @@ describe('hook security tests', { skip: isWindows ? 'bash hooks require unix she
       cwd: tmpDir,
     });
 
-    assert.strictEqual(result.status, 2, `Backtick injection should be blocked: ${result.status}`);
-    assert.ok(result.stdout.includes('block'), `stdout should contain "block": ${result.stdout}`);
+    assert.strictEqual(result.status, 0, `Backtick injection should be denied via JSON: ${result.status}`);
+    const output = assertNeutralSuccessJson(result, 'validate-commit backtick injection');
+    assert.strictEqual(output.hookSpecificOutput?.permissionDecision, 'deny');
   });
 
   test('validate-commit allows commit with scope containing special chars', () => {
@@ -474,6 +492,7 @@ describe('hook security tests', { skip: isWindows ? 'bash hooks require unix she
     });
 
     assert.strictEqual(result.status, 0, `Valid commit with / in scope should be allowed: ${result.status}`);
+    assertNeutralSuccessJson(result, 'validate-commit special scope');
   });
 
   test('phase-boundary handles malformed JSON input gracefully', () => {
@@ -487,6 +506,7 @@ describe('hook security tests', { skip: isWindows ? 'bash hooks require unix she
     });
 
     assert.strictEqual(result.status, 0, `Should not crash on malformed JSON: ${result.stderr}`);
+    assertNeutralSuccessJson(result, 'phase-boundary malformed JSON');
   });
 
   test('hooks handle config.json with broken JSON gracefully', () => {
@@ -509,5 +529,6 @@ describe('hook security tests', { skip: isWindows ? 'bash hooks require unix she
 
     // Should exit 0 (treat malformed config as disabled)
     assert.strictEqual(result.status, 0, `Malformed config should be treated as disabled: ${result.status}`);
+    assertNeutralSuccessJson(result, 'validate-commit malformed config');
   });
 });

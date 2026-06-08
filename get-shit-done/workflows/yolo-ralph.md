@@ -1,5 +1,5 @@
 <purpose>
-Drive repeated fresh Codex runs of the strict-push yolo wrapper until phase work stops advancing, a blocker occurs, or milestone lifecycle work becomes the next step.
+Drive repeated fresh launcher-specific runs of the strict-push yolo wrapper until phase work stops advancing, a blocker occurs, or milestone lifecycle work becomes the next step.
 </purpose>
 
 <process>
@@ -12,7 +12,7 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" yolo-ralph $ARGUMENTS
 ```
 
 The CLI subcommand owns:
-- Codex preflight checks
+- launcher preflight checks
 - iteration looping and sleep behavior
 - `.planning/tmp/yolo-ralph/` run logs
 - stop-condition classification (`advanced`, `failed`, `stalled`, `needs_audit`, `milestone_done`)

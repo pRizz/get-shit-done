@@ -38,28 +38,51 @@ function writePlanningFiles(tmpDir, { roadmap = true, incomplete = true } = {}) 
   }
 }
 
-function installLocalSkill(tmpDir) {
-  const skillDir = path.join(tmpDir, '.codex', 'skills', 'gsd-yolo-discuss-plan-execute-commit-and-push');
-  fs.mkdirSync(skillDir, { recursive: true });
-  fs.writeFileSync(path.join(skillDir, 'SKILL.md'), '# Skill\n', 'utf8');
+function installLocalAsset(tmpDir, launcher = 'codex') {
+  if (launcher === 'codex') {
+    const skillDir = path.join(tmpDir, '.codex', 'skills', 'gsd-yolo-discuss-plan-execute-commit-and-push');
+    fs.mkdirSync(skillDir, { recursive: true });
+    fs.writeFileSync(path.join(skillDir, 'SKILL.md'), '# Skill\n', 'utf8');
+    return;
+  }
+
+  if (launcher === 'claude') {
+    const commandDir = path.join(tmpDir, '.claude', 'commands', 'gsd');
+    fs.mkdirSync(commandDir, { recursive: true });
+    fs.writeFileSync(path.join(commandDir, 'yolo-discuss-plan-execute-commit-and-push.md'), '# Command\n', 'utf8');
+    return;
+  }
+
+  if (launcher === 'cursor-agent') {
+    const skillDir = path.join(tmpDir, '.cursor', 'skills', 'gsd-yolo-discuss-plan-execute-commit-and-push');
+    fs.mkdirSync(skillDir, { recursive: true });
+    fs.writeFileSync(path.join(skillDir, 'SKILL.md'), '# Skill\n', 'utf8');
+    return;
+  }
+
+  throw new Error(`Unsupported launcher asset install: ${launcher}`);
 }
 
-function installFakeCodex(tmpDir, behavior) {
+function installFakeLauncher(tmpDir, launcher, behavior) {
   const binDir = path.join(tmpDir, 'fake-bin');
   fs.mkdirSync(binDir, { recursive: true });
 
-  const fakeJs = path.join(binDir, 'fake-codex.js');
+  const safeLauncher = launcher.replace(/[^a-z0-9-]/gi, '_');
+  const fakeJs = path.join(binDir, `fake-${safeLauncher}.js`);
   const jsSource = `#!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
 const args = process.argv.slice(2);
-const cdIndex = args.indexOf('-C');
-const repoRoot = cdIndex !== -1 ? args[cdIndex + 1] : process.cwd();
-const outIndex = args.indexOf('-o');
-const outputPath = outIndex !== -1 ? args[outIndex + 1] : null;
-const behavior = process.env.GSD_TEST_CODEX_BEHAVIOR || 'advance';
+const launcher = ${JSON.stringify(launcher)};
+const repoRoot = launcher === 'codex'
+  ? (args.includes('-C') ? args[args.indexOf('-C') + 1] : process.cwd())
+  : process.cwd();
+const outputPath = launcher === 'codex' && args.includes('-o')
+  ? args[args.indexOf('-o') + 1]
+  : null;
+const behavior = process.env.GSD_TEST_LAUNCHER_BEHAVIOR || 'advance';
 const sleep = milliseconds => {
   if (milliseconds <= 0) return;
   const buffer = new SharedArrayBuffer(4);
@@ -89,13 +112,23 @@ const contextPath = path.join(phaseDir, '01-CONTEXT.md');
 const planPath = path.join(phaseDir, '01-01-PLAN.md');
 const summaryPath = path.join(phaseDir, '01-01-SUMMARY.md');
 const verificationPath = path.join(phaseDir, '01-VERIFICATION.md');
+const argsPath = path.join(repoRoot, launcher.replace(/[^a-z0-9-]/gi, '_') + '-args.json');
+fs.writeFileSync(argsPath, JSON.stringify(args, null, 2), 'utf8');
 
 if (outputPath) {
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, messages[behavior] || behavior, 'utf8');
 }
 
-process.stdout.write(JSON.stringify({ type: 'message', behavior }) + '\\n');
+if (launcher === 'cursor-agent') {
+  process.stdout.write(JSON.stringify({ type: 'message', behavior, content: messages[behavior] || behavior }) + '\\n');
+} else {
+  process.stdout.write(JSON.stringify({ type: 'message', behavior }) + '\\n');
+}
+
+if (launcher !== 'codex' && behavior === 'last_message_blocker') {
+  process.stdout.write((messages[behavior] || behavior) + '\\n');
+}
 
 if (behavior === 'stdout_false_blocker') {
   process.stdout.write('Workflow note: Skipping commit/push until audit is complete.\\n');
@@ -171,24 +204,24 @@ process.exit(0);
   fs.writeFileSync(fakeJs, jsSource, 'utf8');
   fs.chmodSync(fakeJs, 0o755);
 
-  const unixWrapper = path.join(binDir, 'codex');
+  const unixWrapper = path.join(binDir, launcher);
   fs.writeFileSync(
     unixWrapper,
-    `#!/usr/bin/env bash\n"${process.execPath}" "$(dirname "$0")/fake-codex.js" "$@"\n`,
+    `#!/usr/bin/env bash\n"${process.execPath}" "$(dirname "$0")/${path.basename(fakeJs)}" "$@"\n`,
     'utf8'
   );
   fs.chmodSync(unixWrapper, 0o755);
 
-  const windowsWrapper = path.join(binDir, 'codex.cmd');
+  const windowsWrapper = path.join(binDir, `${launcher}.cmd`);
   fs.writeFileSync(
     windowsWrapper,
-    `@echo off\r\n"${process.execPath}" "%~dp0\\fake-codex.js" %*\r\n`,
+    `@echo off\r\n"${process.execPath}" "%~dp0\\${path.basename(fakeJs)}" %*\r\n`,
     'utf8'
   );
 
   return {
     PATH: `${binDir}${path.delimiter}${process.env.PATH || ''}`,
-    GSD_TEST_CODEX_BEHAVIOR: behavior,
+    GSD_TEST_LAUNCHER_BEHAVIOR: behavior,
   };
 }
 
@@ -224,7 +257,7 @@ describe('yolo-ralph command surfaces', () => {
   test('command file exists with expected frontmatter', () => {
     const content = fs.readFileSync(COMMAND_PATH, 'utf8');
     assert.ok(content.startsWith('---\nname: gsd:yolo-ralph\n'));
-    assert.ok(content.includes('argument-hint: "[--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]"'));
+    assert.ok(content.includes('argument-hint: "--agent-cli <selector> [--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]"'));
   });
 
   test('workflow file exists and shells out to gsd-tools', () => {
@@ -238,7 +271,7 @@ describe('yolo-ralph command surfaces', () => {
     assert.ok(fs.readFileSync(COMMANDS_DOC_PATH, 'utf8').includes('### `/gsd-yolo-ralph`'));
     assert.ok(fs.readFileSync(CLI_TOOLS_DOC_PATH, 'utf8').includes('node gsd-tools.cjs yolo-ralph'));
     assert.ok(fs.readFileSync(CONFIG_DOC_PATH, 'utf8').includes('workflow.yolo_ralph_max_iterations'));
-    assert.ok(fs.readFileSync(HELP_PATH, 'utf8').includes('`/gsd-yolo-ralph [--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]`'));
+    assert.ok(fs.readFileSync(HELP_PATH, 'utf8').includes('`/gsd-yolo-ralph --agent-cli <selector> [--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]`'));
   });
 });
 
@@ -250,17 +283,15 @@ describe('yolo-ralph CLI behavior', () => {
     tmpDir = null;
   });
 
-  test('preflight fails when codex is missing', () => {
+  test('preflight fails when --agent-cli is missing', () => {
     tmpDir = createTempGitProject();
     writePlanningFiles(tmpDir);
-    installLocalSkill(tmpDir);
+    installLocalAsset(tmpDir, 'codex');
 
-    const result = runGsdTools(['yolo-ralph'], tmpDir, {
-      ...installGitOnlyPath(tmpDir),
-    });
+    const result = runGsdTools(['yolo-ralph'], tmpDir, installGitOnlyPath(tmpDir));
 
     assert.strictEqual(result.success, false);
-    assert.ok(result.error.includes('Codex CLI is not available on PATH'));
+    assert.ok(result.error.includes('Missing required --agent-cli'));
   });
 
   test('--help succeeds outside a git repo', () => {
@@ -283,11 +314,55 @@ describe('yolo-ralph CLI behavior', () => {
     assert.match(result.error, /Usage: gsd-tools yolo-ralph/);
   });
 
+  test('unknown agent selectors fail with supported selector guidance', () => {
+    tmpDir = createTempGitProject();
+
+    const result = runGsdTools(['yolo-ralph', '--agent-cli', 'bogus'], tmpDir);
+
+    assert.strictEqual(result.success, false);
+    assert.match(result.error, /Unknown --agent-cli selector: bogus/);
+    assert.match(result.error, /Supported selectors: codex, claude, cursor-agent, agent/);
+  });
+
+  test('preflight fails when codex is missing', () => {
+    tmpDir = createTempGitProject();
+    writePlanningFiles(tmpDir);
+    installLocalAsset(tmpDir, 'codex');
+
+    const result = runGsdTools(['yolo-ralph', '--agent-cli', 'codex'], tmpDir, installGitOnlyPath(tmpDir));
+
+    assert.strictEqual(result.success, false);
+    assert.ok(result.error.includes('Codex CLI is not available on PATH'));
+  });
+
+  test('preflight fails when claude is missing', () => {
+    tmpDir = createTempGitProject();
+    writePlanningFiles(tmpDir);
+    installLocalAsset(tmpDir, 'claude');
+
+    const result = runGsdTools(['yolo-ralph', '--agent-cli', 'claude'], tmpDir, installGitOnlyPath(tmpDir));
+
+    assert.strictEqual(result.success, false);
+    assert.ok(result.error.includes('Claude CLI is not available on PATH'));
+  });
+
+  test('preflight fails when cursor-agent is missing and agent alias explains the mapping', () => {
+    tmpDir = createTempGitProject();
+    writePlanningFiles(tmpDir);
+    installLocalAsset(tmpDir, 'cursor-agent');
+
+    const result = runGsdTools(['yolo-ralph', '--agent-cli', 'agent'], tmpDir, installGitOnlyPath(tmpDir));
+
+    assert.strictEqual(result.success, false);
+    assert.ok(result.error.includes('Cursor CLI is not available on PATH'));
+    assert.ok(result.error.includes('Selector "agent" resolves to Cursor CLI'));
+  });
+
   test('preflight fails when the GSD project is uninitialized', () => {
     tmpDir = createTempGitProject();
-    installLocalSkill(tmpDir);
+    installLocalAsset(tmpDir, 'codex');
 
-    const result = runGsdTools(['yolo-ralph'], tmpDir, installFakeCodex(tmpDir, 'advance'));
+    const result = runGsdTools(['yolo-ralph', '--agent-cli', 'codex'], tmpDir, installFakeLauncher(tmpDir, 'codex', 'advance'));
 
     assert.strictEqual(result.success, false);
     assert.ok(result.error.includes('/gsd-new-project'));
@@ -297,24 +372,49 @@ describe('yolo-ralph CLI behavior', () => {
     tmpDir = createTempGitProject();
     writePlanningFiles(tmpDir);
 
-    const result = runGsdTools(['yolo-ralph'], tmpDir, {
-      ...installFakeCodex(tmpDir, 'advance'),
+    const result = runGsdTools(['yolo-ralph', '--agent-cli', 'codex'], tmpDir, {
+      ...installFakeLauncher(tmpDir, 'codex', 'advance'),
       CODEX_HOME: path.join(tmpDir, 'empty-codex-home'),
     });
 
     assert.strictEqual(result.success, false);
-    assert.ok(result.error.includes('Missing Codex skill asset'));
+    assert.ok(result.error.includes('Missing GSD Codex asset'));
+  });
+
+  test('preflight fails when the Claude command asset is missing', () => {
+    tmpDir = createTempGitProject();
+    writePlanningFiles(tmpDir);
+
+    const result = runGsdTools(['yolo-ralph', '--agent-cli', 'claude'], tmpDir, installFakeLauncher(tmpDir, 'claude', 'advance'));
+
+    assert.strictEqual(result.success, false);
+    assert.ok(result.error.includes('Missing GSD Claude asset'));
+  });
+
+  test('preflight fails when the Cursor skill asset is missing', () => {
+    tmpDir = createTempGitProject();
+    writePlanningFiles(tmpDir);
+
+    const result = runGsdTools(['yolo-ralph', '--agent-cli', 'cursor-agent'], tmpDir, {
+      ...installFakeLauncher(tmpDir, 'cursor-agent', 'advance'),
+      CURSOR_CONFIG_DIR: path.join(tmpDir, 'empty-cursor-home'),
+    });
+
+    assert.strictEqual(result.success, false);
+    assert.ok(result.error.includes('Missing GSD Cursor asset'));
   });
 
   test('raw output uses default max iterations and sleep seconds', () => {
     tmpDir = createTempGitProject();
     writePlanningFiles(tmpDir, { incomplete: false });
-    installLocalSkill(tmpDir);
+    installLocalAsset(tmpDir, 'codex');
 
-    const result = runGsdTools(['yolo-ralph', '--raw'], tmpDir, installFakeCodex(tmpDir, 'advance'));
+    const result = runGsdTools(['yolo-ralph', '--agent-cli', 'codex', '--raw'], tmpDir, installFakeLauncher(tmpDir, 'codex', 'advance'));
 
     assert.ok(result.success, `Command failed: ${result.error}`);
     const output = JSON.parse(result.output);
+    assert.strictEqual(output.agent_cli, 'codex');
+    assert.strictEqual(output.launcher_profile, 'codex');
     assert.strictEqual(output.max_iterations, 20);
     assert.strictEqual(output.sleep_seconds, 10);
     assert.strictEqual(output.heartbeat_seconds, 60);
@@ -325,14 +425,14 @@ describe('yolo-ralph CLI behavior', () => {
   test('flags override config values', () => {
     tmpDir = createTempGitProject();
     writePlanningFiles(tmpDir, { incomplete: false });
-    installLocalSkill(tmpDir);
+    installLocalAsset(tmpDir, 'codex');
     fs.writeFileSync(
       path.join(tmpDir, '.planning', 'config.json'),
       JSON.stringify({ workflow: { yolo_ralph_max_iterations: 9, yolo_ralph_sleep_seconds: 4, yolo_ralph_heartbeat_seconds: 45, yolo_ralph_stage_tick_seconds: 8 } }, null, 2),
       'utf8'
     );
 
-    const result = runGsdTools(['yolo-ralph', '--raw', '--max-iterations', '3', '--sleep-seconds', '0', '--heartbeat-seconds', '1', '--stage-tick-seconds', '2'], tmpDir, installFakeCodex(tmpDir, 'advance'));
+    const result = runGsdTools(['yolo-ralph', '--agent-cli', 'codex', '--raw', '--max-iterations', '3', '--sleep-seconds', '0', '--heartbeat-seconds', '1', '--stage-tick-seconds', '2'], tmpDir, installFakeLauncher(tmpDir, 'codex', 'advance'));
 
     assert.ok(result.success, `Command failed: ${result.error}`);
     const output = JSON.parse(result.output);
@@ -345,9 +445,9 @@ describe('yolo-ralph CLI behavior', () => {
   test('successful advanced iterations continue until the cap is reached', () => {
     tmpDir = createTempGitProject();
     writePlanningFiles(tmpDir);
-    installLocalSkill(tmpDir);
+    installLocalAsset(tmpDir, 'codex');
 
-    const result = runGsdTools(['yolo-ralph', '--raw', '--max-iterations', '2', '--sleep-seconds', '0'], tmpDir, installFakeCodex(tmpDir, 'advance'));
+    const result = runGsdTools(['yolo-ralph', '--agent-cli', 'codex', '--raw', '--max-iterations', '2', '--sleep-seconds', '0'], tmpDir, installFakeLauncher(tmpDir, 'codex', 'advance'));
 
     assert.ok(result.success, `Command failed: ${result.error}`);
     const output = JSON.parse(result.output);
@@ -359,9 +459,9 @@ describe('yolo-ralph CLI behavior', () => {
   test('successful iteration with no state change is classified as stalled', () => {
     tmpDir = createTempGitProject();
     writePlanningFiles(tmpDir);
-    installLocalSkill(tmpDir);
+    installLocalAsset(tmpDir, 'codex');
 
-    const result = runGsdTools(['yolo-ralph', '--raw', '--sleep-seconds', '0'], tmpDir, installFakeCodex(tmpDir, 'stalled'));
+    const result = runGsdTools(['yolo-ralph', '--agent-cli', 'codex', '--raw', '--sleep-seconds', '0'], tmpDir, installFakeLauncher(tmpDir, 'codex', 'stalled'));
 
     assert.ok(result.success, `Command failed: ${result.error}`);
     const output = JSON.parse(result.output);
@@ -372,9 +472,9 @@ describe('yolo-ralph CLI behavior', () => {
   test('blocker-like phrases in stdout do not fail a successful run when last message is clean', () => {
     tmpDir = createTempGitProject();
     writePlanningFiles(tmpDir);
-    installLocalSkill(tmpDir);
+    installLocalAsset(tmpDir, 'codex');
 
-    const result = runGsdTools(['yolo-ralph', '--raw', '--sleep-seconds', '0'], tmpDir, installFakeCodex(tmpDir, 'stdout_false_blocker'));
+    const result = runGsdTools(['yolo-ralph', '--agent-cli', 'codex', '--raw', '--sleep-seconds', '0'], tmpDir, installFakeLauncher(tmpDir, 'codex', 'stdout_false_blocker'));
 
     assert.ok(result.success, `Command failed: ${result.error}`);
     const output = JSON.parse(result.output);
@@ -385,9 +485,9 @@ describe('yolo-ralph CLI behavior', () => {
   test('blocker phrases in the last message still classify the iteration as failed', () => {
     tmpDir = createTempGitProject();
     writePlanningFiles(tmpDir);
-    installLocalSkill(tmpDir);
+    installLocalAsset(tmpDir, 'codex');
 
-    const result = runGsdTools(['yolo-ralph', '--raw', '--sleep-seconds', '0'], tmpDir, installFakeCodex(tmpDir, 'last_message_blocker'));
+    const result = runGsdTools(['yolo-ralph', '--agent-cli', 'codex', '--raw', '--sleep-seconds', '0'], tmpDir, installFakeLauncher(tmpDir, 'codex', 'last_message_blocker'));
 
     assert.ok(result.success, `Command failed: ${result.error}`);
     const output = JSON.parse(result.output);
@@ -395,12 +495,12 @@ describe('yolo-ralph CLI behavior', () => {
     assert.strictEqual(output.failed_iterations, 1);
   });
 
-  test('non-zero Codex exit is classified as failed', () => {
+  test('non-zero launcher exit is classified as failed', () => {
     tmpDir = createTempGitProject();
     writePlanningFiles(tmpDir);
-    installLocalSkill(tmpDir);
+    installLocalAsset(tmpDir, 'codex');
 
-    const result = runGsdTools(['yolo-ralph', '--raw', '--sleep-seconds', '0'], tmpDir, installFakeCodex(tmpDir, 'fail'));
+    const result = runGsdTools(['yolo-ralph', '--agent-cli', 'codex', '--raw', '--sleep-seconds', '0'], tmpDir, installFakeLauncher(tmpDir, 'codex', 'fail'));
 
     assert.ok(result.success, `Command failed: ${result.error}`);
     const output = JSON.parse(result.output);
@@ -411,9 +511,9 @@ describe('yolo-ralph CLI behavior', () => {
   test('completing all phases is classified as needs_audit', () => {
     tmpDir = createTempGitProject();
     writePlanningFiles(tmpDir);
-    installLocalSkill(tmpDir);
+    installLocalAsset(tmpDir, 'codex');
 
-    const result = runGsdTools(['yolo-ralph', '--raw', '--sleep-seconds', '0'], tmpDir, installFakeCodex(tmpDir, 'needs_audit'));
+    const result = runGsdTools(['yolo-ralph', '--agent-cli', 'codex', '--raw', '--sleep-seconds', '0'], tmpDir, installFakeLauncher(tmpDir, 'codex', 'needs_audit'));
 
     assert.ok(result.success, `Command failed: ${result.error}`);
     const output = JSON.parse(result.output);
@@ -424,9 +524,9 @@ describe('yolo-ralph CLI behavior', () => {
   test('between-milestones state is classified as milestone_done', () => {
     tmpDir = createTempGitProject();
     writePlanningFiles(tmpDir, { roadmap: false });
-    installLocalSkill(tmpDir);
+    installLocalAsset(tmpDir, 'codex');
 
-    const result = runGsdTools(['yolo-ralph', '--raw'], tmpDir, installFakeCodex(tmpDir, 'advance'));
+    const result = runGsdTools(['yolo-ralph', '--agent-cli', 'codex', '--raw'], tmpDir, installFakeLauncher(tmpDir, 'codex', 'advance'));
 
     assert.ok(result.success, `Command failed: ${result.error}`);
     const output = JSON.parse(result.output);
@@ -437,9 +537,9 @@ describe('yolo-ralph CLI behavior', () => {
   test('persistent run artifacts are written under .planning/tmp/yolo-ralph', () => {
     tmpDir = createTempGitProject();
     writePlanningFiles(tmpDir);
-    installLocalSkill(tmpDir);
+    installLocalAsset(tmpDir, 'codex');
 
-    const result = runGsdTools(['yolo-ralph', '--raw', '--max-iterations', '1', '--sleep-seconds', '0'], tmpDir, installFakeCodex(tmpDir, 'advance'));
+    const result = runGsdTools(['yolo-ralph', '--agent-cli', 'codex', '--raw', '--max-iterations', '1', '--sleep-seconds', '0'], tmpDir, installFakeLauncher(tmpDir, 'codex', 'advance'));
 
     assert.ok(result.success, `Command failed: ${result.error}`);
     const output = JSON.parse(result.output);
@@ -454,12 +554,12 @@ describe('yolo-ralph CLI behavior', () => {
   test('non-raw runs emit heartbeat lines and one stage transition per detected stage', () => {
     tmpDir = createTempGitProject();
     writePlanningFiles(tmpDir);
-    installLocalSkill(tmpDir);
+    installLocalAsset(tmpDir, 'codex');
 
     const result = runGsdTools(
-      ['yolo-ralph', '--max-iterations', '1', '--sleep-seconds', '0', '--heartbeat-seconds', '1', '--stage-tick-seconds', '1'],
+      ['yolo-ralph', '--agent-cli', 'codex', '--max-iterations', '1', '--sleep-seconds', '0', '--heartbeat-seconds', '1', '--stage-tick-seconds', '1'],
       tmpDir,
-      installFakeCodex(tmpDir, 'slow_stage_markers')
+      installFakeLauncher(tmpDir, 'codex', 'slow_stage_markers')
     );
 
     assert.ok(result.success, `Command failed: ${result.error}`);
@@ -474,12 +574,12 @@ describe('yolo-ralph CLI behavior', () => {
   test('raw mode stays JSON-only even when heartbeat flags are provided', () => {
     tmpDir = createTempGitProject();
     writePlanningFiles(tmpDir);
-    installLocalSkill(tmpDir);
+    installLocalAsset(tmpDir, 'codex');
 
     const result = runGsdTools(
-      ['yolo-ralph', '--raw', '--max-iterations', '1', '--sleep-seconds', '0', '--heartbeat-seconds', '1', '--stage-tick-seconds', '1'],
+      ['yolo-ralph', '--agent-cli', 'codex', '--raw', '--max-iterations', '1', '--sleep-seconds', '0', '--heartbeat-seconds', '1', '--stage-tick-seconds', '1'],
       tmpDir,
-      installFakeCodex(tmpDir, 'slow_stage_markers')
+      installFakeLauncher(tmpDir, 'codex', 'slow_stage_markers')
     );
 
     assert.ok(result.success, `Command failed: ${result.error}`);
@@ -492,17 +592,48 @@ describe('yolo-ralph CLI behavior', () => {
   test('ambiguous live output falls back to running stage instead of guessing', () => {
     tmpDir = createTempGitProject();
     writePlanningFiles(tmpDir);
-    installLocalSkill(tmpDir);
+    installLocalAsset(tmpDir, 'codex');
 
     const result = runGsdTools(
-      ['yolo-ralph', '--max-iterations', '1', '--sleep-seconds', '0', '--heartbeat-seconds', '1', '--stage-tick-seconds', '0'],
+      ['yolo-ralph', '--agent-cli', 'codex', '--max-iterations', '1', '--sleep-seconds', '0', '--heartbeat-seconds', '1', '--stage-tick-seconds', '0'],
       tmpDir,
-      installFakeCodex(tmpDir, 'slow_ambiguous')
+      installFakeLauncher(tmpDir, 'codex', 'slow_ambiguous')
     );
 
     assert.ok(result.success, `Command failed: ${result.error}`);
     assert.match(result.output, /Heartbeat: iter 1\/1 \| phase 1 \(Build\) \| stage running/);
     assert.ok(!result.output.includes('Stage -> discuss'));
     assert.ok(!result.output.includes('Stage -> plan'));
+  });
+
+  test('claude launcher uses the strict-push command prompt and classifies blocker text from combined output', () => {
+    tmpDir = createTempGitProject();
+    writePlanningFiles(tmpDir);
+    installLocalAsset(tmpDir, 'claude');
+
+    const result = runGsdTools(['yolo-ralph', '--agent-cli', 'claude', '--raw', '--sleep-seconds', '0'], tmpDir, installFakeLauncher(tmpDir, 'claude', 'last_message_blocker'));
+
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    const args = JSON.parse(fs.readFileSync(path.join(tmpDir, 'claude-args.json'), 'utf8'));
+    assert.deepStrictEqual(args, ['-p', '/gsd-yolo-discuss-plan-execute-commit-and-push']);
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.agent_cli, 'claude');
+    assert.strictEqual(output.launcher_profile, 'claude');
+    assert.strictEqual(output.status, 'failed');
+  });
+
+  test('cursor-agent launcher uses print-mode json and agent alias resolves to cursor-agent profile', () => {
+    tmpDir = createTempGitProject();
+    writePlanningFiles(tmpDir);
+    installLocalAsset(tmpDir, 'cursor-agent');
+
+    const result = runGsdTools(['yolo-ralph', '--agent-cli', 'agent', '--raw', '--sleep-seconds', '0'], tmpDir, installFakeLauncher(tmpDir, 'cursor-agent', 'advance'));
+
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    const args = JSON.parse(fs.readFileSync(path.join(tmpDir, 'cursor-agent-args.json'), 'utf8'));
+    assert.deepStrictEqual(args, ['-p', 'Run the skill gsd-yolo-discuss-plan-execute-commit-and-push in this repository.', '--output-format', 'json']);
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.agent_cli, 'agent');
+    assert.strictEqual(output.launcher_profile, 'cursor-agent');
   });
 });

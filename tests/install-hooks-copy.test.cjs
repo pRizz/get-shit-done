@@ -18,7 +18,7 @@ const { execFileSync } = require('child_process');
 const { cleanup, createTempDir } = require('./helpers.cjs');
 
 const INSTALL_SRC = path.join(__dirname, '..', 'bin', 'install.js');
-const { writeManifest, validateHookFields, repairGsdManagedCodexHookConfig } = require(INSTALL_SRC);
+const { writeManifest, validateHookFields, repairGsdManagedCodexHookConfig, isGsdHookHandler } = require(INSTALL_SRC);
 const BUILD_SCRIPT = path.join(__dirname, '..', 'scripts', 'build-hooks.js');
 const HOOKS_DIST = path.join(__dirname, '..', 'hooks', 'dist');
 
@@ -313,20 +313,12 @@ describe('writeManifest includes .sh hooks', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('uninstall settings cleanup preserves user hooks', () => {
-  // Mirror the isGsdHookCommand logic from install.js
-  const isGsdHookCommand = (cmd) =>
-    cmd && (cmd.includes('gsd-check-update') || cmd.includes('gsd-statusline') ||
-      cmd.includes('gsd-session-state') || cmd.includes('gsd-context-monitor') ||
-      cmd.includes('gsd-phase-boundary') || cmd.includes('gsd-prompt-guard') ||
-      cmd.includes('gsd-read-guard') || cmd.includes('gsd-validate-commit') ||
-      cmd.includes('gsd-workflow-guard'));
-
   // Simulate the per-hook filtering logic from uninstall
   function filterGsdHooks(entries) {
     return entries
       .map(entry => {
         if (!entry.hooks || !Array.isArray(entry.hooks)) return entry;
-        entry.hooks = entry.hooks.filter(h => !isGsdHookCommand(h.command));
+        entry.hooks = entry.hooks.filter(h => !isGsdHookHandler(h));
         return entry.hooks.length > 0 ? entry : null;
       })
       .filter(Boolean);
@@ -375,7 +367,7 @@ describe('uninstall settings cleanup preserves user hooks', () => {
   test('non-array hook entries are preserved during uninstall (#1825)', () => {
     const entries = [
       { type: 'custom', command: 'echo hello' },
-      { matcher: 'Bash', hooks: [{ type: 'command', command: 'node /path/to/gsd-prompt-guard.js' }] },
+      { matcher: 'Bash', hooks: [{ type: 'command', command: 'bash', args: ['/path/to/gsd-validate-commit.sh'] }] },
       { url: 'https://example.com/webhook' },
     ];
 
@@ -399,8 +391,13 @@ describe('uninstall settings cleanup preserves user hooks', () => {
     ];
 
     for (const cmd of gsdCommands) {
-      assert.ok(isGsdHookCommand(cmd), `should recognize: ${cmd}`);
+      assert.ok(isGsdHookHandler(cmd), `should recognize: ${cmd}`);
     }
+
+    assert.ok(
+      isGsdHookHandler({ type: 'command', command: 'bash', args: ['/path/gsd-validate-commit.sh'] }),
+      'should recognize exec-form gsd-validate-commit hook'
+    );
   });
 });
 

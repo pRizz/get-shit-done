@@ -119,17 +119,18 @@ Run autonomous yolo strict-push mode for all remaining phases in the current mil
 
 Usage: `/gsd-yolo-discuss-plan-execute-commit-and-push-all`
 
-**`/gsd-yolo-ralph [--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]`**
-Loop fresh Codex executions of the strict-push yolo wrapper until milestone lifecycle work or a blocker is reached.
+**`/gsd-yolo-ralph --agent-cli <selector> [--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]`**
+Loop fresh launcher-specific executions of the strict-push yolo wrapper until milestone lifecycle work or a blocker is reached.
 
-- Launches a fresh Codex process each iteration with dangerous mode enabled
+- Requires `--agent-cli <codex|claude|cursor-agent|agent>`; `agent` aliases Cursor CLI's documented `cursor-agent` name
+- Launches a fresh process through the selected launcher profile each iteration
 - Prints iteration stats after every return and persists logs under `.planning/tmp/yolo-ralph/`
 - Stops on milestone lifecycle handoff, the first blocker/failure, or the iteration cap
 
-Usage: `/gsd-yolo-ralph`
-Usage: `/gsd-yolo-ralph --max-iterations 5`
-Usage: `/gsd-yolo-ralph --sleep-seconds 0`
-Usage: `/gsd-yolo-ralph --heartbeat-seconds 30 --stage-tick-seconds 2`
+Usage: `/gsd-yolo-ralph --agent-cli codex`
+Usage: `/gsd-yolo-ralph --agent-cli claude --max-iterations 5`
+Usage: `/gsd-yolo-ralph --agent-cli cursor-agent --sleep-seconds 0`
+Usage: `/gsd-yolo-ralph --agent-cli agent --heartbeat-seconds 30 --stage-tick-seconds 2`
 
 **`/gsd-research-phase <number>`**
 Comprehensive ecosystem research for niche/complex domains.

@@ -15,15 +15,23 @@ const { analyzeRoadmapInternal } = require('./roadmap.cjs');
 
 const TARGET_SKILL = '$gsd-yolo-discuss-plan-execute-commit-and-push';
 const TARGET_SKILL_NAME = 'gsd-yolo-discuss-plan-execute-commit-and-push';
+const TARGET_COMMAND = '/gsd-yolo-discuss-plan-execute-commit-and-push';
+const CURSOR_AGENT_PROMPT = `Run the skill ${TARGET_SKILL_NAME} in this repository.`;
 const HEARTBEAT_SNIPPET_MAX = 120;
 const LIVE_POLL_INTERVAL_MS = 1000;
 const RECENT_LINE_LIMIT = 8;
-const USAGE = 'Usage: gsd-tools yolo-ralph [--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]';
+const SUPPORTED_AGENT_CLI_SELECTORS = ['codex', 'claude', 'cursor-agent', 'agent'];
+const AGENT_CLI_ALIAS_MAP = {
+  agent: 'cursor-agent',
+};
+const USAGE = 'Usage: gsd-tools yolo-ralph --agent-cli <selector> [--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]';
 const HELP_TEXT = [
   USAGE,
   '',
-  'Launch repeated fresh Codex runs of the strict-push yolo wrapper.',
-  'Help succeeds from any directory. Actual execution still requires a git repo, Codex on PATH, and initialized GSD planning assets.',
+  'Launch repeated fresh launcher-specific runs of the strict-push yolo wrapper.',
+  'Required: --agent-cli <codex|claude|cursor-agent|agent>. No default launcher is assumed.',
+  'Help succeeds from any directory. Actual execution still requires a git repo, the selected CLI on PATH, and initialized GSD planning assets.',
+  'Alias note: "agent" is accepted as a compatibility alias for Cursor CLI\'s documented executable name "cursor-agent".',
 ].join('\n');
 const BLOCKER_PATTERNS = [
   /verification status is human_needed/i,
@@ -175,9 +183,164 @@ function parseNonNegativeInteger(value, flagName, allowZero = false) {
   return parsed;
 }
 
+function formatSupportedSelectors() {
+  return SUPPORTED_AGENT_CLI_SELECTORS.join(', ');
+}
+
+function commandExists(commandName) {
+  const executable = process.platform === 'win32' ? 'where' : 'which';
+  const result = spawnSync(executable, [commandName], {
+    stdio: ['ignore', 'ignore', 'ignore'],
+  });
+  return result.status === 0;
+}
+
+function resolveHomeDir(configDirEnvVar, fallbackDirName) {
+  if (process.env[configDirEnvVar] && process.env[configDirEnvVar].trim()) {
+    return path.resolve(process.env[configDirEnvVar].trim());
+  }
+  return path.join(process.env.HOME || require('os').homedir(), fallbackDirName);
+}
+
+function resolveFirstExistingPath(paths) {
+  return paths.find(candidatePath => fs.existsSync(candidatePath)) || null;
+}
+
+function buildMissingCliMessage(profile, requestedSelector) {
+  const aliasNote = requestedSelector === 'agent'
+    ? '\n\nSelector "agent" resolves to Cursor CLI\'s documented executable name "cursor-agent".'
+    : '';
+  return (
+    `${profile.display_name} is not available on PATH.${aliasNote}\n\n` +
+    `Install ${profile.install_label} first, then rerun yolo-ralph with --agent-cli ${requestedSelector}.\n` +
+    `If GSD ${profile.install_label} assets are also missing, run npx get-shit-done-cc --${profile.install_runtime} --local or --global.`
+  );
+}
+
+function buildMissingAssetMessage(profile) {
+  return (
+    `Missing GSD ${profile.install_label} asset for ${TARGET_SKILL_NAME}.\n\n` +
+    `Install GSD ${profile.install_label} assets before running yolo-ralph:\n` +
+    `- Local install: npx get-shit-done-cc --${profile.install_runtime} --local\n` +
+    `- Global install: npx get-shit-done-cc --${profile.install_runtime} --global`
+  );
+}
+
+const LAUNCHER_PROFILES = {
+  codex: {
+    name: 'codex',
+    display_name: 'Codex CLI',
+    install_label: 'Codex',
+    install_runtime: 'codex',
+    cli_name: 'codex',
+    preflight() {
+      const versionResult = spawnSync('codex', ['--version'], {
+        encoding: 'utf-8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      if (versionResult.error && !commandExists('codex')) {
+        error(buildMissingCliMessage(this, 'codex'));
+      }
+    },
+    resolveAsset(repoRoot) {
+      const localPath = path.join(repoRoot, '.codex', 'skills', TARGET_SKILL_NAME, 'SKILL.md');
+      const globalPath = path.join(resolveHomeDir('CODEX_HOME', '.codex'), 'skills', TARGET_SKILL_NAME, 'SKILL.md');
+      const resolved = resolveFirstExistingPath([localPath, globalPath]);
+      if (!resolved) {
+        error(buildMissingAssetMessage(this));
+      }
+      return resolved;
+    },
+    buildSpawn(repoRoot, lastMessagePath) {
+      return {
+        command: 'codex',
+        args: [
+          'exec',
+          '--dangerously-bypass-approvals-and-sandbox',
+          '--json',
+          '-o',
+          lastMessagePath,
+          '-C',
+          repoRoot,
+          TARGET_SKILL,
+        ],
+        cwd: repoRoot,
+      };
+    },
+    blocker_source: 'last_message',
+  },
+  claude: {
+    name: 'claude',
+    display_name: 'Claude CLI',
+    install_label: 'Claude',
+    install_runtime: 'claude',
+    cli_name: 'claude',
+    preflight() {
+      const versionResult = spawnSync('claude', ['--version'], {
+        encoding: 'utf-8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      if (versionResult.error && !commandExists('claude')) {
+        error(buildMissingCliMessage(this, 'claude'));
+      }
+    },
+    resolveAsset(repoRoot) {
+      const localPath = path.join(repoRoot, '.claude', 'commands', 'gsd', 'yolo-discuss-plan-execute-commit-and-push.md');
+      const globalPath = path.join(resolveHomeDir('CLAUDE_CONFIG_DIR', '.claude'), 'commands', 'gsd', 'yolo-discuss-plan-execute-commit-and-push.md');
+      const resolved = resolveFirstExistingPath([localPath, globalPath]);
+      if (!resolved) {
+        error(buildMissingAssetMessage(this));
+      }
+      return resolved;
+    },
+    buildSpawn(repoRoot) {
+      return {
+        command: 'claude',
+        args: ['-p', TARGET_COMMAND],
+        cwd: repoRoot,
+      };
+    },
+    blocker_source: 'combined_output',
+  },
+  'cursor-agent': {
+    name: 'cursor-agent',
+    display_name: 'Cursor CLI',
+    install_label: 'Cursor',
+    install_runtime: 'cursor',
+    cli_name: 'cursor-agent',
+    preflight(requestedSelector) {
+      const versionResult = spawnSync('cursor-agent', ['--version'], {
+        encoding: 'utf-8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      if (versionResult.error && !commandExists('cursor-agent')) {
+        error(buildMissingCliMessage(this, requestedSelector));
+      }
+    },
+    resolveAsset(repoRoot) {
+      const localPath = path.join(repoRoot, '.cursor', 'skills', TARGET_SKILL_NAME, 'SKILL.md');
+      const globalPath = path.join(resolveHomeDir('CURSOR_CONFIG_DIR', '.cursor'), 'skills', TARGET_SKILL_NAME, 'SKILL.md');
+      const resolved = resolveFirstExistingPath([localPath, globalPath]);
+      if (!resolved) {
+        error(buildMissingAssetMessage(this));
+      }
+      return resolved;
+    },
+    buildSpawn(repoRoot) {
+      return {
+        command: 'cursor-agent',
+        args: ['-p', CURSOR_AGENT_PROMPT, '--output-format', 'json'],
+        cwd: repoRoot,
+      };
+    },
+    blocker_source: 'combined_output',
+  },
+};
+
 function parseArgs(args) {
   const options = {
     helpRequested: false,
+    agentCli: null,
     maxIterations: null,
     sleepSeconds: null,
     heartbeatSeconds: null,
@@ -189,6 +352,14 @@ function parseArgs(args) {
 
     if (token === '--help' || token === '-h') {
       options.helpRequested = true;
+      continue;
+    }
+
+    if (token === '--agent-cli') {
+      const value = args[i + 1];
+      if (!value || value.startsWith('--')) error(USAGE);
+      options.agentCli = value;
+      i += 1;
       continue;
     }
 
@@ -227,7 +398,31 @@ function parseArgs(args) {
     error(`Unknown yolo-ralph argument: ${token}\n${USAGE}`);
   }
 
+  if (!options.helpRequested && !options.agentCli) {
+    error(`Missing required --agent-cli <selector>\n${USAGE}\nSupported selectors: ${formatSupportedSelectors()}`);
+  }
+
   return options;
+}
+
+function resolveLauncher(requestedSelector) {
+  const normalizedSelector = String(requestedSelector || '').trim();
+  const canonicalSelector = AGENT_CLI_ALIAS_MAP[normalizedSelector] || normalizedSelector;
+  const profile = LAUNCHER_PROFILES[canonicalSelector];
+
+  if (!profile) {
+    error(
+      `Unknown --agent-cli selector: ${requestedSelector}\n` +
+      `Supported selectors: ${formatSupportedSelectors()}\n` +
+      'Alias note: "agent" resolves to Cursor CLI\'s documented executable name "cursor-agent".'
+    );
+  }
+
+  return {
+    requested_selector: normalizedSelector,
+    canonical_selector: canonicalSelector,
+    profile,
+  };
 }
 
 function resolveRepoRoot(cwd) {
@@ -269,43 +464,6 @@ function ensureRunLogsIgnored(repoRoot) {
   fs.appendFileSync(excludePath, `${prefix}${missing.join('\n')}\n`, 'utf-8');
 }
 
-function resolveCodexBinary() {
-  const result = spawnSync('codex', ['--version'], {
-    encoding: 'utf-8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
-  if (result.error) {
-    error(
-      'Codex CLI is not available on PATH.\n\n' +
-      'Install Codex first, then rerun yolo-ralph.\n' +
-      'If GSD Codex assets are also missing, run npx get-shit-done-cc --codex --local or --global.'
-    );
-  }
-  return 'codex';
-}
-
-function resolveSkillAsset(repoRoot) {
-  const localPath = path.join(repoRoot, '.codex', 'skills', TARGET_SKILL_NAME, 'SKILL.md');
-  if (fs.existsSync(localPath)) {
-    return localPath;
-  }
-
-  const home = process.env.CODEX_HOME
-    ? path.resolve(process.env.CODEX_HOME)
-    : path.join(process.env.HOME || require('os').homedir(), '.codex');
-  const globalPath = path.join(home, 'skills', TARGET_SKILL_NAME, 'SKILL.md');
-  if (fs.existsSync(globalPath)) {
-    return globalPath;
-  }
-
-  error(
-    `Missing Codex skill asset for ${TARGET_SKILL_NAME}.\n\n` +
-    'Install GSD Codex assets before running yolo-ralph:\n' +
-    '- Local install: npx get-shit-done-cc --codex --local\n' +
-    '- Global install: npx get-shit-done-cc --codex --global'
-  );
-}
-
 function buildSnapshot(cwd, repoRoot) {
   const roadmap = analyzeRoadmapInternal(cwd);
   const phases = roadmap.phases || [];
@@ -333,22 +491,32 @@ function buildSnapshot(cwd, repoRoot) {
   };
 }
 
-function lastMessageHasExplicitBlocker(lastMessage) {
-  return Boolean(lastMessage) && BLOCKER_PATTERNS.some(pattern => pattern.test(lastMessage));
+function hasExplicitBlocker(text) {
+  return Boolean(text) && BLOCKER_PATTERNS.some(pattern => pattern.test(text));
 }
 
-function classifyIteration(before, after, processResult) {
+function collectProcessOutputText(processResult) {
+  return [processResult.stdout, processResult.stderr, processResult.lastMessage]
+    .filter(Boolean)
+    .join('\n');
+}
+
+function classifyIteration(before, after, processResult, launcher) {
+  const blockerText = launcher.profile.blocker_source === 'last_message'
+    ? processResult.lastMessage
+    : collectProcessOutputText(processResult);
+
   if (processResult.spawnError) {
     return {
       status: 'failed',
-      reason: `Codex launch failed: ${processResult.spawnError.message}`,
+      reason: `${launcher.profile.display_name} launch failed: ${processResult.spawnError.message}`,
     };
   }
 
   if (processResult.exitCode !== 0) {
     return {
       status: 'failed',
-      reason: `Codex exited with status ${processResult.exitCode}`,
+      reason: `${launcher.profile.display_name} exited with status ${processResult.exitCode}`,
     };
   }
 
@@ -359,10 +527,10 @@ function classifyIteration(before, after, processResult) {
     };
   }
 
-  if (lastMessageHasExplicitBlocker(processResult.lastMessage)) {
+  if (hasExplicitBlocker(blockerText)) {
     return {
       status: 'failed',
-      reason: 'The spawned Codex run reported a blocker or non-clean outcome.',
+      reason: `The spawned ${launcher.profile.display_name} run reported a blocker or non-clean outcome.`,
     };
   }
 
@@ -394,7 +562,7 @@ function classifyIteration(before, after, processResult) {
 
   return {
     status: 'stalled',
-    reason: 'The Codex run returned without advancing git history or milestone progress.',
+    reason: `The ${launcher.profile.display_name} run returned without advancing git history or milestone progress.`,
   };
 }
 
@@ -756,7 +924,24 @@ function pollLiveState(liveState, iterationStartedMs) {
   printHeartbeat(liveState);
 }
 
-async function runCodexIteration(repoRoot, iterationDir, options) {
+function deriveLastMessage(stdout, stderr) {
+  const lines = `${stdout || ''}\n${stderr || ''}`
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  for (let index = lines.length - 1; index >= 0; index--) {
+    const candidates = extractTextCandidates(lines[index]);
+    const preferred = candidates.find(candidate => candidate && !candidate.startsWith('{'));
+    if (preferred) {
+      return preferred;
+    }
+  }
+
+  return '';
+}
+
+async function runLauncherIteration(launcher, repoRoot, iterationDir, options) {
   const stdoutPath = path.join(iterationDir, 'stdout.log');
   const stderrPath = path.join(iterationDir, 'stderr.log');
   const lastMessagePath = path.join(iterationDir, 'last-message.txt');
@@ -785,22 +970,20 @@ async function runCodexIteration(repoRoot, iterationDir, options) {
 
   const stdoutProcessor = createLineProcessor(line => handleOutputLine(liveState, line));
   const stderrProcessor = createLineProcessor(line => handleOutputLine(liveState, line));
+  const spawnSpec = launcher.profile.buildSpawn(repoRoot, lastMessagePath);
 
   await new Promise(resolve => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
     const child = spawn(
-      'codex',
-      [
-        'exec',
-        '--dangerously-bypass-approvals-and-sandbox',
-        '--json',
-        '-o',
-        lastMessagePath,
-        '-C',
-        repoRoot,
-        TARGET_SKILL,
-      ],
+      spawnSpec.command,
+      spawnSpec.args,
       {
-        cwd: repoRoot,
+        cwd: spawnSpec.cwd,
         env: process.env,
         stdio: ['ignore', 'pipe', 'pipe'],
       }
@@ -829,12 +1012,13 @@ async function runCodexIteration(repoRoot, iterationDir, options) {
 
     child.on('error', err => {
       spawnError = err;
+      finish();
     });
 
     child.on('close', (code, closeSignal) => {
       exitCode = typeof code === 'number' ? code : 1;
       signal = closeSignal || null;
-      resolve();
+      finish();
     });
   });
 
@@ -845,11 +1029,11 @@ async function runCodexIteration(repoRoot, iterationDir, options) {
   fs.closeSync(stdoutFd);
   fs.closeSync(stderrFd);
 
-  const lastMessage = fs.existsSync(lastMessagePath)
+  let lastMessage = fs.existsSync(lastMessagePath)
     ? fs.readFileSync(lastMessagePath, 'utf-8')
     : '';
-
-  if (!fs.existsSync(lastMessagePath)) {
+  if (!lastMessage.trim()) {
+    lastMessage = deriveLastMessage(stdout, stderr);
     writeFile(lastMessagePath, lastMessage);
   }
 
@@ -932,6 +1116,7 @@ async function cmdYoloRalph(cwd, args, raw) {
     writeStdout(`${HELP_TEXT}\n`);
     return;
   }
+  const launcher = resolveLauncher(parsedArgs.agentCli);
   const config = loadConfig(cwd);
   const maxIterations = parsedArgs.maxIterations ?? config.yolo_ralph_max_iterations;
   const sleepSeconds = parsedArgs.sleepSeconds ?? config.yolo_ralph_sleep_seconds;
@@ -952,8 +1137,8 @@ async function cmdYoloRalph(cwd, args, raw) {
   }
 
   const repoRoot = resolveRepoRoot(cwd);
-  resolveCodexBinary();
-  const skillAssetPath = resolveSkillAsset(repoRoot);
+  launcher.profile.preflight(launcher.requested_selector);
+  const launcherAssetPath = launcher.profile.resolveAsset(repoRoot);
   ensureRunLogsIgnored(repoRoot);
 
   const initialSnapshot = buildSnapshot(cwd, repoRoot);
@@ -980,7 +1165,9 @@ async function cmdYoloRalph(cwd, args, raw) {
   const runMeta = {
     command: 'yolo-ralph',
     repo_root: repoRoot,
-    codex_skill_path: skillAssetPath,
+    agent_cli: launcher.requested_selector,
+    launcher_profile: launcher.canonical_selector,
+    launcher_asset_path: launcherAssetPath,
     started_at: nowIso(),
     started_ms: Date.now(),
     max_iterations: maxIterations,
@@ -1020,7 +1207,7 @@ async function cmdYoloRalph(cwd, args, raw) {
       writeStdout(`\nStarting iteration ${index}/${maxIterations}...\n`);
     }
 
-    const processResult = await runCodexIteration(repoRoot, iterationDir, {
+    const processResult = await runLauncherIteration(launcher, repoRoot, iterationDir, {
       cwd,
       iteration: index,
       maxIterations,
@@ -1031,12 +1218,13 @@ async function cmdYoloRalph(cwd, args, raw) {
     });
     latestLiveState = processResult.liveState;
     const after = buildSnapshot(cwd, repoRoot);
-    const classification = classifyIteration(before, after, processResult);
+    const classification = classifyIteration(before, after, processResult, launcher);
     latestSnapshot = after;
 
     const record = {
       iteration: index,
       max_iterations: maxIterations,
+      launcher_profile: launcher.canonical_selector,
       started_at: processResult.startedAt,
       ended_at: processResult.finishedAt,
       duration_ms: processResult.durationMs,

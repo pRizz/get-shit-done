@@ -26,6 +26,18 @@ const GSD_SHELL_PATH_MARKER_START = '# >>> GSD PATH >>> managed by get-shit-done
 const GSD_SHELL_PATH_MARKER_END = '# <<< GSD PATH <<< managed by get-shit-done installer';
 const GSD_SHARED_INSTALL_STATE_NAME = 'install-state.json';
 const GSD_YOLO_RALPH_COMMAND = 'gsd-yolo-ralph';
+const GSD_YOLO_RALPH_SUPPORTED_GLOBAL_RUNTIMES = ['codex', 'claude', 'cursor'];
+const GSD_MANAGED_HOOK_NAMES = [
+  'gsd-check-update',
+  'gsd-statusline',
+  'gsd-session-state',
+  'gsd-context-monitor',
+  'gsd-phase-boundary',
+  'gsd-prompt-guard',
+  'gsd-read-guard',
+  'gsd-validate-commit',
+  'gsd-workflow-guard',
+];
 
 const CODEX_AGENT_SANDBOX = {
   'gsd-executor': 'workspace-write',
@@ -421,6 +433,43 @@ function buildHookCommand(configDir, hookName) {
   // Use forward slashes for Node.js compatibility on all platforms
   const hooksPath = configDir.replace(/\\/g, '/') + '/hooks/' + hookName;
   return `node "${hooksPath}"`;
+}
+
+function getHookCommandSearchText(hook) {
+  if (typeof hook === 'string') return hook;
+  if (!hook || typeof hook !== 'object') return '';
+
+  const parts = [];
+  if (typeof hook.command === 'string') parts.push(hook.command);
+  if (Array.isArray(hook.args)) {
+    for (const arg of hook.args) {
+      if (typeof arg === 'string') parts.push(arg);
+    }
+  }
+  return parts.join(' ');
+}
+
+function hookHandlerIncludes(hook, fragment) {
+  return getHookCommandSearchText(hook).includes(fragment);
+}
+
+function isGsdHookHandler(hook) {
+  const searchText = getHookCommandSearchText(hook);
+  return searchText && GSD_MANAGED_HOOK_NAMES.some(name => searchText.includes(name));
+}
+
+function entryHasHookHandler(entry, fragment) {
+  return Boolean(entry && Array.isArray(entry.hooks) &&
+    entry.hooks.some(hook => hookHandlerIncludes(hook, fragment)));
+}
+
+function buildBashHookHandler(scriptPath, timeout) {
+  return {
+    type: 'command',
+    command: 'bash',
+    args: [scriptPath],
+    timeout,
+  };
 }
 
 /**
@@ -1996,10 +2045,26 @@ function hasAnySharedGlobalInstalls(state) {
   return Object.keys(normalizeSharedInstallState(state).global_installs).length > 0;
 }
 
-function getActiveCodexGlobalInstall(state) {
+function getFirstActiveYoloRalphGlobalInstall(state) {
   const normalized = normalizeSharedInstallState(state);
-  const codexInstall = normalized.global_installs.codex;
-  return codexInstall && codexInstall.config_dir ? codexInstall : null;
+
+  for (const runtime of GSD_YOLO_RALPH_SUPPORTED_GLOBAL_RUNTIMES) {
+    const installInfo = normalized.global_installs[runtime];
+    if (!installInfo || !installInfo.config_dir) {
+      continue;
+    }
+
+    const wrapperPath = getYoloRalphWrapperPath(installInfo.config_dir);
+    if (fs.existsSync(wrapperPath)) {
+      return {
+        runtime,
+        config_dir: installInfo.config_dir,
+        updated_at: installInfo.updated_at,
+      };
+    }
+  }
+
+  return null;
 }
 
 function hasCommandOnPath(commandName) {
@@ -2132,15 +2197,16 @@ function writeExecutableShellScript(filePath, content) {
   }
 }
 
-function getCodexYoloRalphWrapperPath(configDir) {
+function getYoloRalphWrapperPath(configDir) {
   return path.join(configDir, 'get-shit-done', 'bin', GSD_YOLO_RALPH_COMMAND);
 }
 
 function getYoloRalphUsageLines(commandName = GSD_YOLO_RALPH_COMMAND) {
   return [
-    `Usage: ${commandName} [--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]`,
+    `Usage: ${commandName} --agent-cli <selector> [--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]`,
     '',
-    'Runs the GSD Codex yolo-ralph wrapper.',
+    'Runs the GSD launcher-aware yolo-ralph wrapper.',
+    'Required: --agent-cli <codex|claude|cursor-agent|agent>. No default launcher is assumed.',
     'Help works from any directory. Actual execution still requires a git repo with initialized GSD planning assets.',
   ];
 }
@@ -2149,9 +2215,10 @@ function shellSingleQuote(value) {
   return `'${String(value).replace(/'/g, `'\"'\"'`)}'`;
 }
 
-function buildCodexYoloRalphWrapper(configDir) {
+function buildYoloRalphWrapper(configDir, runtime) {
   const gsdToolsPath = path.resolve(configDir, 'get-shit-done', 'bin', 'gsd-tools.cjs').replace(/\\/g, '/');
   const helpText = getYoloRalphUsageLines();
+  const reinstallRuntime = runtime || 'codex';
   return [
     '#!/usr/bin/env sh',
     'set -eu',
@@ -2162,7 +2229,7 @@ function buildCodexYoloRalphWrapper(configDir) {
     'fi',
     '',
     `if [ ! -f "${gsdToolsPath}" ]; then`,
-    `  printf '%s\\n' ${JSON.stringify('GSD Codex assets are missing from this install.')} ${JSON.stringify('Reinstall with: npx get-shit-done-cc --codex --global')} >&2`,
+    `  printf '%s\\n' ${JSON.stringify('GSD assets are missing from this install.')} ${JSON.stringify(`Reinstall with: npx get-shit-done-cc --${reinstallRuntime} --global`)} >&2`,
     '  exit 1',
     'fi',
     '',
@@ -2175,26 +2242,36 @@ function buildSharedYoloRalphShim() {
   const helpText = getYoloRalphUsageLines().concat([
     '',
     'Resolution order:',
-    '1. $CODEX_HOME',
-    '2. ~/.gsd/install-state.json (codex entry)',
-    '3. ~/.codex',
+    '1. First managed global install in ~/.gsd/install-state.json (codex, claude, cursor)',
+    '2. Default runtime roots: ~/.codex, ~/.claude, ~/.cursor',
   ]);
   const stateReadScript = [
     'const fs = require("fs");',
+    'const path = require("path");',
     'const statePath = process.argv[1];',
+    `const runtimes = ${JSON.stringify(GSD_YOLO_RALPH_SUPPORTED_GLOBAL_RUNTIMES)};`,
+    `const wrapperName = ${JSON.stringify(GSD_YOLO_RALPH_COMMAND)};`,
     'try {',
     '  const parsed = JSON.parse(fs.readFileSync(statePath, "utf8"));',
-    '  const configDir = parsed && parsed.global_installs && parsed.global_installs.codex && typeof parsed.global_installs.codex.config_dir === "string"',
-    '    ? parsed.global_installs.codex.config_dir.trim()',
-    '    : "";',
-    '  if (configDir) process.stdout.write(configDir);',
+    '  const installs = parsed && parsed.global_installs && typeof parsed.global_installs === "object" ? parsed.global_installs : {};',
+    '  for (const runtime of runtimes) {',
+    '    const info = installs[runtime];',
+    '    const configDir = info && typeof info.config_dir === "string" ? info.config_dir.trim() : "";',
+    '    if (!configDir) continue;',
+    '    const wrapperPath = path.join(configDir, "get-shit-done", "bin", wrapperName);',
+    '    if (fs.existsSync(wrapperPath)) {',
+    '      process.stdout.write(`${runtime}\\t${configDir}`);',
+    '      process.exit(0);',
+    '    }',
+    '  }',
     '} catch {}',
   ].join(' ');
   const stateWriteScript = [
     'const fs = require("fs");',
     'const path = require("path");',
     'const statePath = process.argv[1];',
-    'const configDir = process.argv[2];',
+    'const runtime = process.argv[2];',
+    'const configDir = process.argv[3];',
     'let state = {};',
     'try { state = JSON.parse(fs.readFileSync(statePath, "utf8")); } catch {}',
     'if (!state || typeof state !== "object") state = {};',
@@ -2204,7 +2281,7 @@ function buildSharedYoloRalphShim() {
     'const now = new Date().toISOString();',
     'state.schema_version = 1;',
     'state.updated_at = now;',
-    'state.global_installs.codex = { config_dir: configDir, updated_at: now };',
+    'state.global_installs[runtime] = { config_dir: configDir, updated_at: now };',
     `if (!state.shared_bin_artifacts.includes(${JSON.stringify(GSD_YOLO_RALPH_COMMAND)})) state.shared_bin_artifacts.push(${JSON.stringify(GSD_YOLO_RALPH_COMMAND)});`,
     'fs.mkdirSync(path.dirname(statePath), { recursive: true });',
     'fs.writeFileSync(statePath, JSON.stringify(state, null, 2) + "\\n", "utf8");',
@@ -2214,10 +2291,10 @@ function buildSharedYoloRalphShim() {
     'set -eu',
     '',
     'STATE_PATH="${HOME}/.gsd/install-state.json"',
-    'STATE_CODEX_HOME=""',
+    'STATE_INSTALL=""',
     'RESOLVED_CONFIG_DIR=""',
+    'RESOLVED_RUNTIME=""',
     'RESOLVED_WRAPPER=""',
-    'DEFAULT_CODEX_HOME="${HOME}/.codex"',
     '',
     'print_help() {',
     `  printf '%s\\n' ${helpText.map(shellSingleQuote).join(' ')}`,
@@ -2231,12 +2308,12 @@ function buildSharedYoloRalphShim() {
     '}',
     '',
     'repair_shared_state() {',
-    '  desired_dir="${1:-}"',
-    '  current_dir="${2:-}"',
-    '  if [ -z "$desired_dir" ] || [ "$desired_dir" = "$current_dir" ] || ! command -v node >/dev/null 2>&1; then',
-    '    return 0',
+    '  desired_runtime="${1:-}"',
+    '  desired_dir="${2:-}"',
+    '  if [ -z "$desired_runtime" ] || [ -z "$desired_dir" ] || ! command -v node >/dev/null 2>&1; then',
+      '    return 0',
     '  fi',
-    `  node -e ${JSON.stringify(stateWriteScript)} "$STATE_PATH" "$desired_dir" >/dev/null 2>&1 || true`,
+    `  node -e ${JSON.stringify(stateWriteScript)} "$STATE_PATH" "$desired_runtime" "$desired_dir" >/dev/null 2>&1 || true`,
     '}',
     '',
     'if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then',
@@ -2244,43 +2321,35 @@ function buildSharedYoloRalphShim() {
     '  exit 0',
     'fi',
     '',
-    'if [ -n "${CODEX_HOME:-}" ]; then',
-    '  candidate_home="${CODEX_HOME%/}"',
-    `  candidate_wrapper="\${candidate_home}/get-shit-done/bin/${GSD_YOLO_RALPH_COMMAND}"`,
-    '  if [ -x "$candidate_wrapper" ]; then',
-    '    RESOLVED_CONFIG_DIR="$candidate_home"',
-    '    RESOLVED_WRAPPER="$candidate_wrapper"',
-    '  fi',
-    'fi',
-    '',
-    'STATE_CODEX_HOME="$(read_state_codex_home)"',
-    'if [ -z "$RESOLVED_WRAPPER" ] && [ -n "$STATE_CODEX_HOME" ]; then',
-    '  candidate_home="${STATE_CODEX_HOME%/}"',
-    `  candidate_wrapper="\${candidate_home}/get-shit-done/bin/${GSD_YOLO_RALPH_COMMAND}"`,
-    '  if [ -x "$candidate_wrapper" ]; then',
-    '    RESOLVED_CONFIG_DIR="$candidate_home"',
-    '    RESOLVED_WRAPPER="$candidate_wrapper"',
-    '  fi',
+    'STATE_INSTALL="$(read_state_codex_home)"',
+    'if [ -n "$STATE_INSTALL" ]; then',
+    '  RESOLVED_RUNTIME="${STATE_INSTALL%%	*}"',
+    '  RESOLVED_CONFIG_DIR="${STATE_INSTALL#*	}"',
+    `  RESOLVED_WRAPPER="$RESOLVED_CONFIG_DIR/get-shit-done/bin/${GSD_YOLO_RALPH_COMMAND}"`,
     'fi',
     '',
     'if [ -z "$RESOLVED_WRAPPER" ]; then',
-    '  candidate_home="${DEFAULT_CODEX_HOME%/}"',
-    `  candidate_wrapper="\${candidate_home}/get-shit-done/bin/${GSD_YOLO_RALPH_COMMAND}"`,
-    '  if [ -x "$candidate_wrapper" ]; then',
-    '    RESOLVED_CONFIG_DIR="$candidate_home"',
-    '    RESOLVED_WRAPPER="$candidate_wrapper"',
-    '  fi',
+    '  for candidate in "codex:${HOME}/.codex" "claude:${HOME}/.claude" "cursor:${HOME}/.cursor"; do',
+    '    candidate_runtime="${candidate%%:*}"',
+    '    candidate_home="${candidate#*:}"',
+    `    candidate_wrapper="\${candidate_home}/get-shit-done/bin/${GSD_YOLO_RALPH_COMMAND}"`,
+    '    if [ -x "$candidate_wrapper" ]; then',
+    '      RESOLVED_RUNTIME="$candidate_runtime"',
+    '      RESOLVED_CONFIG_DIR="$candidate_home"',
+    '      RESOLVED_WRAPPER="$candidate_wrapper"',
+    '      break',
+    '    fi',
+    '  done',
     'fi',
     '',
     'if [ -z "$RESOLVED_WRAPPER" ]; then',
     '  printf \'%s\\n\' ' +
-      `${JSON.stringify('GSD could not find a usable global Codex yolo-ralph wrapper.')} '' ${JSON.stringify('Looked in:')} ` +
-      '"  - ${CODEX_HOME:-<unset>}" "  - ${STATE_CODEX_HOME:-<missing from ~/.gsd/install-state.json>}" "  - ${DEFAULT_CODEX_HOME}" ' +
-      `'' ${JSON.stringify('Install or repair the Codex global assets with:')} ${JSON.stringify('  npx get-shit-done-cc --codex --global')} ${JSON.stringify('Or set CODEX_HOME to a valid Codex config root and retry.')} >&2`,
+      `${JSON.stringify('GSD could not find a usable global yolo-ralph wrapper.')} '' ${JSON.stringify('Looked in managed installs plus default roots for codex, claude, and cursor.')} ` +
+      `'' ${JSON.stringify('Install or repair one of the supported global assets with:')} ${JSON.stringify('  npx get-shit-done-cc --codex --global')} ${JSON.stringify('  npx get-shit-done-cc --claude --global')} ${JSON.stringify('  npx get-shit-done-cc --cursor --global')} >&2`,
     '  exit 1',
     'fi',
     '',
-    'repair_shared_state "$RESOLVED_CONFIG_DIR" "$STATE_CODEX_HOME"',
+    'repair_shared_state "$RESOLVED_RUNTIME" "$RESOLVED_CONFIG_DIR"',
     'exec "$RESOLVED_WRAPPER" "$@"',
     '',
   ].join('\n');
@@ -2346,12 +2415,12 @@ function reconcileSharedGlobalInstallState(state) {
     normalized.shell_files = [];
   }
 
-  const activeCodexInstall = getActiveCodexGlobalInstall(normalized);
+  const activeInstall = getFirstActiveYoloRalphGlobalInstall(normalized);
   normalized.shared_bin_artifacts = [];
 
-  if (activeCodexInstall) {
-    const codexWrapperPath = getCodexYoloRalphWrapperPath(activeCodexInstall.config_dir);
-    if (fs.existsSync(codexWrapperPath)) {
+  if (activeInstall) {
+    const wrapperPath = getYoloRalphWrapperPath(activeInstall.config_dir);
+    if (fs.existsSync(wrapperPath)) {
       writeExecutableShellScript(sharedCommandPath, buildSharedYoloRalphShim());
       normalized.shared_bin_artifacts.push(GSD_YOLO_RALPH_COMMAND);
     } else if (fs.existsSync(sharedCommandPath)) {
@@ -5200,13 +5269,9 @@ function uninstall(isGlobal, runtime = 'claude') {
     }
 
     // Remove GSD hooks from settings — per-hook granularity to preserve
-    // user hooks that share an entry with a GSD hook (#1755 followup)
-    const isGsdHookCommand = (cmd) =>
-      cmd && (cmd.includes('gsd-check-update') || cmd.includes('gsd-statusline') ||
-        cmd.includes('gsd-session-state') || cmd.includes('gsd-context-monitor') ||
-        cmd.includes('gsd-phase-boundary') || cmd.includes('gsd-prompt-guard') ||
-        cmd.includes('gsd-read-guard') || cmd.includes('gsd-validate-commit') ||
-        cmd.includes('gsd-workflow-guard'));
+    // user hooks that share an entry with a GSD hook (#1755 followup).
+    // Managed hooks can be shell-form (`command` contains the script path)
+    // or exec-form (`args` contains the script path), so inspect both.
 
     for (const eventName of ['SessionStart', 'PostToolUse', 'AfterTool', 'PreToolUse', 'BeforeTool']) {
       if (settings.hooks && settings.hooks[eventName]) {
@@ -5215,7 +5280,7 @@ function uninstall(isGlobal, runtime = 'claude') {
           .map(entry => {
             if (!entry.hooks || !Array.isArray(entry.hooks)) return entry;
             // Filter out individual GSD hooks, keep user hooks
-            entry.hooks = entry.hooks.filter(h => !isGsdHookCommand(h.command));
+            entry.hooks = entry.hooks.filter(h => !isGsdHookHandler(h));
             return entry.hooks.length > 0 ? entry : null;
           })
           .filter(Boolean);
@@ -6197,10 +6262,10 @@ function install(isGlobal, runtime = 'claude') {
     failures.push(RELEASE_METADATA_NAME);
   }
 
-  if (isGlobal && isCodex) {
-    const codexWrapperPath = getCodexYoloRalphWrapperPath(targetDir);
-    writeExecutableShellScript(codexWrapperPath, buildCodexYoloRalphWrapper(targetDir));
-    if (verifyFileInstalled(codexWrapperPath, GSD_YOLO_RALPH_COMMAND)) {
+  if (isGlobal && GSD_YOLO_RALPH_SUPPORTED_GLOBAL_RUNTIMES.includes(runtime)) {
+    const yoloRalphWrapperPath = getYoloRalphWrapperPath(targetDir);
+    writeExecutableShellScript(yoloRalphWrapperPath, buildYoloRalphWrapper(targetDir, runtime));
+    if (verifyFileInstalled(yoloRalphWrapperPath, GSD_YOLO_RALPH_COMMAND)) {
       console.log(`  ${green}✓${reset} Installed ${GSD_YOLO_RALPH_COMMAND} to get-shit-done/bin/`);
     } else {
       failures.push(GSD_YOLO_RALPH_COMMAND);
@@ -6239,10 +6304,14 @@ function install(isGlobal, runtime = 'claude') {
             // Ensure hook files are executable (fixes #1162 — missing +x permission)
             try { fs.chmodSync(destFile, 0o755); } catch (e) { /* Windows doesn't support chmod */ }
           } else {
-            fs.copyFileSync(srcFile, destFile);
-            // Ensure .sh hook files are executable (mirrors chmod in build-hooks.js)
             if (entry.endsWith('.sh')) {
+              let content = fs.readFileSync(srcFile, 'utf8');
+              content = content.replace(/\{\{GSD_VERSION\}\}/g, pkg.version);
+              fs.writeFileSync(destFile, content);
+              // Ensure .sh hook files are executable (mirrors chmod in build-hooks.js)
               try { fs.chmodSync(destFile, 0o755); } catch (e) { /* Windows doesn't support chmod */ }
+            } else {
+              fs.copyFileSync(srcFile, destFile);
             }
           }
         }
@@ -6562,11 +6631,12 @@ function install(isGlobal, runtime = 'claude') {
     }
 
     // Configure commit validation hook (Conventional Commits enforcement, opt-in)
-    const validateCommitCommand = isGlobal
-      ? 'bash ' + targetDir.replace(/\\/g, '/') + '/hooks/gsd-validate-commit.sh'
-      : 'bash ' + localPrefix + '/hooks/gsd-validate-commit.sh';
+    const validateCommitHookPath = isGlobal
+      ? targetDir.replace(/\\/g, '/') + '/hooks/gsd-validate-commit.sh'
+      : '${CLAUDE_PROJECT_DIR}/' + dirName + '/hooks/gsd-validate-commit.sh';
+    const validateCommitHandler = buildBashHookHandler(validateCommitHookPath, 5);
     const hasValidateCommitHook = settings.hooks[preToolEvent].some(entry =>
-      entry.hooks && entry.hooks.some(h => h.command && h.command.includes('gsd-validate-commit'))
+      entryHasHookHandler(entry, 'gsd-validate-commit')
     );
     // Guard: only register if the .sh file was actually installed. If the npm package
     // omitted the file (as happened in v1.32.0, bug #1817), registering a missing hook
@@ -6577,15 +6647,49 @@ function install(isGlobal, runtime = 'claude') {
         matcher: 'Bash',
         hooks: [
           {
-            type: 'command',
-            command: validateCommitCommand,
-            timeout: 5
+            ...validateCommitHandler
           }
         ]
       });
       console.log(`  ${green}✓${reset} Configured commit validation hook (opt-in via config)`);
     } else if (!hasValidateCommitHook && !fs.existsSync(validateCommitFile)) {
       console.warn(`  ${yellow}⚠${reset}  Skipped commit validation hook — gsd-validate-commit.sh not found at target`);
+    } else if (hasValidateCommitHook && fs.existsSync(validateCommitFile)) {
+      let migratedValidateCommitHook = false;
+      for (const entry of settings.hooks[preToolEvent]) {
+        if (!entry || !Array.isArray(entry.hooks)) continue;
+        if (!entryHasHookHandler(entry, 'gsd-validate-commit')) continue;
+
+        if (entry.matcher !== 'Bash') {
+          entry.matcher = 'Bash';
+          migratedValidateCommitHook = true;
+        }
+
+        for (const hook of entry.hooks) {
+          if (!hookHandlerIncludes(hook, 'gsd-validate-commit')) continue;
+          if (hook.type !== validateCommitHandler.type) {
+            hook.type = validateCommitHandler.type;
+            migratedValidateCommitHook = true;
+          }
+          if (hook.command !== validateCommitHandler.command) {
+            hook.command = validateCommitHandler.command;
+            migratedValidateCommitHook = true;
+          }
+          if (!Array.isArray(hook.args) ||
+            hook.args.length !== validateCommitHandler.args.length ||
+            hook.args.some((arg, index) => arg !== validateCommitHandler.args[index])) {
+            hook.args = [...validateCommitHandler.args];
+            migratedValidateCommitHook = true;
+          }
+          if (hook.timeout !== validateCommitHandler.timeout) {
+            hook.timeout = validateCommitHandler.timeout;
+            migratedValidateCommitHook = true;
+          }
+        }
+      }
+      if (migratedValidateCommitHook) {
+        console.log(`  ${green}✓${reset} Updated commit validation hook to exec form`);
+      }
     }
 
     // Configure session state orientation hook (opt-in)
@@ -7019,9 +7123,13 @@ if (process.env.GSD_TEST_MODE) {
     reconcileSharedGlobalInstallState,
     repairGsdManagedCodexHookConfig,
     stripManagedCodexHookBlocks,
-    getCodexYoloRalphWrapperPath,
-    buildCodexYoloRalphWrapper,
+    getYoloRalphWrapperPath,
+    buildYoloRalphWrapper,
     buildSharedYoloRalphShim,
+    getCodexYoloRalphWrapperPath: getYoloRalphWrapperPath,
+    buildCodexYoloRalphWrapper: buildYoloRalphWrapper,
+    getHookCommandSearchText,
+    isGsdHookHandler,
     GSD_SHELL_PATH_MARKER_START,
     GSD_SHELL_PATH_MARKER_END,
     GSD_YOLO_RALPH_COMMAND,

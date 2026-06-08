@@ -22,7 +22,7 @@ const path = require('path');
 const INSTALL_SRC = path.join(__dirname, '..', 'bin', 'install.js');
 
 const SH_HOOKS = [
-  { name: 'gsd-validate-commit.sh', settingsVar: 'validateCommitCommand' },
+  { name: 'gsd-validate-commit.sh', settingsVar: 'validateCommitHookPath' },
   { name: 'gsd-session-state.sh',   settingsVar: 'sessionStateCommand' },
   { name: 'gsd-phase-boundary.sh',  settingsVar: 'phaseBoundaryCommand' },
 ];

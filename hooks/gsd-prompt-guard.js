@@ -14,6 +14,19 @@
 const fs = require('fs');
 const path = require('path');
 
+let outputWritten = false;
+
+function emitJson(output) {
+  if (outputWritten) return;
+  outputWritten = true;
+  process.stdout.write(JSON.stringify(output));
+}
+
+function exitSuccess() {
+  emitJson({ continue: true });
+  process.exit(0);
+}
+
 // Prompt injection patterns (subset of security.cjs patterns, inlined for hook independence)
 const INJECTION_PATTERNS = [
   /ignore\s+(all\s+)?previous\s+instructions/i,
@@ -33,7 +46,7 @@ const INJECTION_PATTERNS = [
 ];
 
 let input = '';
-const stdinTimeout = setTimeout(() => process.exit(0), 3000);
+const stdinTimeout = setTimeout(exitSuccess, 3000);
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', chunk => input += chunk);
 process.stdin.on('end', () => {
@@ -44,20 +57,20 @@ process.stdin.on('end', () => {
 
     // Only scan Write and Edit operations
     if (toolName !== 'Write' && toolName !== 'Edit') {
-      process.exit(0);
+      exitSuccess();
     }
 
     const filePath = data.tool_input?.file_path || '';
 
     // Only scan files going into .planning/ (agent context files)
     if (!filePath.includes('.planning/') && !filePath.includes('.planning\\')) {
-      process.exit(0);
+      exitSuccess();
     }
 
     // Get the content being written
     const content = data.tool_input?.content || data.tool_input?.new_string || '';
     if (!content) {
-      process.exit(0);
+      exitSuccess();
     }
 
     // Scan for injection patterns
@@ -74,11 +87,12 @@ process.stdin.on('end', () => {
     }
 
     if (findings.length === 0) {
-      process.exit(0);
+      exitSuccess();
     }
 
     // Advisory warning — does not block the operation
     const output = {
+      continue: true,
       hookSpecificOutput: {
         hookEventName: 'PreToolUse',
         additionalContext: `\u26a0\ufe0f PROMPT INJECTION WARNING: Content being written to ${path.basename(filePath)} ` +
@@ -89,9 +103,9 @@ process.stdin.on('end', () => {
       },
     };
 
-    process.stdout.write(JSON.stringify(output));
+    emitJson(output);
   } catch {
-    // Silent fail — never block tool execution
-    process.exit(0);
+    // Neutral success — never block tool execution
+    exitSuccess();
   }
 });

@@ -21,8 +21,21 @@
 const fs = require('fs');
 const path = require('path');
 
+let outputWritten = false;
+
+function emitJson(output) {
+  if (outputWritten) return;
+  outputWritten = true;
+  process.stdout.write(JSON.stringify(output));
+}
+
+function exitSuccess() {
+  emitJson({ continue: true });
+  process.exit(0);
+}
+
 let input = '';
-const stdinTimeout = setTimeout(() => process.exit(0), 3000);
+const stdinTimeout = setTimeout(exitSuccess, 3000);
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', chunk => input += chunk);
 process.stdin.on('end', () => {
@@ -33,12 +46,12 @@ process.stdin.on('end', () => {
 
     // Only intercept Write and Edit tool calls
     if (toolName !== 'Write' && toolName !== 'Edit') {
-      process.exit(0);
+      exitSuccess();
     }
 
     const filePath = data.tool_input?.file_path || '';
     if (!filePath) {
-      process.exit(0);
+      exitSuccess();
     }
 
     // Only inject guidance when the file already exists.
@@ -52,13 +65,14 @@ process.stdin.on('end', () => {
     }
 
     if (!fileExists) {
-      process.exit(0);
+      exitSuccess();
     }
 
     const fileName = path.basename(filePath);
 
     // Advisory guidance — does not block the operation
     const output = {
+      continue: true,
       hookSpecificOutput: {
         hookEventName: 'PreToolUse',
         additionalContext:
@@ -69,9 +83,9 @@ process.stdin.on('end', () => {
       },
     };
 
-    process.stdout.write(JSON.stringify(output));
+    emitJson(output);
   } catch {
-    // Silent fail — never block tool execution
-    process.exit(0);
+    // Neutral success — never block tool execution
+    exitSuccess();
   }
 });

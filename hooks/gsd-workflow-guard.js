@@ -14,8 +14,21 @@
 const fs = require('fs');
 const path = require('path');
 
+let outputWritten = false;
+
+function emitJson(output) {
+  if (outputWritten) return;
+  outputWritten = true;
+  process.stdout.write(JSON.stringify(output));
+}
+
+function exitSuccess() {
+  emitJson({ continue: true });
+  process.exit(0);
+}
+
 let input = '';
-const stdinTimeout = setTimeout(() => process.exit(0), 3000);
+const stdinTimeout = setTimeout(exitSuccess, 3000);
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', chunk => input += chunk);
 process.stdin.on('end', () => {
@@ -26,14 +39,14 @@ process.stdin.on('end', () => {
 
     // Only guard Write and Edit tool calls
     if (toolName !== 'Write' && toolName !== 'Edit') {
-      process.exit(0);
+      exitSuccess();
     }
 
     // Check if we're inside a GSD workflow (Task subagent or /gsd- skill)
     // Subagents have a session_id that differs from the parent
     // and typically have a description field set by the orchestrator
     if (data.tool_input?.is_subagent || data.session_type === 'task') {
-      process.exit(0);
+      exitSuccess();
     }
 
     // Check the file being edited
@@ -41,7 +54,7 @@ process.stdin.on('end', () => {
 
     // Allow edits to .planning/ files (GSD state management)
     if (filePath.includes('.planning/') || filePath.includes('.planning\\')) {
-      process.exit(0);
+      exitSuccess();
     }
 
     // Allow edits to common config/docs files that don't need GSD tracking
@@ -54,7 +67,7 @@ process.stdin.on('end', () => {
       /settings\.json$/,
     ];
     if (allowedPatterns.some(p => p.test(filePath))) {
-      process.exit(0);
+      exitSuccess();
     }
 
     // Check if workflow guard is enabled
@@ -64,18 +77,19 @@ process.stdin.on('end', () => {
       try {
         const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
         if (!config.hooks?.workflow_guard) {
-          process.exit(0); // Guard disabled (default)
+          exitSuccess(); // Guard disabled (default)
         }
       } catch (e) {
-        process.exit(0);
+        exitSuccess();
       }
     } else {
-      process.exit(0); // No GSD project — don't guard
+      exitSuccess(); // No GSD project — don't guard
     }
 
     // If we get here: GSD project, guard enabled, file edit outside .planning/,
     // not in a subagent context. Inject advisory warning.
     const output = {
+      continue: true,
       hookSpecificOutput: {
         hookEventName: "PreToolUse",
         additionalContext: `⚠️ WORKFLOW ADVISORY: You're editing ${path.basename(filePath)} directly without a GSD command. ` +
@@ -86,9 +100,9 @@ process.stdin.on('end', () => {
       }
     };
 
-    process.stdout.write(JSON.stringify(output));
+    emitJson(output);
   } catch (e) {
-    // Silent fail — never block tool execution
-    process.exit(0);
+    // Neutral success — never block tool execution
+    exitSuccess();
   }
 });

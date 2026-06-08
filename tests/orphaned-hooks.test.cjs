@@ -13,7 +13,7 @@ const path = require('path');
 
 const CHECK_UPDATE_PATH = path.join(__dirname, '..', 'hooks', 'gsd-check-update.js');
 const BUILD_HOOKS_PATH = path.join(__dirname, '..', 'scripts', 'build-hooks.js');
-const { MANAGED_HOOKS } = require('../hooks/gsd-check-update.js');
+const { MANAGED_HOOKS, collectStaleHooks } = require('../hooks/gsd-check-update.js');
 
 describe('orphaned hooks stale detection (#1750)', () => {
   test('stale hook scanner uses an allowlist of managed hooks, not a wildcard', () => {
@@ -33,21 +33,21 @@ describe('orphaned hooks stale detection (#1750)', () => {
       'Use a MANAGED_HOOKS allowlist instead.');
   });
 
-  test('managed hooks list in check-update matches build-hooks HOOKS_TO_COPY JS entries', () => {
-    // Extract JS hooks from build-hooks.js HOOKS_TO_COPY
+  test('managed hooks list in check-update matches build-hooks HOOKS_TO_COPY entries', () => {
+    // Extract hooks from build-hooks.js HOOKS_TO_COPY
     const buildContent = fs.readFileSync(BUILD_HOOKS_PATH, 'utf8');
     const hooksArrayMatch = buildContent.match(/HOOKS_TO_COPY\s*=\s*\[([\s\S]*?)\]/);
     assert.ok(hooksArrayMatch, 'should find HOOKS_TO_COPY array');
 
-    const jsHooks = [];
-    const hookEntries = hooksArrayMatch[1].matchAll(/'([^']+\.js)'/g);
+    const managedHooks = [];
+    const hookEntries = hooksArrayMatch[1].matchAll(/'([^']+\.(?:js|sh))'/g);
     for (const m of hookEntries) {
-      jsHooks.push(m[1]);
+      managedHooks.push(m[1]);
     }
-    assert.ok(jsHooks.length >= 5, `expected at least 5 JS hooks in HOOKS_TO_COPY, got ${jsHooks.length}`);
+    assert.ok(managedHooks.length >= 8, `expected managed hooks in HOOKS_TO_COPY, got ${managedHooks.length}`);
 
-    // Verify each JS hook from HOOKS_TO_COPY is referenced in the managed list
-    for (const hook of jsHooks) {
+    // Verify each hook from HOOKS_TO_COPY is referenced in the managed list
+    for (const hook of managedHooks) {
       assert.ok(
         MANAGED_HOOKS.includes(hook),
         `managed hooks in check-update should include '${hook}' from HOOKS_TO_COPY`
@@ -69,5 +69,23 @@ describe('orphaned hooks stale detection (#1750)', () => {
         `orphaned hook '${orphan}' must NOT be in the managed hooks list`
       );
     }
+  });
+
+  test('stale scanner tracks shell hook version headers', (t) => {
+    const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'gsd-stale-hooks-'));
+    t.after(() => { fs.rmSync(tmpDir, { recursive: true, force: true }); });
+    const hooksDir = path.join(tmpDir, 'hooks');
+    fs.mkdirSync(hooksDir, { recursive: true });
+
+    fs.writeFileSync(path.join(hooksDir, 'gsd-validate-commit.sh'), '#!/usr/bin/env bash\n', 'utf8');
+    fs.writeFileSync(path.join(hooksDir, 'gsd-phase-boundary.sh'), '# gsd-hook-version: 1.0.0\n', 'utf8');
+    fs.writeFileSync(path.join(hooksDir, 'gsd-session-state.sh'), '# gsd-hook-version: 1.34.2\n', 'utf8');
+
+    const staleHooks = collectStaleHooks(tmpDir, '1.34.2');
+    const staleFiles = staleHooks.map(h => h.file);
+
+    assert.ok(staleFiles.includes('gsd-validate-commit.sh'), 'shell hook without version header should be stale');
+    assert.ok(staleFiles.includes('gsd-phase-boundary.sh'), 'older shell hook should be stale');
+    assert.ok(!staleFiles.includes('gsd-session-state.sh'), 'current shell hook should not be stale');
   });
 });

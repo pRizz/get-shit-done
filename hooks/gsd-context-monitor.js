@@ -22,6 +22,19 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
+let outputWritten = false;
+
+function emitJson(output) {
+  if (outputWritten) return;
+  outputWritten = true;
+  process.stdout.write(JSON.stringify(output));
+}
+
+function exitSuccess() {
+  emitJson({ continue: true });
+  process.exit(0);
+}
+
 const WARNING_THRESHOLD = 35;  // remaining_percentage <= 35%
 const CRITICAL_THRESHOLD = 25; // remaining_percentage <= 25%
 const STALE_SECONDS = 60;      // ignore metrics older than 60s
@@ -30,9 +43,9 @@ const DEBOUNCE_CALLS = 5;      // min tool uses between warnings
 let input = '';
 // Timeout guard: if stdin doesn't close within 10s (e.g. pipe issues on
 // Windows/Git Bash, or slow Claude Code piping during large outputs),
-// exit silently instead of hanging until Claude Code kills the process
+// emit neutral JSON instead of hanging until Claude Code kills the process
 // and reports "hook error". See #775, #1162.
-const stdinTimeout = setTimeout(() => process.exit(0), 10000);
+const stdinTimeout = setTimeout(exitSuccess, 10000);
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', chunk => input += chunk);
 process.stdin.on('end', () => {
@@ -42,14 +55,14 @@ process.stdin.on('end', () => {
     const sessionId = data.session_id;
 
     if (!sessionId) {
-      process.exit(0);
+      exitSuccess();
     }
 
     // Reject session IDs that contain path traversal sequences or path separators.
     // session_id is used to construct file paths in /tmp — an unsanitized value
     // could escape the temp directory and read or write arbitrary files.
     if (/[/\\]|\.\./.test(sessionId)) {
-      process.exit(0);
+      exitSuccess();
     }
 
     // Check if context warnings are disabled via config.
@@ -61,7 +74,7 @@ process.stdin.on('end', () => {
         const configPath = path.join(planningDir, 'config.json');
         const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
         if (config.hooks?.context_warnings === false) {
-          process.exit(0);
+          exitSuccess();
         }
       } catch (e) {
         // Ignore config read/parse errors (config may not exist in .planning/)
@@ -71,9 +84,9 @@ process.stdin.on('end', () => {
     const tmpDir = os.tmpdir();
     const metricsPath = path.join(tmpDir, `claude-ctx-${sessionId}.json`);
 
-    // If no metrics file, this is a subagent or fresh session -- exit silently
+    // If no metrics file, this is a subagent or fresh session -- emit neutral JSON
     if (!fs.existsSync(metricsPath)) {
-      process.exit(0);
+      exitSuccess();
     }
 
     const metrics = JSON.parse(fs.readFileSync(metricsPath, 'utf8'));
@@ -81,7 +94,7 @@ process.stdin.on('end', () => {
 
     // Ignore stale metrics
     if (metrics.timestamp && (now - metrics.timestamp) > STALE_SECONDS) {
-      process.exit(0);
+      exitSuccess();
     }
 
     const remaining = metrics.remaining_percentage;
@@ -89,7 +102,7 @@ process.stdin.on('end', () => {
 
     // No warning needed
     if (remaining > WARNING_THRESHOLD) {
-      process.exit(0);
+      exitSuccess();
     }
 
     // Debounce: check if we warned recently
@@ -117,7 +130,7 @@ process.stdin.on('end', () => {
     if (!firstWarn && warnData.callsSinceWarn < DEBOUNCE_CALLS && !severityEscalated) {
       // Update counter and exit without warning
       fs.writeFileSync(warnPath, JSON.stringify(warnData));
-      process.exit(0);
+      exitSuccess();
     }
 
     // Reset debounce counter
@@ -151,15 +164,16 @@ process.stdin.on('end', () => {
     }
 
     const output = {
+      continue: true,
       hookSpecificOutput: {
         hookEventName: process.env.GEMINI_API_KEY ? "AfterTool" : "PostToolUse",
         additionalContext: message
       }
     };
 
-    process.stdout.write(JSON.stringify(output));
+    emitJson(output);
   } catch (e) {
-    // Silent fail -- never block tool execution
-    process.exit(0);
+    // Neutral success -- never block tool execution
+    exitSuccess();
   }
 });

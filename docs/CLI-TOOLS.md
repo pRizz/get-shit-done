@@ -150,18 +150,20 @@ node gsd-tools.cjs config-set-model-profile <profile>
 Drive higher-level orchestration loops from the low-level CLI layer.
 
 ```bash
-# Launch repeated fresh Codex runs of the strict-push yolo wrapper
-node gsd-tools.cjs yolo-ralph [--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]
+# Launch repeated fresh launcher-specific runs of the strict-push yolo wrapper
+node gsd-tools.cjs yolo-ralph --agent-cli <selector> [--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]
 
-# After a global install that includes Codex, use the shared shell shim
-gsd-yolo-ralph [--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]
+# After a supported global install, use the shared shell shim
+gsd-yolo-ralph --agent-cli <selector> [--max-iterations N] [--sleep-seconds N] [--heartbeat-seconds N] [--stage-tick-seconds N]
 ```
 
 Behavior:
 - Requires a Git repo plus initialized GSD planning assets
-- Requires Codex CLI on `PATH` and the `gsd-yolo-discuss-plan-execute-commit-and-push` Codex skill
-- Global installs manage `~/.gsd/bin` on `PATH` with marked shell blocks; `gsd-yolo-ralph` is published there only when a global Codex install is active
-- Launches `codex exec --dangerously-bypass-approvals-and-sandbox ... '$gsd-yolo-discuss-plan-execute-commit-and-push'`
+- Requires explicit `--agent-cli <codex|claude|cursor-agent|agent>`; no default launcher is assumed
+- Requires the selected launcher CLI on `PATH` and the matching GSD asset install (`codex`, `claude`, or `cursor`)
+- `agent` is accepted as a compatibility alias for Cursor CLI's documented executable name `cursor-agent`
+- Global installs manage `~/.gsd/bin` on `PATH` with marked shell blocks; `gsd-yolo-ralph` is published there when a supported global install is active
+- Launches the strict-push wrapper through the selected launcher profile (`codex`, `claude`, or `cursor-agent`)
 - Emits periodic heartbeat summaries and a live stage timer in TTY sessions unless disabled via config or flags
 - Persists iteration logs under `.planning/tmp/yolo-ralph/run-<timestamp>/`
 - Stops on the first `failed` or `stalled` iteration, or when milestone lifecycle work is next

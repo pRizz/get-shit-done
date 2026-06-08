@@ -1,17 +1,28 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# gsd-hook-version: {{GSD_VERSION}}
 # gsd-validate-commit.sh — PreToolUse hook: enforce Conventional Commits format
-# Blocks git commit commands with non-conforming messages (exit 2).
+# Denies git commit commands with non-conforming messages.
 # Allows conforming messages and all non-commit commands (exit 0).
 # Uses Node.js for JSON parsing (always available in GSD projects, no jq dependency).
 #
 # OPT-IN: This hook is a no-op unless config.json has hooks.community: true.
 # Enable with: "hooks": { "community": true } in .planning/config.json
 
-# Check opt-in config — exit silently if not enabled
+emit_hook_success() {
+  printf '{"continue":true}\n'
+}
+
+emit_pretool_deny() {
+  local reason="$1"
+  node -e 'const reason=process.argv[1]; process.stdout.write(JSON.stringify({continue:true,hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:reason}})+"\n");' "$reason"
+}
+
+# Check opt-in config — emit neutral success if not enabled
 if [ -f .planning/config.json ]; then
   ENABLED=$(node -e "try{const c=require('./.planning/config.json');process.stdout.write(c.hooks?.community===true?'1':'0')}catch{process.stdout.write('0')}" 2>/dev/null)
-  if [ "$ENABLED" != "1" ]; then exit 0; fi
+  if [ "$ENABLED" != "1" ]; then emit_hook_success; exit 0; fi
 else
+  emit_hook_success
   exit 0
 fi
 
@@ -34,14 +45,15 @@ if [[ "$CMD" =~ ^git[[:space:]]+commit ]]; then
     SUBJECT=$(echo "$MSG" | head -1)
     # Validate Conventional Commits format
     if ! [[ "$SUBJECT" =~ ^(feat|fix|docs|style|refactor|perf|test|build|ci|chore)(\(.+\))?:[[:space:]].+ ]]; then
-      echo '{"decision": "block", "reason": "Commit message must follow Conventional Commits: <type>(<scope>): <subject>. Valid types: feat, fix, docs, style, refactor, perf, test, build, ci, chore. Subject must be <=72 chars, lowercase, imperative mood, no trailing period."}'
-      exit 2
+      emit_pretool_deny "Commit message must follow Conventional Commits: <type>(<scope>): <subject>. Valid types: feat, fix, docs, style, refactor, perf, test, build, ci, chore. Subject must be <=72 chars, lowercase, imperative mood, no trailing period."
+      exit 0
     fi
     if [ ${#SUBJECT} -gt 72 ]; then
-      echo '{"decision": "block", "reason": "Commit subject must be 72 characters or less."}'
-      exit 2
+      emit_pretool_deny "Commit subject must be 72 characters or less."
+      exit 0
     fi
   fi
 fi
 
+emit_hook_success
 exit 0

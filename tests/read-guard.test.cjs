@@ -45,6 +45,18 @@ function runHook(payload) {
   }
 }
 
+function parseHookOutput(result) {
+  assert.ok(result.stdout.length > 0, 'hook should produce JSON output');
+  return JSON.parse(result.stdout);
+}
+
+function assertNeutralOutput(result) {
+  const output = parseHookOutput(result);
+  assert.equal(output.continue, true);
+  assert.equal(output.hookSpecificOutput, undefined);
+  return output;
+}
+
 describe('gsd-read-guard hook', () => {
   let tmpDir;
 
@@ -107,7 +119,7 @@ describe('gsd-read-guard hook', () => {
     });
 
     assert.equal(result.exitCode, 0);
-    assert.equal(result.stdout, '', 'should produce no output for new files');
+    assertNeutralOutput(result);
   });
 
   test('does nothing for non-Write/Edit tools', () => {
@@ -117,7 +129,7 @@ describe('gsd-read-guard hook', () => {
     });
 
     assert.equal(result.exitCode, 0);
-    assert.equal(result.stdout, '');
+    assertNeutralOutput(result);
   });
 
   test('does nothing for Read tool', () => {
@@ -130,7 +142,7 @@ describe('gsd-read-guard hook', () => {
     });
 
     assert.equal(result.exitCode, 0);
-    assert.equal(result.stdout, '');
+    assertNeutralOutput(result);
   });
 
   // ─── Error resilience ──────────────────────────────────────────────────
@@ -143,8 +155,9 @@ describe('gsd-read-guard hook', () => {
         timeout: 5000,
         stdio: ['pipe', 'pipe', 'pipe'],
       });
-      // Should exit 0 silently
-      assert.equal(stdout.trim(), '');
+      // Should exit 0 with neutral JSON
+      const output = JSON.parse(stdout.trim());
+      assert.equal(output.continue, true);
     } catch (err) {
       assert.equal(err.status, 0, 'should exit 0 on parse error');
     }
@@ -153,7 +166,7 @@ describe('gsd-read-guard hook', () => {
   test('exits cleanly when tool_input is missing', () => {
     const result = runHook({ tool_name: 'Write' });
     assert.equal(result.exitCode, 0);
-    assert.equal(result.stdout, '');
+    assertNeutralOutput(result);
   });
 
   // ─── Guidance content quality ──────────────────────────────────────────
@@ -217,8 +230,8 @@ describe('gsd-read-guard hook', () => {
       tool_name: 'Write',
       tool_input: { file_path: 12345, content: 'data' },
     });
-    // file_path is a number — || '' yields '' — hook exits silently
+    // file_path is a number — || '' yields '' — hook exits with neutral JSON
     assert.equal(result.exitCode, 0);
-    assert.equal(result.stdout, '');
+    assertNeutralOutput(result);
   });
 });

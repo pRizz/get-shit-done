@@ -17,7 +17,7 @@ const {
   getSharedBinDir,
   getSharedInstallStatePath,
   writeSharedInstallState,
-  getCodexYoloRalphWrapperPath,
+  getYoloRalphWrapperPath,
   GSD_SHELL_PATH_MARKER_START,
   GSD_SHELL_PATH_MARKER_END,
   GSD_YOLO_RALPH_COMMAND,
@@ -143,7 +143,7 @@ describe('shared global PATH + shim integration', () => {
     const statePath = getSharedInstallStatePath();
     const sharedBinDir = getSharedBinDir();
     const sharedShimPath = path.join(sharedBinDir, GSD_YOLO_RALPH_COMMAND);
-    const codexWrapperPath = getCodexYoloRalphWrapperPath(codexHome);
+    const codexWrapperPath = getYoloRalphWrapperPath(codexHome);
     const state = JSON.parse(readUtf8(statePath));
 
     assert.strictEqual(state.global_installs.codex.config_dir, codexHome);
@@ -188,7 +188,7 @@ describe('shared global PATH + shim integration', () => {
 
     let commandError = null;
     try {
-      execFileSync(sharedShimPath, ['--sleep-seconds', '0'], { encoding: 'utf8' });
+      execFileSync(sharedShimPath, ['--agent-cli', 'codex', '--sleep-seconds', '0'], { encoding: 'utf8' });
       assert.fail('shared shim should forward the Codex wrapper exit code');
     } catch (error) {
       commandError = error;
@@ -198,7 +198,7 @@ describe('shared global PATH + shim integration', () => {
     assert.strictEqual(commandError.status, 12, 'shared shim preserves exit code');
     assert.strictEqual(
       commandError.stdout.trim(),
-      JSON.stringify(['yolo-ralph', '--sleep-seconds', '0']),
+      JSON.stringify(['yolo-ralph', '--agent-cli', 'codex', '--sleep-seconds', '0']),
       'shared shim forwards arguments through the Codex wrapper',
     );
     const repairedState = JSON.parse(readUtf8(statePath));
@@ -213,19 +213,19 @@ describe('shared global PATH + shim integration', () => {
     assert.strictEqual(readUtf8(path.join(tempHome, '.config', 'fish', 'config.fish')), 'set fish_greeting\n');
   });
 
-  test('shared PATH persists across mixed global installs and only exposes gsd-yolo-ralph while Codex is active', () => {
+  test('shared PATH persists across mixed global installs and exposes gsd-yolo-ralph for supported runtimes', () => {
     const sharedShimPath = path.join(getSharedBinDir(), GSD_YOLO_RALPH_COMMAND);
 
     install(true, 'claude');
     let state = JSON.parse(readUtf8(getSharedInstallStatePath()));
     assert.ok(state.global_installs.claude, 'Claude global install is recorded');
-    assert.ok(!fs.existsSync(sharedShimPath), 'non-Codex installs do not publish gsd-yolo-ralph');
+    assert.ok(fs.existsSync(sharedShimPath), 'Claude install publishes shared gsd-yolo-ralph');
     assert.ok(readUtf8(path.join(tempHome, '.zshrc')).includes('$HOME/.gsd/bin'), 'shared PATH block installed');
 
     install(true, 'codex');
     state = JSON.parse(readUtf8(getSharedInstallStatePath()));
     assert.ok(state.global_installs.codex, 'Codex global install is recorded');
-    assert.ok(fs.existsSync(sharedShimPath), 'Codex install publishes shared gsd-yolo-ralph');
+    assert.ok(fs.existsSync(sharedShimPath), 'shared shim remains available after adding Codex');
 
     uninstall(true, 'claude');
     state = JSON.parse(readUtf8(getSharedInstallStatePath()));
@@ -239,12 +239,24 @@ describe('shared global PATH + shim integration', () => {
     assert.strictEqual(readUtf8(path.join(tempHome, '.zshrc')), '# zsh setup\n');
   });
 
-  test('shared shim --help works outside a repo even when no live Codex wrapper exists', () => {
+  test('global Cursor install also publishes the shared shim', () => {
+    const cursorHome = path.join(tempHome, '.cursor');
+    install(true, 'cursor');
+
+    const sharedShimPath = path.join(getSharedBinDir(), GSD_YOLO_RALPH_COMMAND);
+    const state = JSON.parse(readUtf8(getSharedInstallStatePath()));
+
+    assert.ok(state.global_installs.cursor, 'Cursor global install is recorded');
+    assert.ok(fs.existsSync(sharedShimPath), 'Cursor install publishes shared gsd-yolo-ralph');
+    assert.ok(fs.existsSync(getYoloRalphWrapperPath(cursorHome)), 'Cursor-specific wrapper exists');
+  });
+
+  test('shared shim --help works outside a repo even when no live wrapper exists', () => {
     const codexHome = path.join(tempHome, '.codex');
     install(true, 'codex');
 
     const sharedShimPath = path.join(getSharedBinDir(), GSD_YOLO_RALPH_COMMAND);
-    fs.rmSync(getCodexYoloRalphWrapperPath(codexHome), { force: true });
+    fs.rmSync(getYoloRalphWrapperPath(codexHome), { force: true });
     writeSharedInstallState({
       global_installs: {
         codex: {
@@ -259,15 +271,16 @@ describe('shared global PATH + shim integration', () => {
     });
 
     assert.match(help, /Usage: gsd-yolo-ralph/);
+    assert.match(help, /--agent-cli <selector>/);
     assert.match(help, /Resolution order:/);
   });
 
-  test('shared shim prints actionable guidance when no usable Codex wrapper exists', () => {
+  test('shared shim prints actionable guidance when no usable wrapper exists', () => {
     const codexHome = path.join(tempHome, '.codex');
     install(true, 'codex');
 
     const sharedShimPath = path.join(getSharedBinDir(), GSD_YOLO_RALPH_COMMAND);
-    fs.rmSync(getCodexYoloRalphWrapperPath(codexHome), { force: true });
+    fs.rmSync(getYoloRalphWrapperPath(codexHome), { force: true });
     writeSharedInstallState({
       global_installs: {
         codex: {
@@ -289,8 +302,10 @@ describe('shared global PATH + shim integration', () => {
     }
 
     assert.ok(commandError, 'expected shared shim to fail');
-    assert.match(commandError.stderr, /could not find a usable global Codex yolo-ralph wrapper/i);
+    assert.match(commandError.stderr, /could not find a usable global yolo-ralph wrapper/i);
     assert.match(commandError.stderr, /npx get-shit-done-cc --codex --global/);
+    assert.match(commandError.stderr, /npx get-shit-done-cc --claude --global/);
+    assert.match(commandError.stderr, /npx get-shit-done-cc --cursor --global/);
   });
 
   test('global install tests do not mutate the real shared install state path', () => {

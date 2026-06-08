@@ -25,6 +25,7 @@ const { execFileSync } = require('child_process');
 
 const INSTALL_SCRIPT = path.join(__dirname, '..', 'bin', 'install.js');
 const BUILD_SCRIPT = path.join(__dirname, '..', 'scripts', 'build-hooks.js');
+const PKG = require('../package.json');
 const isWindows = process.platform === 'win32';
 
 const SH_HOOKS = [
@@ -119,6 +120,38 @@ describe('#1834: installer deploys .sh hooks alongside .js hooks', () => {
       assert.ok(
         fs.existsSync(path.join(hooksDir, hook)),
         `${hook} must be present in hooks/ after install`
+      );
+    }
+  });
+
+  test('validate-commit hook is registered in exec form after install', () => {
+    runInstaller(tmpDir);
+    const settings = JSON.parse(fs.readFileSync(path.join(tmpDir, 'settings.json'), 'utf8'));
+    const preToolHooks = settings.hooks?.PreToolUse || [];
+    const validateCommitHook = preToolHooks
+      .flatMap(entry => entry.hooks || [])
+      .find(hook => Array.isArray(hook.args) &&
+        hook.args.some(arg => typeof arg === 'string' && arg.includes('gsd-validate-commit.sh')));
+
+    assert.ok(validateCommitHook, 'validate-commit hook should be registered');
+    assert.strictEqual(validateCommitHook.command, 'bash');
+    assert.deepStrictEqual(validateCommitHook.args, [
+      path.join(tmpDir, 'hooks', 'gsd-validate-commit.sh').replace(/\\/g, '/'),
+    ]);
+    assert.strictEqual(validateCommitHook.timeout, 5);
+  });
+
+  test('.sh hooks are stamped with concrete GSD version after install', () => {
+    const hooksDir = runInstaller(tmpDir);
+    for (const hook of SH_HOOKS) {
+      const content = fs.readFileSync(path.join(hooksDir, hook), 'utf8');
+      assert.ok(
+        content.includes(`# gsd-hook-version: ${PKG.version}`),
+        `${hook} should contain the installed GSD version header`
+      );
+      assert.ok(
+        !content.includes('{{GSD_VERSION}}'),
+        `${hook} should not retain the template version placeholder`
       );
     }
   });
