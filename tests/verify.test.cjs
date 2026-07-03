@@ -238,6 +238,16 @@ describe('verify lifecycle command', () => {
     cleanup(tmpDir);
   });
 
+  function writeStaleVerificationLifecycleArtifacts() {
+    fs.writeFileSync(path.join(phaseDir, '01-CONTEXT.md'), lifecycleContextContent());
+    fs.writeFileSync(path.join(phaseDir, '01-01-PLAN.md'), lifecyclePlanContent());
+    fs.writeFileSync(path.join(phaseDir, '01-01-SUMMARY.md'), lifecycleSummaryContent());
+    fs.writeFileSync(
+      path.join(phaseDir, '01-VERIFICATION.md'),
+      lifecycleVerificationContent({ generatedAt: '2026-04-08T12:01:00Z' })
+    );
+  }
+
   test('accepts valid interactive provenance', () => {
     fs.writeFileSync(path.join(phaseDir, '01-CONTEXT.md'), lifecycleContextContent());
     fs.writeFileSync(path.join(phaseDir, '01-01-PLAN.md'), lifecyclePlanContent());
@@ -374,21 +384,55 @@ describe('verify lifecycle command', () => {
     );
   });
 
-  test('fails when verification is stale', () => {
-    fs.writeFileSync(path.join(phaseDir, '01-CONTEXT.md'), lifecycleContextContent());
-    fs.writeFileSync(path.join(phaseDir, '01-01-PLAN.md'), lifecyclePlanContent());
-    fs.writeFileSync(path.join(phaseDir, '01-01-SUMMARY.md'), lifecycleSummaryContent());
-    fs.writeFileSync(
-      path.join(phaseDir, '01-VERIFICATION.md'),
-      lifecycleVerificationContent({ generatedAt: '2026-04-08T12:01:00Z' })
-    );
+  test('fails when verification is stale by default', () => {
+    // Arrange
+    writeStaleVerificationLifecycleArtifacts();
 
+    // Act
+    const result = runGsdTools('verify lifecycle 1 --require-plans', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    // Assert
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.valid, false);
+    assert.ok(
+      output.reasons.includes('verification is stale relative to context, plan, or summary artifacts'),
+      JSON.stringify(output.reasons)
+    );
+  });
+
+  test('allows stale verification when explicitly permitted', () => {
+    // Arrange
+    writeStaleVerificationLifecycleArtifacts();
+
+    // Act
     const result = runGsdTools(
-      'verify lifecycle 1 --require-plans --require-verification',
+      'verify lifecycle 1 --require-plans --allow-stale-verification',
       tmpDir
     );
     assert.ok(result.success, `Command failed: ${result.error}`);
 
+    // Assert
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.valid, true, JSON.stringify(output.reasons));
+    assert.ok(
+      !output.reasons.includes('verification is stale relative to context, plan, or summary artifacts'),
+      JSON.stringify(output.reasons)
+    );
+  });
+
+  test('fails when verification is stale and required even if stale verification is allowed', () => {
+    // Arrange
+    writeStaleVerificationLifecycleArtifacts();
+
+    // Act
+    const result = runGsdTools(
+      'verify lifecycle 1 --require-plans --require-verification --allow-stale-verification',
+      tmpDir
+    );
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    // Assert
     const output = JSON.parse(result.output);
     assert.strictEqual(output.valid, false);
     assert.ok(

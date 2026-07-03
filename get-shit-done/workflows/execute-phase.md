@@ -116,7 +116,14 @@ If `PROJECT_INSTRUCTION_FILE` is empty, warn:
 
 Run the lifecycle validator:
 ```bash
-LIFECYCLE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" verify lifecycle "${PHASE_ARG}" --require-plans --raw)
+LIFECYCLE_FLAGS=(--require-plans)
+if [[ "{{GSD_ARGS}}" =~ --gaps-only ]]; then
+  # Gap-closure plans are intentionally newer than the previous VERIFICATION.md.
+  # Execution still requires compliant context and plans, but re-verification
+  # happens after gap plans complete.
+  LIFECYCLE_FLAGS+=(--allow-stale-verification)
+fi
+LIFECYCLE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" verify lifecycle "${PHASE_ARG}" "${LIFECYCLE_FLAGS[@]}" --raw)
 ```
 
 Parse JSON for: `valid`, `reasons[]`, `lifecycle_id`, `lifecycle_mode`, `context`, `plans`, `verification`.

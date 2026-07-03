@@ -108,6 +108,7 @@ function normalizeLifecycleOptions(options = {}) {
     expectedMode: options.expectedMode || null,
     requirePlans: !!options.requirePlans,
     requireVerification: !!options.requireVerification,
+    allowStaleVerification: !!options.allowStaleVerification,
   };
 }
 
@@ -265,7 +266,10 @@ function validateLifecycleInternal(cwd, phaseArg, options = {}) {
     reasons.push(`lifecycle_mode mismatch across artifacts: ${[...lifecycleModes].join(', ')}`);
   }
 
-  if (verification.exists) {
+  const shouldCheckVerificationFreshness = verification.exists
+    && (!normalizedOptions.allowStaleVerification || normalizedOptions.requireVerification);
+
+  if (shouldCheckVerificationFreshness) {
     const upstreamArtifacts = [context, ...planRecords, ...summaryRecords].filter(a => a.exists);
     const latestArtifactMs = upstreamArtifacts.reduce((max, artifact) => {
       const candidate = artifact.generated_at_ms || artifact.mtime_ms || 0;
@@ -322,7 +326,7 @@ function validateLifecycleInternal(cwd, phaseArg, options = {}) {
 
 function cmdVerifyLifecycle(cwd, phaseArg, options, raw) {
   if (!phaseArg) {
-    error('Usage: verify lifecycle <phase> [--expect-id <id>] [--expect-mode <mode>] [--require-plans] [--require-verification]');
+    error('Usage: verify lifecycle <phase> [--expect-id <id>] [--expect-mode <mode>] [--require-plans] [--require-verification] [--allow-stale-verification]');
   }
 
   const result = validateLifecycleInternal(cwd, phaseArg, options);

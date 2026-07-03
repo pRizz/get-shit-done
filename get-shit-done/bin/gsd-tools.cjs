@@ -103,7 +103,7 @@
  *
  * Verification Suite:
  *   verify lifecycle <phase>           Check lifecycle provenance across phase artifacts
- *     [--expect-id <id>] [--expect-mode <mode>] [--require-plans] [--require-verification]
+ *     [--expect-id <id>] [--expect-mode <mode>] [--require-plans] [--require-verification] [--allow-stale-verification]
  *   verify plan-structure <file>       Check PLAN.md structure + tasks
  *   verify phase-completeness <phase>  Check all plans have summaries
  *   verify references <file>           Check @-refs + paths resolve
@@ -587,6 +587,7 @@ async function runCommand(command, args, cwd, raw, defaultValue) {
           expectedMode: expectMode,
           requirePlans: args.includes('--require-plans'),
           requireVerification: args.includes('--require-verification'),
+          allowStaleVerification: args.includes('--allow-stale-verification'),
         }, raw);
       } else if (subcommand === 'plan-structure') {
         verify.cmdVerifyPlanStructure(cwd, args[2], raw);

@@ -55,6 +55,26 @@ describe('execute-phase workflow: wave filtering', () => {
     assert.ok(content.includes('Optional `--wave N`'), 'workflow should parse --wave N');
   });
 
+  test('workflow only allows stale verification for literal gaps-only execution', () => {
+    const content = fs.readFileSync(WORKFLOW_PATH, 'utf-8');
+    assert.ok(
+      content.includes('LIFECYCLE_FLAGS=(--require-plans)'),
+      'workflow should build lifecycle flags from the standard require-plans baseline'
+    );
+    assert.ok(
+      content.includes('if [[ "{{GSD_ARGS}}" =~ --gaps-only ]]; then'),
+      'workflow should derive gaps-only behavior from literal user arguments'
+    );
+    assert.ok(
+      content.includes('LIFECYCLE_FLAGS+=(--allow-stale-verification)'),
+      'workflow should allow stale verification only inside the gaps-only branch'
+    );
+    assert.ok(
+      content.includes('"${LIFECYCLE_FLAGS[@]}" --raw'),
+      'workflow should pass the computed lifecycle flags to the verifier'
+    );
+  });
+
   test('workflow enforces lower-wave safety', () => {
     const content = fs.readFileSync(WORKFLOW_PATH, 'utf-8');
     assert.ok(
