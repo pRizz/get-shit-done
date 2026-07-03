@@ -46,4 +46,28 @@ describe('Playwright-MCP UI verification integration', () => {
       verifyContent.includes('fall back');
     assert.ok(hasConditional, 'Playwright integration must be conditional with manual fallback');
   });
+
+  test('verify-work supports conditional agent-performed simple UAT with manual fallback', () => {
+    const verifyContent = fs.readFileSync(
+      path.join(__dirname, '..', 'get-shit-done', 'workflows', 'verify-work.md'), 'utf-8'
+    );
+    assert.ok(
+      verifyContent.includes('agent_performed_simple_uat'),
+      'verify-work.md should define agent-performed simple UAT rules'
+    );
+    assert.ok(
+      verifyContent.includes('verified_by: agent') && verifyContent.includes('evidence:'),
+      'agent-passed UAT should require verification metadata'
+    );
+    assert.ok(
+      verifyContent.includes('fall back to `present_test` unchanged') ||
+        verifyContent.includes('continue with the manual checkpoint presentation'),
+      'agent UAT must fall back to manual checkpoint presentation'
+    );
+    assert.ok(
+      verifyContent.includes('Do NOT auto-pass checkpoints that require human judgment') &&
+        verifyContent.includes('destructive or unsafe action'),
+      'agent UAT must exclude human-only and unsafe checkpoints'
+    );
+  });
 });

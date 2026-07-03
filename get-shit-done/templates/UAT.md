@@ -33,6 +33,8 @@ result: [pending]
 ### 2. [Test Name]
 expected: [observable behavior]
 result: pass
+verified_by: agent
+evidence: "[command, artifact path, or concise observation proving this objective checkpoint]"
 
 ### 3. [Test Name]
 expected: [observable behavior]
@@ -95,6 +97,7 @@ blocked: [N]
 **Tests:**
 - Each test: OVERWRITE result field when user responds
 - `result` values: [pending], pass, issue, skipped, blocked
+- If agent-verified pass: add `verified_by: agent` and `evidence` with exact commands, artifact paths, or concise observations
 - If issue: add `reported` (verbatim) and `severity` (inferred)
 - If skipped: add `reason` if provided
 - If blocked: add `blocked_by` (tag) and `reason` (if provided)
@@ -151,9 +154,11 @@ blocked: [N]
 - All tests have result: [pending]
 
 **During testing:**
-- Present test from Current Test section
+- Before presenting a manual checkpoint, complete simple objective checkpoints when they are verifiable from repo artifacts or non-destructive commands
+- Present test from Current Test section when agent verification is not sufficient
 - User responds with pass confirmation or issue description
 - Update test result (pass/issue/skipped)
+- If agent-verified pass: add `verified_by: agent` and `evidence`
 - Update Summary counts
 - If issue: append to Gaps section (YAML format), infer severity
 - Move Current Test to next pending test
