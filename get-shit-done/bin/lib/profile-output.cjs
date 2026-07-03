@@ -192,6 +192,13 @@ const CLAUDE_MD_WORKFLOW_ENFORCEMENT = [
   '- `/gsd-execute-phase` for planned phase work',
   '',
   'Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.',
+  '',
+  '### Agent-Performed Simple UAT',
+  '',
+  '- When starting or resuming `/gsd-verify-work`, agents may complete simple UAT checkpoints without waiting for the user only when the expected behavior is objectively verifiable from repo artifacts or non-destructive commands.',
+  '- Treat simple objective UAT as static inspection, committed evidence review, redaction checks, lifecycle checks, test/build/lint checks, and other deterministic repo-local verification.',
+  '- For auto-passed UAT checkpoints, record `result: pass`, `verified_by: agent`, and an `evidence:` line citing exact commands, artifact paths, or concise observations.',
+  '- Stop at the first checkpoint that needs human judgment, subjective product review, secret access, external accounts, raw unredacted endpoint review, destructive or unsafe action, missing prerequisites, ambiguous interpretation, or unstated target discovery. Leave that checkpoint pending or blocked and report what user input or prerequisite is needed.',
 ].join('\n');
 
 const CLAUDE_MD_PROFILE_PLACEHOLDER = [

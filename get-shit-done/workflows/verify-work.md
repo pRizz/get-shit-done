@@ -1,7 +1,7 @@
 <purpose>
 Validate built features through conversational testing with persistent state. Creates UAT.md that tracks test progress, survives /clear, and feeds gaps into /gsd-plan-phase --gaps.
 
-User tests, Claude records. One test at a time. Plain text responses.
+User tests, Claude records. For simple objective checkpoints, Claude may verify from repo artifacts or non-destructive commands and record the evidence before asking the user. One test at a time. Plain text responses.
 </purpose>
 
 <available_agent_types>
@@ -19,6 +19,28 @@ Claude presents what SHOULD happen. User confirms or describes what's different.
 
 No Pass/Fail buttons. No severity questions. Just: "Here's what should happen. Does it?"
 </philosophy>
+
+<agent_performed_simple_uat>
+Before presenting a manual UAT checkpoint, decide whether the current checkpoint is simple and objective enough for agent verification.
+
+Eligible auto-pass checkpoints:
+- Static inspection of tracked files, generated planning artifacts, committed evidence, release notes, or documentation.
+- Deterministic repo-local commands such as test, build, lint, redaction, lifecycle, parity, or reference checks.
+- Existing artifact review where the expected behavior can be proven by exact paths, command output, or concise observations.
+
+Do NOT auto-pass checkpoints that require human judgment, subjective product review, secret access, external accounts, raw unredacted endpoint review, destructive or unsafe action, missing prerequisites, ambiguous interpretation, or unstated target discovery.
+
+When a checkpoint is auto-passed, update that test as:
+```markdown
+### {N}. {name}
+expected: {expected}
+result: pass
+verified_by: agent
+evidence: "{exact commands, artifact paths, or concise observations}"
+```
+
+Then update Summary counts and Current Test, and continue to the next pending checkpoint. If the next checkpoint is not objectively provable, fall back to `present_test` unchanged.
+</agent_performed_simple_uat>
 
 <template>
 @~/.claude/get-shit-done/templates/UAT.md
@@ -230,6 +252,11 @@ Proceed to `present_test`.
 <step name="present_test">
 **Present current test to user:**
 
+Before rendering the checkpoint, apply the `agent_performed_simple_uat` rule:
+- If the current checkpoint can be objectively proven, update the UAT file with `result: pass`, `verified_by: agent`, and an `evidence:` line, then advance to the next pending test without asking the user.
+- If the checkpoint cannot be objectively proven, must not be auto-passed, or needs any human-only input, leave it pending or blocked and continue with the manual checkpoint presentation below.
+- Do not run destructive, unsafe, secret-dependent, external-account, raw-endpoint, or target-discovery actions to satisfy UAT.
+
 Render the checkpoint from the structured UAT file instead of composing it freehand:
 
 ```bash
@@ -263,6 +290,11 @@ Update Tests section:
 expected: {expected}
 result: pass
 ```
+
+**If agent verification indicates pass:**
+- Only when the checkpoint is simple and objective under `agent_performed_simple_uat`
+- Add `verified_by: agent`
+- Add `evidence: "{exact commands, artifact paths, or concise observations}"`
 
 **If response indicates skip:**
 - "skip", "can't test", "n/a"
@@ -688,6 +720,8 @@ Default to **major** if unclear. User can correct if needed.
 <success_criteria>
 - [ ] UAT file created with all tests from SUMMARY.md
 - [ ] Tests presented one at a time with expected behavior
+- [ ] Simple objective checkpoints auto-passed only with `verified_by: agent` and `evidence`
+- [ ] Human-only, destructive, unsafe, secret-dependent, external-account, ambiguous, or prerequisite-blocked checkpoints fall back to manual UAT or blocked status
 - [ ] User responses processed as pass/issue/skip
 - [ ] Severity inferred from description (never asked)
 - [ ] Batched writes: on issue, every 5 passes, or completion

@@ -10,6 +10,19 @@ const fs = require('fs');
 const path = require('path');
 const { runGsdTools, createTempProject, cleanup } = require('./helpers.cjs');
 
+describe('UAT template', () => {
+  test('documents agent-verified objective checkpoint metadata', () => {
+    const content = fs.readFileSync(
+      path.join(__dirname, '..', 'get-shit-done', 'templates', 'UAT.md'),
+      'utf-8'
+    );
+    assert.ok(content.includes('verified_by: agent'));
+    assert.ok(content.includes('evidence:'));
+    assert.ok(content.includes('Before presenting a manual checkpoint'));
+    assert.ok(content.includes('repo artifacts or non-destructive commands'));
+  });
+});
+
 describe('audit-uat command', () => {
   let tmpDir;
 

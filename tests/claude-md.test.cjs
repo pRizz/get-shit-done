@@ -44,6 +44,9 @@ describe('generate-claude-md', () => {
     assert.ok(content.includes('/gsd-debug'));
     assert.ok(content.includes('/gsd-execute-phase'));
     assert.ok(content.includes('Do not make direct repo edits outside a GSD workflow'));
+    assert.ok(content.includes('### Agent-Performed Simple UAT'));
+    assert.ok(content.includes('objectively verifiable from repo artifacts or non-destructive commands'));
+    assert.ok(content.includes('verified_by: agent'));
   });
 
   test('adds workflow enforcement section when updating an existing CLAUDE.md', () => {
