@@ -2,9 +2,9 @@
 Display comprehensive project statistics including phases, plans, requirements, git metrics, and timeline.
 </purpose>
 
-<required_reading>
+<required-reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
-</required_reading>
+</required-reading>
 
 <process>
 
@@ -53,8 +53,8 @@ If no `.planning/` directory exists, inform the user to run `/gsd-new-project` f
 
 </process>
 
-<success_criteria>
+<success-criteria>
 - [ ] Statistics gathered from project state
 - [ ] Results formatted clearly
 - [ ] Displayed to user
-</success_criteria>
+</success-criteria>

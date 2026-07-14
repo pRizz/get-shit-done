@@ -1,9 +1,9 @@
 # Especificação: Design de Multi-Project Workspaces (pt-BR)
 
-Data original: 2026-03-20  
+Data original: 2026-03-20\
 Fonte canônica: `docs/superpowers/specs/2026-03-20-multi-project-workspaces-design.md`
 
----
+______________________________________________________________________
 
 ## Problema
 
@@ -33,9 +33,9 @@ Introduzir workspaces multi-projeto com:
 ## Fluxo de uso
 
 1. Criar workspace com nome e repositórios alvo
-2. Inicializar/retomar fluxo GSD dentro do workspace
-3. Operar fases normalmente com estado isolado
-4. Finalizar e remover quando concluído
+1. Inicializar/retomar fluxo GSD dentro do workspace
+1. Operar fases normalmente com estado isolado
+1. Finalizar e remover quando concluído
 
 ## Considerações
 
@@ -49,7 +49,7 @@ Introduzir workspaces multi-projeto com:
 - listagem mostra workspace ativo e metadados essenciais
 - remoção limpa artefatos sem afetar repositórios externos
 
----
+______________________________________________________________________
 
 > [!NOTE]
 > Esta versão em Português resume a especificação de design para uso prático. O arquivo original em inglês mantém o detalhamento normativo completo.

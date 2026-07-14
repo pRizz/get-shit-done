@@ -1,9 +1,9 @@
 # Referência de Agentes do GSD
 
-Este documento descreve os papéis dos agentes especializados no ecossistema GSD.  
+Este documento descreve os papéis dos agentes especializados no ecossistema GSD.\
 Para a listagem completa com regras detalhadas, consulte [AGENTS.md em inglês](../AGENTS.md).
 
----
+______________________________________________________________________
 
 ## Visão geral
 
@@ -60,7 +60,7 @@ Cada agente tem responsabilidade clara, entradas/saídas definidas e contexto de
 - Use `assumptions mode` quando já houver padrão consolidado no código
 - Ajuste perfil de modelo conforme custo x qualidade
 
----
+______________________________________________________________________
 
 > [!NOTE]
 > Esta versão em Português é uma referência operacional. Se você estiver contribuindo com o núcleo do framework ou alterando comportamento de agentes, consulte sempre o documento em inglês para detalhes normativos.

@@ -4,11 +4,12 @@ Seeds auto-surface during /gsd-new-milestone when trigger conditions match the
 new milestone's scope.
 
 Seeds beat deferred items because they:
+
 - Preserve WHY the idea matters (not just WHAT)
 - Define WHEN to surface (trigger conditions, not manual scanning)
 - Track breadcrumbs (code references, related decisions)
 - Auto-present at the right time via new-milestone scan
-</purpose>
+  </purpose>
 
 <process>
 
@@ -16,6 +17,7 @@ Seeds beat deferred items because they:
 Parse `$ARGUMENTS` for the idea summary.
 
 If empty, ask:
+
 ```
 What's the idea? (one sentence)
 ```
@@ -76,6 +78,7 @@ grep -rl "$KEYWORD" --include="*.ts" --include="*.js" --include="*.md" . 2>/dev/
 ```
 
 Also check:
+
 - Current STATE.md for related decisions
 - ROADMAP.md for related phases
 - todos/ for related captured ideas
@@ -136,6 +139,7 @@ Related code and decisions found in the current codebase:
 
 {any additional context from the current session}
 ```
+
 </step>
 
 <step name="commit_seed">
@@ -155,15 +159,17 @@ File: .planning/seeds/SEED-{PADDED}-{slug}.md
 
 This seed will surface automatically when you run /gsd-new-milestone
 and the milestone scope matches the trigger condition.
+
 ```
 </step>
 
 </process>
 
-<success_criteria>
+<success-criteria>
 - [ ] Seed file created in .planning/seeds/
 - [ ] Frontmatter includes status, trigger, scope
 - [ ] Breadcrumbs collected from codebase
 - [ ] Committed to git
 - [ ] User shown confirmation with trigger info
-</success_criteria>
+</success-criteria>
+```

@@ -7,7 +7,7 @@ O GSD oferece dois estilos para `/gsd-discuss-phase`:
 
 Para referência completa, veja [workflow-discuss-mode.md em inglês](../workflow-discuss-mode.md).
 
----
+______________________________________________________________________
 
 ## Quando usar `standard`
 
@@ -17,7 +17,7 @@ Use quando:
 - você quer explorar alternativas livremente
 - há decisões de produto/UX em aberto
 
-Vantagem: descoberta ampla.  
+Vantagem: descoberta ampla.\
 Trade-off: pode consumir mais tempo de perguntas.
 
 ## Quando usar `assumptions`
@@ -28,7 +28,7 @@ Use quando:
 - você quer reduzir fricção no intake
 - o time prefere revisão de propostas em vez de entrevista aberta
 
-Vantagem: velocidade e consistência com o código existente.  
+Vantagem: velocidade e consistência com o código existente.\
 Trade-off: depende da qualidade do mapeamento de contexto.
 
 ## Como habilitar
@@ -46,9 +46,9 @@ Via `/gsd-settings`, defina:
 ## Fluxo no modo `assumptions`
 
 1. GSD lê `PROJECT.md`, mapeamento de código e convenções
-2. Gera lista estruturada de suposições
-3. Você confirma, corrige ou expande
-4. GSD escreve `CONTEXT.md` com decisões consolidadas
+1. Gera lista estruturada de suposições
+1. Você confirma, corrige ou expande
+1. GSD escreve `CONTEXT.md` com decisões consolidadas
 
 ## Boas práticas
 
@@ -56,7 +56,7 @@ Via `/gsd-settings`, defina:
 - Corrija ambiguidades de nomes/paths cedo
 - Se o plano sair desalinhado, volte ao discuss-phase e refine
 
----
+______________________________________________________________________
 
 > [!NOTE]
 > Para ambientes com múltiplos runtimes e perfis de modelo dinâmicos, prefira `assumptions` quando o reuso de padrões de código for prioridade.

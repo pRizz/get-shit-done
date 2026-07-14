@@ -113,6 +113,27 @@ describe('extractFrontmatter', () => {
     assert.strictEqual(result.second, 'two');
     assert.strictEqual(result.third, 'three');
   });
+
+  test('supports a BOM and CRLF delimiters', () => {
+    const content = '\uFEFF---\r\nname: windows\r\n---\r\nbody';
+    assert.strictEqual(extractFrontmatter(content).name, 'windows');
+  });
+
+  test('uses the last immediately contiguous top header', () => {
+    const content = '---\nname: stale\n---\n---\nname: current\n---\nbody';
+    assert.strictEqual(extractFrontmatter(content).name, 'current');
+  });
+
+  test('does not scan body rules or fenced examples as frontmatter', () => {
+    const content = '---\nname: header\n---\n\n# Body\n\n---\n\n```yaml\n---\nname: example\n---\n```';
+    assert.strictEqual(extractFrontmatter(content).name, 'header');
+  });
+
+  test('requires an exact opening delimiter at the document start', () => {
+    assert.deepStrictEqual(extractFrontmatter('\n---\nname: late\n---\n'), {});
+    assert.deepStrictEqual(extractFrontmatter(' ---\nname: indented\n---\n'), {});
+    assert.deepStrictEqual(extractFrontmatter('--- extra\nname: invalid\n---\n'), {});
+  });
 });
 
 // ─── reconstructFrontmatter ─────────────────────────────────────────────────
@@ -146,6 +167,26 @@ describe('reconstructFrontmatter', () => {
 
     const hashResult = reconstructFrontmatter({ comment: 'value # note' });
     assert.ok(hashResult.includes('"value # note"'), 'should quote value with hash');
+  });
+
+  test('quotes YAML-ambiguous string scalars in values and arrays', () => {
+    const result = reconstructFrontmatter({
+      phase: '01',
+      enabled: 'true',
+      completed: '2026-07-13',
+      placeholder: '{phase-slug}',
+      empty: '',
+      values: ['yes', 'a, b', '{date}'],
+      safe: 'plain-text',
+    });
+
+    assert.ok(result.includes('phase: "01"'));
+    assert.ok(result.includes('enabled: "true"'));
+    assert.ok(result.includes('completed: "2026-07-13"'));
+    assert.ok(result.includes('placeholder: "{phase-slug}"'));
+    assert.ok(result.includes('empty: ""'));
+    assert.ok(result.includes('values: ["yes", "a, b", "{date}"]'));
+    assert.ok(result.includes('safe: plain-text'));
   });
 
   test('serializes nested objects with proper indentation', () => {
@@ -246,6 +287,22 @@ describe('spliceFrontmatter', () => {
     const closingIdx = result.indexOf('\n---', 4); // skip the opening ---
     const resultBody = result.slice(closingIdx + 4); // skip \n---
     assert.strictEqual(resultBody, body, 'body content after frontmatter should be exactly preserved');
+  });
+
+  test('collapses contiguous duplicate headers and preserves the final body', () => {
+    const content = '\uFEFF---\r\nname: stale\r\n---\r\n---\r\nname: current\r\n---\r\n\r\n# Body\r\n';
+    const result = spliceFrontmatter(content, { name: 'replacement' });
+
+    assert.strictEqual((result.match(/---/g) || []).length, 2);
+    assert.ok(result.startsWith('\uFEFF---\nname: replacement\n---'));
+    assert.ok(result.endsWith('\r\n\r\n# Body\r\n'));
+  });
+
+  test('preserves a BOM when adding a new header', () => {
+    const result = spliceFrontmatter('\uFEFFPlain body.', { name: 'new' });
+    assert.ok(result.startsWith('\uFEFF---\nname: new\n---'));
+    assert.ok(result.endsWith('Plain body.'));
+    assert.strictEqual(result.indexOf('\uFEFF', 1), -1);
   });
 });
 
@@ -434,4 +491,3 @@ must_haves:
     assert.ok(result[0].exports !== undefined, 'should have exports field');
   });
 });
-

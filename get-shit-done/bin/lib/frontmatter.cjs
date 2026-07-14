@@ -40,16 +40,106 @@ function splitInlineArray(body) {
   return items;
 }
 
+function lineEndingAt(content, offset) {
+  if (content.startsWith('\r\n', offset)) return '\r\n';
+  if (content.startsWith('\n', offset)) return '\n';
+  return null;
+}
+
+/**
+ * Read one full-line-delimited YAML block at an exact offset.
+ *
+ * Delimiters must be exactly `---` and occupy a complete line. The returned
+ * end offset excludes the closing delimiter's line ending so callers can
+ * preserve the body byte-for-byte.
+ */
+function readFrontmatterBlock(content, openingOffset) {
+  if (!content.startsWith('---', openingOffset)) return null;
+
+  const openingEnd = openingOffset + 3;
+  const openingLineEnding = lineEndingAt(content, openingEnd);
+  if (!openingLineEnding) return null;
+
+  const yamlStart = openingEnd + openingLineEnding.length;
+  let lineStart = yamlStart;
+
+  while (lineStart <= content.length) {
+    const newlineIndex = content.indexOf('\n', lineStart);
+    const lineEnd = newlineIndex === -1 ? content.length : newlineIndex;
+    const contentEnd = lineEnd > lineStart && content[lineEnd - 1] === '\r'
+      ? lineEnd - 1
+      : lineEnd;
+
+    if (content.slice(lineStart, contentEnd) === '---') {
+      let yamlEnd = lineStart;
+      if (yamlEnd > yamlStart && content[yamlEnd - 1] === '\n') yamlEnd -= 1;
+      if (yamlEnd > yamlStart && content[yamlEnd - 1] === '\r') yamlEnd -= 1;
+
+      return {
+        yaml: content.slice(yamlStart, yamlEnd),
+        openingOffset,
+        closingEnd: contentEnd,
+      };
+    }
+
+    if (newlineIndex === -1) break;
+    lineStart = newlineIndex + 1;
+  }
+
+  return null;
+}
+
+/**
+ * Split the document's top frontmatter prefix from its body.
+ *
+ * A UTF-8 BOM is allowed before the first delimiter. Corrupted duplicate
+ * headers are recovered only when blocks are immediately back-to-back; the
+ * last such header wins. Delimiters elsewhere in the body are never scanned.
+ */
+function splitFrontmatterDocument(content) {
+  const hasBom = content.startsWith('\uFEFF');
+  const firstOffset = hasBom ? 1 : 0;
+  const blocks = [];
+  const firstBlock = readFrontmatterBlock(content, firstOffset);
+
+  if (!firstBlock) {
+    return {
+      frontmatter: null,
+      body: content,
+      bodyOffset: 0,
+      hasBom,
+      blocks,
+    };
+  }
+
+  blocks.push(firstBlock);
+  let lastBlock = firstBlock;
+
+  while (true) {
+    const separator = lineEndingAt(content, lastBlock.closingEnd);
+    if (!separator) break;
+
+    const nextOffset = lastBlock.closingEnd + separator.length;
+    const maybeNextBlock = readFrontmatterBlock(content, nextOffset);
+    if (!maybeNextBlock) break;
+
+    blocks.push(maybeNextBlock);
+    lastBlock = maybeNextBlock;
+  }
+
+  return {
+    frontmatter: lastBlock.yaml,
+    body: content.slice(lastBlock.closingEnd),
+    bodyOffset: lastBlock.closingEnd,
+    hasBom,
+    blocks,
+  };
+}
+
 function extractFrontmatter(content) {
   const frontmatter = {};
-  // Find ALL frontmatter blocks at the start of the file.
-  // If multiple blocks exist (corruption from CRLF mismatch), use the LAST one
-  // since it represents the most recent state sync.
-  const allBlocks = [...content.matchAll(/(?:^|\n)\s*---\r?\n([\s\S]+?)\r?\n---/g)];
-  const match = allBlocks.length > 0 ? allBlocks[allBlocks.length - 1] : null;
-  if (!match) return frontmatter;
-
-  const yaml = match[1];
+  const { frontmatter: yaml } = splitFrontmatterDocument(content);
+  if (yaml === null) return frontmatter;
   const lines = yaml.split(/\r?\n/);
 
   // Stack to track nested objects: [{obj, key, indent}]
@@ -119,6 +209,29 @@ function extractFrontmatter(content) {
   return frontmatter;
 }
 
+function serializeYamlScalar(value) {
+  if (typeof value !== 'string') return String(value);
+
+  const yamlKeyword = /^(?:null|~|true|false|yes|no|on|off)$/i;
+  const yamlNumber = /^[+-]?(?:(?:[0-9][0-9_]*|\.[0-9_]+)(?:\.[0-9_]*)?(?:e[+-]?[0-9]+)?|0o[0-7_]+|0x[0-9a-f_]+|0b[01_]+)$/i;
+  const yamlSpecialNumber = /^[+-]?\.(?:inf|nan)$/i;
+  const yamlDate = /^\d{4}-\d{2}-\d{2}(?:(?:[Tt]|[ \t]+)\d{2}:\d{2}(?::\d{2}(?:\.\d*)?)?(?:[ \t]*(?:Z|[+-]\d{2}(?::?\d{2})?))?)?$/;
+  const unsafeLeadingCharacter = /^[\-?:,\[\]{}#&*!|>'"%@`]/;
+  const needsQuotes = value.length === 0
+    || value.trim() !== value
+    || /[\r\n\t]/.test(value)
+    || unsafeLeadingCharacter.test(value)
+    || value.includes(':')
+    || value.includes('#')
+    || /[\[\]{},]/.test(value)
+    || yamlKeyword.test(value)
+    || yamlNumber.test(value)
+    || yamlSpecialNumber.test(value)
+    || yamlDate.test(value);
+
+  return needsQuotes ? JSON.stringify(value) : value;
+}
+
 function reconstructFrontmatter(obj) {
   const lines = [];
   for (const [key, value] of Object.entries(obj)) {
@@ -127,11 +240,11 @@ function reconstructFrontmatter(obj) {
       if (value.length === 0) {
         lines.push(`${key}: []`);
       } else if (value.every(v => typeof v === 'string') && value.length <= 3 && value.join(', ').length < 60) {
-        lines.push(`${key}: [${value.join(', ')}]`);
+        lines.push(`${key}: [${value.map(serializeYamlScalar).join(', ')}]`);
       } else {
         lines.push(`${key}:`);
         for (const item of value) {
-          lines.push(`  - ${typeof item === 'string' && (item.includes(':') || item.includes('#')) ? `"${item}"` : item}`);
+          lines.push(`  - ${serializeYamlScalar(item)}`);
         }
       }
     } else if (typeof value === 'object') {
@@ -142,11 +255,11 @@ function reconstructFrontmatter(obj) {
           if (subval.length === 0) {
             lines.push(`  ${subkey}: []`);
           } else if (subval.every(v => typeof v === 'string') && subval.length <= 3 && subval.join(', ').length < 60) {
-            lines.push(`  ${subkey}: [${subval.join(', ')}]`);
+            lines.push(`  ${subkey}: [${subval.map(serializeYamlScalar).join(', ')}]`);
           } else {
             lines.push(`  ${subkey}:`);
             for (const item of subval) {
-              lines.push(`    - ${typeof item === 'string' && (item.includes(':') || item.includes('#')) ? `"${item}"` : item}`);
+              lines.push(`    - ${serializeYamlScalar(item)}`);
             }
           }
         } else if (typeof subval === 'object') {
@@ -159,25 +272,19 @@ function reconstructFrontmatter(obj) {
               } else {
                 lines.push(`    ${subsubkey}:`);
                 for (const item of subsubval) {
-                  lines.push(`      - ${item}`);
+                  lines.push(`      - ${serializeYamlScalar(item)}`);
                 }
               }
             } else {
-              lines.push(`    ${subsubkey}: ${subsubval}`);
+              lines.push(`    ${subsubkey}: ${serializeYamlScalar(subsubval)}`);
             }
           }
         } else {
-          const sv = String(subval);
-          lines.push(`  ${subkey}: ${sv.includes(':') || sv.includes('#') ? `"${sv}"` : sv}`);
+          lines.push(`  ${subkey}: ${serializeYamlScalar(subval)}`);
         }
       }
     } else {
-      const sv = String(value);
-      if (sv.includes(':') || sv.includes('#') || sv.startsWith('[') || sv.startsWith('{')) {
-        lines.push(`${key}: "${sv}"`);
-      } else {
-        lines.push(`${key}: ${sv}`);
-      }
+      lines.push(`${key}: ${serializeYamlScalar(value)}`);
     }
   }
   return lines.join('\n');
@@ -185,20 +292,22 @@ function reconstructFrontmatter(obj) {
 
 function spliceFrontmatter(content, newObj) {
   const yamlStr = reconstructFrontmatter(newObj);
-  const match = content.match(/^---\r?\n[\s\S]+?\r?\n---/);
-  if (match) {
-    return `---\n${yamlStr}\n---` + content.slice(match[0].length);
+  const split = splitFrontmatterDocument(content);
+  const bom = split.hasBom ? '\uFEFF' : '';
+
+  if (split.frontmatter !== null) {
+    return `${bom}---\n${yamlStr}\n---` + split.body;
   }
-  return `---\n${yamlStr}\n---\n\n` + content;
+
+  const body = split.hasBom ? content.slice(1) : content;
+  return `${bom}---\n${yamlStr}\n---\n\n` + body;
 }
 
 function parseMustHavesBlock(content, blockName) {
   // Extract a specific block from must_haves in raw frontmatter YAML
   // Handles 3-level nesting: must_haves > artifacts/key_links > [{path, provides, ...}]
-  const fmMatch = content.match(/^---\r?\n([\s\S]+?)\r?\n---/);
-  if (!fmMatch) return [];
-
-  const yaml = fmMatch[1];
+  const { frontmatter: yaml } = splitFrontmatterDocument(content);
+  if (yaml === null) return [];
 
   // Find must_haves: first to detect its indentation level
   const mustHavesMatch = yaml.match(/^(\s*)must_haves:\s*$/m);
@@ -369,6 +478,7 @@ function cmdFrontmatterValidate(cwd, filePath, schemaName, raw) {
 }
 
 module.exports = {
+  splitFrontmatterDocument,
   extractFrontmatter,
   reconstructFrontmatter,
   spliceFrontmatter,

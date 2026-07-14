@@ -1643,7 +1643,7 @@ function cmdInitRemoveWorkspace(cwd, name, raw) {
  * Build a formatted agent skills block for injection into Task() prompts.
  *
  * Reads `config.agent_skills[agentType]` and validates each skill path exists
- * within the project root. Returns a formatted `<agent_skills>` block or empty
+ * within the project root. Returns a formatted `<agent-skills>` block or empty
  * string if no skills are configured.
  *
  * @param {object} config - Loaded project config
@@ -1687,7 +1687,7 @@ function buildAgentSkillsBlock(config, agentType, projectRoot) {
   if (validPaths.length === 0) return '';
 
   const lines = validPaths.map(p => `- @${p}/SKILL.md`).join('\n');
-  return `<agent_skills>\nRead these user-configured skills:\n${lines}\n</agent_skills>`;
+  return `<agent-skills>\nRead these user-configured skills:\n${lines}\n</agent-skills>`;
 }
 
 /**

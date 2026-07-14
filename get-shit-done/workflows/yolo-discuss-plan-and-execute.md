@@ -142,6 +142,7 @@ BASE_ARGS="$ARGUMENTS"
 ```bash
 Skill(skill="gsd-discuss-phase", args="${BASE_ARGS} --yolo --chain --lifecycle-id ${PHASE_LIFECYCLE_ID} --lifecycle-mode yolo")
 ```
+
 </step>
 
 <step name="preview_range">
@@ -159,6 +160,7 @@ Parse from `INIT`: `milestone_version`, `milestone_name`, `phase_count`, `comple
 Parse from `ROADMAP`: `phases[]`.
 
 Use the same filtering rules as `gsd-autonomous`:
+
 - keep phases where `disk_status !== "complete"` OR `roadmap_complete === false`
 - if `--from N` is present, filter out phases below N
 - if `--to N` is present, filter out phases above N
@@ -201,7 +203,7 @@ This wrapper does not add wrapper-level sub-agents because the delegated workflo
 
 </process>
 
-<success_criteria>
+<success-criteria>
 - Explicit single-phase routing still uses `/gsd-discuss-phase --yolo --chain`
 - No-argument routing auto-selects the current incomplete phase or next pending phase
 - Auto-selected previews explain why the phase was chosen
@@ -209,4 +211,4 @@ This wrapper does not add wrapper-level sub-agents because the delegated workflo
 - Range mode exits early with a no-op message when no phases match
 - Range routing uses `/gsd-autonomous --yolo`
 - Existing plan/execute gates remain unchanged
-</success_criteria>
+</success-criteria>

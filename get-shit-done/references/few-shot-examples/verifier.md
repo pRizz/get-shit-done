@@ -78,11 +78,11 @@ calibration_source: "Adapted from thinking-partner verification corpus"
 
 Based on analysis of verification corpus (80% pass rate, 8 gaps):
 
-| Pattern | Count | % of Gaps | What to Check |
-|---------|-------|-----------|---------------|
-| Missing wiring | 3 | 37% | File exists + tested but never imported/called by consumer |
-| Missing tests | 2 | 25% | Feature works but test file excluded from CI or never runs |
-| Other | 3 | 38% | Config layer mismatches, planning ordering issues, schema gaps |
+| Pattern        | Count | % of Gaps | What to Check                                                  |
+| -------------- | ----- | --------- | -------------------------------------------------------------- |
+| Missing wiring | 3     | 37%       | File exists + tested but never imported/called by consumer     |
+| Missing tests  | 2     | 25%       | Feature works but test file excluded from CI or never runs     |
+| Other          | 3     | 38%       | Config layer mismatches, planning ordering issues, schema gaps |
 
 ## Negative Examples
 

@@ -29,6 +29,6 @@ Task(
 ## 使用方法
 
 1. 在编排开始时解析一次
-2. 存储 profile 值
-3. 生成时在表中查找每个代理的模型
-4. 将 model 参数传递给每个 Task 调用（值：`"inherit"`、`"sonnet"`、`"haiku"`）
+1. 存储 profile 值
+1. 生成时在表中查找每个代理的模型
+1. 将 model 参数传递给每个 Task 调用（值：`"inherit"`、`"sonnet"`、`"haiku"`）

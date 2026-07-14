@@ -42,6 +42,7 @@ grep -l "status: diagnosed" "$phase_dir"/*-UAT.md 2>/dev/null
 ```
 
 **7. Assign waves using standard dependency analysis** (same as `assign_waves` step):
+
 - Plans with no dependencies → wave 1
 - Plans that depend on other gap closure plans → max(dependency waves) + 1
 - Also consider dependencies on existing (non-gap) plans in the phase

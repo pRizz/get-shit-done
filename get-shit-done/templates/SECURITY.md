@@ -1,55 +1,55 @@
 ---
-phase: {N}
-slug: {phase-slug}
+phase: "{N}"
+slug: "{phase-slug}"
 status: draft
 threats_open: 0
 asvs_level: 1
-created: {date}
+created: "{date}"
 ---
 
 # Phase {N} — Security
 
 > Per-phase security contract: threat register, accepted risks, and audit trail.
 
----
+______________________________________________________________________
 
 ## Trust Boundaries
 
-| Boundary | Description | Data Crossing |
-|----------|-------------|---------------|
+| Boundary   | Description   | Data Crossing             |
+| ---------- | ------------- | ------------------------- |
 | {boundary} | {description} | {data type / sensitivity} |
 
----
+______________________________________________________________________
 
 ## Threat Register
 
-| Threat ID | Category | Component | Disposition | Mitigation | Status |
-|-----------|----------|-----------|-------------|------------|--------|
-| T-{N}-01 | {STRIDE category} | {component} | {mitigate / accept / transfer} | {control or reference} | open |
+| Threat ID | Category          | Component   | Disposition                    | Mitigation             | Status |
+| --------- | ----------------- | ----------- | ------------------------------ | ---------------------- | ------ |
+| T-{N}-01  | {STRIDE category} | {component} | {mitigate / accept / transfer} | {control or reference} | open   |
 
 *Status: open · closed*
 *Disposition: mitigate (implementation required) · accept (documented risk) · transfer (third-party)*
 
----
+______________________________________________________________________
 
 ## Accepted Risks Log
 
 | Risk ID | Threat Ref | Rationale | Accepted By | Date |
-|---------|------------|-----------|-------------|------|
+| ------- | ---------- | --------- | ----------- | ---- |
 
 *Accepted risks do not resurface in future audit runs.*
 
 *If none: "No accepted risks."*
 
----
+______________________________________________________________________
 
 ## Security Audit Trail
 
-| Audit Date | Threats Total | Closed | Open | Run By |
-|------------|---------------|--------|------|--------|
-| {YYYY-MM-DD} | {N} | {N} | {N} | {name / agent} |
+| Audit Date   | Threats Total | Closed | Open | Run By         |
+| ------------ | ------------- | ------ | ---- | -------------- |
+| {YYYY-MM-DD} | {N}           | {N}    | {N}  | {name / agent} |
 
----
+______________________________________________________________________
 
 ## Sign-Off
 

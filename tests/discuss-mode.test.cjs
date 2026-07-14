@@ -86,7 +86,7 @@ describe('workflow.discuss_mode config', () => {
     const workflow = fs.readFileSync(
       path.join(__dirname, '..', 'get-shit-done', 'workflows', 'discuss-phase-assumptions.md'), 'utf8'
     );
-    const sections = ['<domain>', '<decisions>', '<canonical_refs>', '<code_context>', '<specifics>', '<deferred>'];
+    const sections = ['<domain>', '<decisions>', '<canonical-refs>', '<code-context>', '<specifics>', '<deferred>'];
     for (const section of sections) {
       assert.ok(workflow.includes(section), `missing CONTEXT.md section: ${section}`);
     }

@@ -16,21 +16,26 @@ milestone sequence or remove stale entries.
 <process>
 
 1. **List backlog items:**
+
    ```bash
    ls -d .planning/phases/999* 2>/dev/null || echo "No backlog items found"
    ```
 
-2. **Read ROADMAP.md** and extract all 999.x phase entries:
+1. **Read ROADMAP.md** and extract all 999.x phase entries:
+
    ```bash
    cat .planning/ROADMAP.md
    ```
+
    Show each backlog item with its description, any accumulated context (CONTEXT.md, RESEARCH.md), and creation date.
 
-3. **Present the list to the user** via AskUserQuestion:
+1. **Present the list to the user** via AskUserQuestion:
+
    - For each backlog item, show: phase number, description, accumulated artifacts
    - Options per item: **Promote** (move to active), **Keep** (leave in backlog), **Remove** (delete)
 
-4. **For items to PROMOTE:**
+1. **For items to PROMOTE:**
+
    - Find the next sequential phase number in the active milestone
    - Rename the directory from `999.x-slug` to `{new_num}-slug`:
      ```bash
@@ -41,16 +46,19 @@ milestone sequence or remove stale entries.
    - Remove `(BACKLOG)` marker
    - Add appropriate `**Depends on:**` field
 
-5. **For items to REMOVE:**
+1. **For items to REMOVE:**
+
    - Delete the phase directory
    - Remove the entry from ROADMAP.md `## Backlog` section
 
-6. **Commit changes:**
+1. **Commit changes:**
+
    ```bash
    node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: review backlog — promoted N, removed M" --files .planning/ROADMAP.md
    ```
 
-7. **Report summary:**
+1. **Report summary:**
+
    ```
    ## 📋 Backlog Review Complete
 

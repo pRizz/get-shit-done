@@ -2,7 +2,7 @@
 
 Mechanism for intentionally accepting must-have failures when the deviation is known and acceptable. Prevents verification loops on items that will never pass as originally specified.
 
-<override_format>
+<override-format>
 
 ## Override Format
 
@@ -29,14 +29,14 @@ overrides:
 
 ### Required Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `must_have` | string | The must-have truth, artifact description, or key link being overridden. Does not need to be an exact match — fuzzy matching applies. |
-| `reason` | string | Why this deviation is acceptable. Must be specific — not just "not needed". |
-| `accepted_by` | string | Who accepted the override (username or role). Required. |
-| `accepted_at` | string | ISO timestamp of when the override was accepted. Required. |
+| Field         | Type   | Description                                                                                                                           |
+| ------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `must_have`   | string | The must-have truth, artifact description, or key link being overridden. Does not need to be an exact match — fuzzy matching applies. |
+| `reason`      | string | Why this deviation is acceptable. Must be specific — not just "not needed".                                                           |
+| `accepted_by` | string | Who accepted the override (username or role). Required.                                                                               |
+| `accepted_at` | string | ISO timestamp of when the override was accepted. Required.                                                                            |
 
-</override_format>
+</override-format>
 
 ## When to Use
 
@@ -45,6 +45,7 @@ Overrides apply when a phase intentionally deviated from the original plan durin
 Without overrides, the verifier reports these as FAIL even though the deviation was intentional. Overrides let the developer mark specific items as `PASSED (override)` with a documented reason.
 
 Overrides are appropriate when:
+
 - A requirement changed after planning but ROADMAP.md hasn't been updated yet
 - An alternative implementation satisfies the intent but not the literal wording
 - A must-have is deferred to a later phase with explicit tracking
@@ -53,12 +54,13 @@ Overrides are appropriate when:
 ## When NOT to Use
 
 Overrides are NOT appropriate when:
+
 - The implementation is simply incomplete — fix it instead
 - The must-have is unclear — clarify it instead
 - The developer wants to skip verification — that undermines the process
 - Multiple must-haves are failing for the same phase — if more than 2-3 items need overrides, revisit the plan instead of overriding in bulk
 
-<matching_rules>
+<matching-rules>
 
 ## Matching Rules
 
@@ -67,26 +69,26 @@ Override matching uses **fuzzy matching**, not exact string comparison. This acc
 ### Matching Algorithm
 
 1. **Normalize both strings:** case-insensitive comparison — lowercase both strings, strip punctuation, collapse whitespace
-2. **Token overlap:** split into words, compute intersection
-3. **Match threshold:** 80% token overlap in EITHER direction (override tokens found in must-have, OR must-have tokens found in override)
-4. **Key noun priority:** nouns and technical terms (file paths, component names, API endpoints) are weighted higher than common words
+1. **Token overlap:** split into words, compute intersection
+1. **Match threshold:** 80% token overlap in EITHER direction (override tokens found in must-have, OR must-have tokens found in override)
+1. **Key noun priority:** nouns and technical terms (file paths, component names, API endpoints) are weighted higher than common words
 
 ### Examples
 
-| Must-Have | Override `must_have` | Match? | Reason |
-|-----------|---------------------|--------|--------|
-| "User can authenticate via OAuth2 PKCE" | "OAuth2 PKCE flow implemented" | Yes | Key terms `OAuth2` and `PKCE` overlap, 80% threshold met |
-| "Rate limiting on /api/auth/login" | "Rate limiting on login endpoint" | Yes | `rate limiting` + `login` overlap |
-| "Chat component renders messages" | "OAuth2 PKCE flow implemented" | No | No meaningful token overlap |
-| "src/components/Chat.tsx provides message list" | "Chat.tsx message list rendering" | Yes | `Chat.tsx` + `message` + `list` overlap |
+| Must-Have                                       | Override `must_have`              | Match? | Reason                                                   |
+| ----------------------------------------------- | --------------------------------- | ------ | -------------------------------------------------------- |
+| "User can authenticate via OAuth2 PKCE"         | "OAuth2 PKCE flow implemented"    | Yes    | Key terms `OAuth2` and `PKCE` overlap, 80% threshold met |
+| "Rate limiting on /api/auth/login"              | "Rate limiting on login endpoint" | Yes    | `rate limiting` + `login` overlap                        |
+| "Chat component renders messages"               | "OAuth2 PKCE flow implemented"    | No     | No meaningful token overlap                              |
+| "src/components/Chat.tsx provides message list" | "Chat.tsx message list rendering" | Yes    | `Chat.tsx` + `message` + `list` overlap                  |
 
 ### Ambiguity Resolution
 
 If an override matches multiple must-haves, apply it to the **most specific match** (highest token overlap percentage). If still ambiguous, apply to the first match and log a warning.
 
-</matching_rules>
+</matching-rules>
 
-<verifier_behavior>
+<verifier-behavior>
 
 ## Verifier Behavior with Overrides
 
@@ -95,11 +97,11 @@ If an override matches multiple must-haves, apply it to the **most specific matc
 The override check happens **before marking a must-have as FAIL**. The flow is:
 
 1. Evaluate must-have against codebase (Steps 3-5 of verification process)
-2. If evaluation result is FAIL or UNCERTAIN:
+1. If evaluation result is FAIL or UNCERTAIN:
    a. Check `overrides:` array in VERIFICATION.md frontmatter for a fuzzy match
    b. If override found: mark as `PASSED (override)` instead of FAIL
    c. If no override found: mark as FAIL as normal
-3. If evaluation result is PASS: mark as VERIFIED (overrides are irrelevant)
+1. If evaluation result is PASS: mark as VERIFIED (overrides are irrelevant)
 
 ### Output Format
 
@@ -130,9 +132,9 @@ score: 5/5  # includes 2 overrides
 overrides_applied: 2
 ```
 
-</verifier_behavior>
+</verifier-behavior>
 
-<creating_overrides>
+<creating-overrides>
 
 ## Creating Overrides
 
@@ -140,7 +142,7 @@ overrides_applied: 2
 
 When the verifier marks a must-have as FAIL and the failure looks intentional (e.g., alternative implementation exists, or the code explicitly handles the case differently), the verifier should suggest creating an override:
 
-```markdown
+````markdown
 ### F-002: OAuth2 PKCE flow
 
 **Status:** FAILED
@@ -154,9 +156,10 @@ overrides:
     reason: "Using session-based auth instead — PKCE unnecessary for server-rendered app"
     accepted_by: "{your name}"
     accepted_at: "{current ISO timestamp}"
-```
+````
 
 Then re-run verification to apply.
+
 ```
 
 ### Override via gsd-tools
@@ -168,9 +171,9 @@ Overrides can also be managed through the verification workflow:
 3. Add override entries to VERIFICATION.md frontmatter
 4. Re-run `/gsd-verify-work` — overrides are applied, remaining gaps shown
 
-</creating_overrides>
+</creating-overrides>
 
-<override_lifecycle>
+<override-lifecycle>
 
 ## Override Lifecycle
 
@@ -186,12 +189,14 @@ When a phase is re-verified (e.g., after gap closure):
 During `/gsd-audit-milestone`, overrides are surfaced in the audit report:
 
 ```
+
 ### Verification Overrides ({count} across {phase_count} phases)
 
-| Phase | Must-Have | Reason | Accepted By |
-|-------|----------|--------|-------------|
-| 03 | OAuth2 PKCE | Session-based auth used instead | dave |
-```
+| Phase | Must-Have   | Reason                          | Accepted By |
+| ----- | ----------- | ------------------------------- | ----------- |
+| 03    | OAuth2 PKCE | Session-based auth used instead | dave        |
+
+````
 
 This gives the team visibility into all accepted deviations before closing the milestone.
 
@@ -199,7 +204,7 @@ This gives the team visibility into all accepted deviations before closing the m
 
 Stale overrides (where the must-have was later implemented or removed from ROADMAP.md) can be cleaned up during milestone completion. They are informational — leaving them causes no harm.
 
-</override_lifecycle>
+</override-lifecycle>
 
 ## Example VERIFICATION.md
 
@@ -224,4 +229,4 @@ overrides:
 | 1 | REST endpoints return JSON | VERIFIED | curl tests confirm |
 | 2 | Paginated API responses | PASSED (override) | Descoped — see override: dataset under 100 items |
 | 3 | Authentication middleware | VERIFIED | JWT validation working |
-```
+````

@@ -16,15 +16,15 @@ GSD Nyquist auditor. Spawned by /gsd-validate-phase to fill validation gaps in c
 
 For each gap in `<gaps>`: generate minimal behavioral test, run it, debug if failing (max 3 iterations), report results.
 
-**Mandatory Initial Read:** If prompt contains `<files_to_read>`, load ALL listed files before any action.
+**Mandatory Initial Read:** If prompt contains `<files-to-read>`, load ALL listed files before any action.
 
 **Implementation files are READ-ONLY.** Only create/modify: test files, fixtures, VALIDATION.md. Implementation bugs → ESCALATE. Never fix implementation.
 </role>
 
-<execution_flow>
+<execution-flow>
 
 <step name="load_context">
-Read ALL files from `<files_to_read>`. Extract:
+Read ALL files from `<files-to-read>`. Extract:
 - Implementation: exports, public API, input/output contracts
 - PLANs: requirement IDs, task structure, verify blocks
 - SUMMARYs: what was implemented, files changed, deviations
@@ -36,33 +36,34 @@ Read ALL files from `<files_to_read>`. Extract:
 For each gap in `<gaps>`:
 
 1. Read related implementation files
-2. Identify observable behavior the requirement demands
-3. Classify test type:
+1. Identify observable behavior the requirement demands
+1. Classify test type:
 
-| Behavior | Test Type |
-|----------|-----------|
-| Pure function I/O | Unit |
-| API endpoint | Integration |
-| CLI command | Smoke |
+| Behavior                | Test Type   |
+| ----------------------- | ----------- |
+| Pure function I/O       | Unit        |
+| API endpoint            | Integration |
+| CLI command             | Smoke       |
 | DB/filesystem operation | Integration |
 
 4. Map to test file path per project conventions
 
 Action by gap type:
+
 - `no_test_file` → Create test file
 - `test_fails` → Diagnose and fix the test (not impl)
 - `no_automated_command` → Determine command, update map
-</step>
+  </step>
 
 <step name="generate_tests">
 Convention discovery: existing tests → framework defaults → fallback.
 
-| Framework | File Pattern | Runner | Assert Style |
-|-----------|-------------|--------|--------------|
-| pytest | `test_{name}.py` | `pytest {file} -v` | `assert result == expected` |
-| jest | `{name}.test.ts` | `npx jest {file}` | `expect(result).toBe(expected)` |
-| vitest | `{name}.test.ts` | `npx vitest run {file}` | `expect(result).toBe(expected)` |
-| go test | `{name}_test.go` | `go test -v -run {Name}` | `if got != want { t.Errorf(...) }` |
+| Framework | File Pattern     | Runner                   | Assert Style                       |
+| --------- | ---------------- | ------------------------ | ---------------------------------- |
+| pytest    | `test_{name}.py` | `pytest {file} -v`       | `assert result == expected`        |
+| jest      | `{name}.test.ts` | `npx jest {file}`        | `expect(result).toBe(expected)`    |
+| vitest    | `{name}.test.ts` | `npx vitest run {file}`  | `expect(result).toBe(expected)`    |
+| go test   | `{name}_test.go` | `go test -v -run {Name}` | `if got != want { t.Errorf(...) }` |
 
 Per gap: Write test file. One focused test per requirement behavior. Arrange/Act/Assert. Behavioral test names (`test_user_can_reset_password`), not structural (`test_reset_function`).
 </step>
@@ -76,12 +77,12 @@ Run every test. Never mark untested tests as passing.
 <step name="debug_loop">
 Max 3 iterations per failing test.
 
-| Failure Type | Action |
-|--------------|--------|
-| Import/syntax/fixture error | Fix test, re-run |
+| Failure Type                                            | Action                        |
+| ------------------------------------------------------- | ----------------------------- |
+| Import/syntax/fixture error                             | Fix test, re-run              |
 | Assertion: actual matches impl but violates requirement | IMPLEMENTATION BUG → ESCALATE |
-| Assertion: test expectation wrong | Fix assertion, re-run |
-| Environment/runtime error | ESCALATE |
+| Assertion: test expectation wrong                       | Fix assertion, re-run         |
+| Environment/runtime error                               | ESCALATE                      |
 
 Track: `{ gap_id, iteration, error_type, action, result }`
 
@@ -95,9 +96,9 @@ Escalated gaps: `{ task_id, requirement, reason, debug_iterations, last_error }`
 Return one of three formats below.
 </step>
 
-</execution_flow>
+</execution-flow>
 
-<structured_returns>
+<structured-returns>
 
 ## GAPS FILLED
 
@@ -160,10 +161,10 @@ Return one of three formats below.
 - **{req}:** {manual test instructions or implementation fix needed}
 ```
 
-</structured_returns>
+</structured-returns>
 
-<success_criteria>
-- [ ] All `<files_to_read>` loaded before any action
+<success-criteria>
+- [ ] All `<files-to-read>` loaded before any action
 - [ ] Each gap analyzed with correct test type
 - [ ] Tests follow project conventions
 - [ ] Tests verify behavior, not structure
@@ -173,4 +174,4 @@ Return one of three formats below.
 - [ ] Implementation bugs escalated, not fixed
 - [ ] Structured return provided (GAPS FILLED / PARTIAL / ESCALATE)
 - [ ] Test files listed for commit
-</success_criteria>
+</success-criteria>

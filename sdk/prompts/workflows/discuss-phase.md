@@ -3,17 +3,19 @@ Extract implementation decisions that downstream agents need. Analyze the phase 
 Headless SDK variant — in autonomous mode, AI self-discusses by analyzing available context and making decisions based on project artifacts and codebase patterns.
 </purpose>
 
-<downstream_awareness>
+<downstream-awareness>
 **CONTEXT.md feeds into:**
 
 1. **Researcher** — Reads CONTEXT.md to know WHAT to research
+
    - Locked decisions guide research focus
    - Discretion areas get options explored
 
-2. **Planner** — Reads CONTEXT.md to know WHAT decisions are locked
+1. **Planner** — Reads CONTEXT.md to know WHAT decisions are locked
+
    - Locked decisions become non-negotiable plan constraints
    - Discretion areas allow planner flexibility
-</downstream_awareness>
+     </downstream-awareness>
 
 <philosophy>
 In headless mode, the AI acts as both visionary and builder. It:
@@ -23,11 +25,11 @@ In headless mode, the AI acts as both visionary and builder. It:
 - Documents decisions clearly for downstream agents
 </philosophy>
 
-<scope_guardrail>
+<scope-guardrail>
 The phase boundary comes from the roadmap and is FIXED. Discussion clarifies HOW to implement what's scoped, never WHETHER to add new capabilities.
 
 When analysis suggests scope creep: note it in "Deferred Ideas" section, do not act on it.
-</scope_guardrail>
+</scope-guardrail>
 
 <process>
 
@@ -54,25 +56,26 @@ Read project-level and prior phase context:
 Analyze the phase to identify gray areas:
 
 1. **Domain boundary** — What capability is this phase delivering?
-2. **Check prior decisions** — What's already decided from earlier phases?
-3. **Gray areas by category** — For each relevant category, identify 1-2 specific ambiguities
-4. **Auto-resolve each gray area** — Make decisions based on:
+1. **Check prior decisions** — What's already decided from earlier phases?
+1. **Gray areas by category** — For each relevant category, identify 1-2 specific ambiguities
+1. **Auto-resolve each gray area** — Make decisions based on:
    - Codebase patterns (existing conventions)
    - Prior phase decisions (consistency)
    - Requirements (constraints)
    - Best practices (industry standard)
-5. **Log each decision** with rationale
-</step>
+1. **Log each decision** with rationale
+   </step>
 
 <step name="pass_guard">
 **CRITICAL — Single-pass guard:**
 This step MUST complete in ONE pass. After writing CONTEXT.md, you are DONE. Do NOT re-read your own CONTEXT.md to identify "gaps", "undefined types", or "missing references" and run additional passes. Each decision naturally references other types and interfaces — this is expected, not a gap. The planner and executor will handle implementation details.
 
 Self-referential gap-finding creates an infinite loop where:
+
 1. Pass N creates decisions referencing types/interfaces
-2. Pass N+1 "discovers" those references as "gaps"
-3. Pass N+1 creates new decisions that reference more types
-4. Repeat forever
+1. Pass N+1 "discovers" those references as "gaps"
+1. Pass N+1 creates new decisions that reference more types
+1. Repeat forever
 
 Write your decisions once, comprehensively, then stop.
 </step>
@@ -110,14 +113,15 @@ Create CONTEXT.md capturing decisions made:
 ## Deferred Ideas
 [Ideas that came up but belong in other phases]
 ```
+
 </step>
 
 </process>
 
-<success_criteria>
+<success-criteria>
 - Phase validated against roadmap
 - Prior context loaded and honored
 - Gray areas identified and resolved autonomously
 - CONTEXT.md captures actual decisions with rationale
 - Scope maintained (no creep into deferred ideas)
-</success_criteria>
+</success-criteria>

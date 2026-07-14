@@ -66,8 +66,8 @@ Body content.
 `;
 
     const result = convertClaudeCommandToWindsurfSkill(input, 'gsd-test');
-    assert.ok(result.includes('<windsurf_skill_adapter>'), 'adapter header present');
-    assert.ok(result.includes('</windsurf_skill_adapter>'), 'adapter footer present');
+    assert.ok(result.includes('<windsurf-skill-adapter>'), 'adapter header present');
+    assert.ok(result.includes('</windsurf-skill-adapter>'), 'adapter footer present');
     assert.ok(result.includes('Shell'), 'Shell tool mentioned');
     assert.ok(result.includes('StrReplace'), 'StrReplace tool mentioned');
   });

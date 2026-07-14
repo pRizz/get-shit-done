@@ -3,6 +3,7 @@
 This document audits the current `*-yolo-*` skill family for wrapper-level sub-agent opportunities.
 
 The audit is intentionally conservative:
+
 - do not add wrapper-level sub-agents when the wrapper is only a thin delegator
 - prefer downstream workflows that already own agent orchestration
 - keep gating, state mutation, and git finalization deterministic in the current thread
@@ -12,9 +13,9 @@ The audit is intentionally conservative:
 Use this rubric for every target:
 
 1. If the skill is only a thin delegator to a downstream workflow that already spawns agents, do not add wrapper-level sub-agents.
-2. If the skill performs heavy, independent, non-interactive work inline in the current thread, recommend sub-agent delegation.
-3. If the skill has tight gating, sequential state mutation, or git-finalization behavior, prefer keeping that part inline.
-4. If sub-agent use would duplicate downstream orchestration or obscure failure handling, reject it.
+1. If the skill performs heavy, independent, non-interactive work inline in the current thread, recommend sub-agent delegation.
+1. If the skill has tight gating, sequential state mutation, or git-finalization behavior, prefer keeping that part inline.
+1. If sub-agent use would duplicate downstream orchestration or obscure failure handling, reject it.
 
 ## Audit Results
 

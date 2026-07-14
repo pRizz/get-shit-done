@@ -16,9 +16,9 @@ Purpose: Help users see what Claude thinks BEFORE planning begins - enabling cou
 Output: Conversational output only (no file creation) - ends with "What do you think?" prompt
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/list-phase-assumptions.md
-</execution_context>
+</execution-context>
 
 <context>
 Phase number: $ARGUMENTS (required)
@@ -37,10 +37,10 @@ Project state and roadmap are loaded in-workflow using targeted reads.
 4. Gather feedback and offer next steps
 </process>
 
-<success_criteria>
+<success-criteria>
 
 - Phase validated against roadmap
 - Assumptions surfaced across five areas
 - User prompted for feedback
 - User knows next steps (discuss context, plan phase, or correct assumptions)
-  </success_criteria>
+  </success-criteria>

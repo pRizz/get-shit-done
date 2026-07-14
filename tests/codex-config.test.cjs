@@ -107,8 +107,8 @@ function assertUsesOnlyEol(content, eol) {
 describe('getCodexSkillAdapterHeader', () => {
   test('contains all four sections', () => {
     const result = getCodexSkillAdapterHeader('gsd-execute-phase');
-    assert.ok(result.includes('<codex_skill_adapter>'), 'has opening tag');
-    assert.ok(result.includes('</codex_skill_adapter>'), 'has closing tag');
+    assert.ok(result.includes('<codex-skill-adapter>'), 'has opening tag');
+    assert.ok(result.includes('</codex-skill-adapter>'), 'has closing tag');
     assert.ok(result.includes('## A. Skill Invocation'), 'has section A');
     assert.ok(result.includes('## B. AskUserQuestion'), 'has section B');
     assert.ok(result.includes('## C. Task() → spawn_agent'), 'has section C');
@@ -221,17 +221,17 @@ You are a GSD plan executor.
     assert.ok(result.includes('"gsd-executor"'), 'has quoted name');
     assert.ok(result.includes('"Executes GSD plans with atomic commits"'), 'has quoted description');
     assert.ok(!result.includes('color: yellow'), 'drops color field');
-    // Tools should be in <codex_agent_role> but NOT in frontmatter
+    // Tools should be in <codex-agent-role> but NOT in frontmatter
     const fmEnd = result.indexOf('---', 4);
     const frontmatterSection = result.substring(0, fmEnd);
     assert.ok(!frontmatterSection.includes('tools:'), 'drops tools from frontmatter');
 
     // Has codex_agent_role block
-    assert.ok(result.includes('<codex_agent_role>'), 'has role header');
+    assert.ok(result.includes('<codex-agent-role>'), 'has role header');
     assert.ok(result.includes('role: gsd-executor'), 'role matches agent name');
     assert.ok(result.includes('tools: Read, Write, Edit, Bash, Grep, Glob'), 'tools in role block');
     assert.ok(result.includes('purpose: Executes GSD plans with atomic commits'), 'purpose from description');
-    assert.ok(result.includes('</codex_agent_role>'), 'has closing tag');
+    assert.ok(result.includes('</codex-agent-role>'), 'has closing tag');
 
     // Body preserved
     assert.ok(result.includes('<role>'), 'body content preserved');
@@ -279,7 +279,7 @@ description: Executes plans
 tools: Read
 ---
 
-<project_context>
+<project-context>
 **Project instructions:** Read \`./CLAUDE.md\` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
 
 **Project skills:** Check \`.claude/skills/\` or \`.agents/skills/\` directory if either exists:
@@ -290,7 +290,7 @@ tools: Read
 5. Follow skill rules relevant to your current task
 
 **CLAUDE.md enforcement:** If \`./CLAUDE.md\` exists, treat its directives as hard constraints during execution.
-</project_context>`;
+</project-context>`;
 
     const result = convertClaudeAgentToCodexAgent(input);
     assert.ok(result.includes('Prefer `./AGENTS.md` in the working directory.'), 'uses AGENTS.md as canonical instruction file');

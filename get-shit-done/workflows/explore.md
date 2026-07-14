@@ -3,23 +3,24 @@ Socratic ideation workflow. Guides the developer through exploring an idea via p
 offers mid-conversation research when useful, then routes crystallized outputs to GSD artifacts.
 </purpose>
 
-<required_reading>
+<required-reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
 
 @~/.claude/get-shit-done/references/questioning.md
 @~/.claude/get-shit-done/references/domain-probes.md
-</required_reading>
+</required-reading>
 
-<available_agent_types>
+<available-agent-types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
 - gsd-phase-researcher — Researches specific questions and returns concise findings
-</available_agent_types>
+</available-agent-types>
 
 <process>
 
 ## Step 1: Open the conversation
 
 If a topic was provided, acknowledge it and begin exploring:
+
 ```
 ## Explore: {topic}
 
@@ -28,6 +29,7 @@ before we commit to any artifacts.
 ```
 
 If no topic, ask:
+
 ```
 ## Explore
 
@@ -59,6 +61,7 @@ This would take ~30 seconds and might surface useful context.
 ```
 
 If yes, spawn a research agent:
+
 ```
 Task(
   prompt="Quick research: {specific_question}. Return 3-5 key findings, no more than 200 words.",
@@ -74,16 +77,17 @@ If the topic doesn't warrant research, skip this step entirely. **Don't force it
 
 When the conversation reaches natural conclusions or the developer signals readiness, propose outputs. Analyze the conversation to identify what was discussed and suggest **up to 4 outputs** from:
 
-| Type | Destination | When to suggest |
-|------|-------------|-----------------|
-| Note | `.planning/notes/{slug}.md` | Observations, context, decisions worth remembering |
-| Todo | `.planning/todos/pending/{slug}.md` | Concrete actionable tasks identified |
-| Seed | `.planning/seeds/{slug}.md` | Forward-looking ideas with trigger conditions |
-| Research question | `.planning/research/questions.md` (append) | Open questions that need deeper investigation |
-| Requirement | `REQUIREMENTS.md` (append) | Clear requirements that emerged from discussion |
-| New phase | `ROADMAP.md` (append) | Scope large enough to warrant its own phase |
+| Type              | Destination                                | When to suggest                                    |
+| ----------------- | ------------------------------------------ | -------------------------------------------------- |
+| Note              | `.planning/notes/{slug}.md`                | Observations, context, decisions worth remembering |
+| Todo              | `.planning/todos/pending/{slug}.md`        | Concrete actionable tasks identified               |
+| Seed              | `.planning/seeds/{slug}.md`                | Forward-looking ideas with trigger conditions      |
+| Research question | `.planning/research/questions.md` (append) | Open questions that need deeper investigation      |
+| Requirement       | `REQUIREMENTS.md` (append)                 | Clear requirements that emerged from discussion    |
+| New phase         | `ROADMAP.md` (append)                      | Scope large enough to warrant its own phase        |
 
 Present suggestions:
+
 ```
 Based on our conversation, I'd suggest capturing:
 
@@ -110,6 +114,7 @@ For each selected output, write the file:
 - **Phases:** Use existing `/gsd-add-phase` command via SlashCommand
 
 Commit if `commit_docs` is enabled:
+
 ```bash
 node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: capture exploration — {topic_slug}" --files {file_list}
 ```
@@ -128,7 +133,7 @@ Continue exploring with `/gsd-explore` or start working with `/gsd-next`.
 
 </process>
 
-<success_criteria>
+<success-criteria>
 - [ ] Socratic conversation follows questioning.md principles
 - [ ] Questions asked one at a time, not in batches
 - [ ] Research offered contextually (not forced)
@@ -136,4 +141,4 @@ Continue exploring with `/gsd-explore` or start working with `/gsd-next`.
 - [ ] User explicitly selects which outputs to create
 - [ ] Files written to correct destinations
 - [ ] Commit respects commit_docs config
-</success_criteria>
+</success-criteria>

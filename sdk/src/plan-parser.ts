@@ -2,7 +2,7 @@
  * plan-parser.ts — Parse GSD-1 PLAN.md files into structured data.
  *
  * Extracts YAML frontmatter, XML task bodies, and markdown sections
- * (<objective>, <execution_context>, <context>) from plan files.
+ * (<objective>, <execution-context>, <context>) from plan files.
  *
  * Ported from get-shit-done/bin/lib/frontmatter.cjs with TypeScript types.
  */
@@ -17,6 +17,92 @@ import type {
   MustHaveKeyLink,
 } from './types.js';
 
+interface FrontmatterBlock {
+  yaml: string;
+  nextOffset: number;
+}
+
+interface MarkdownLine {
+  text: string;
+  nextOffset: number;
+  hasTerminator: boolean;
+}
+
+function readMarkdownLine(content: string, offset: number): MarkdownLine {
+  const lineFeedOffset = content.indexOf('\n', offset);
+  if (lineFeedOffset === -1) {
+    return {
+      text: content.slice(offset),
+      nextOffset: content.length,
+      hasTerminator: false,
+    };
+  }
+
+  const maybeCarriageReturnOffset = lineFeedOffset - 1;
+  const lineEndOffset =
+    maybeCarriageReturnOffset >= offset && content[maybeCarriageReturnOffset] === '\r'
+      ? maybeCarriageReturnOffset
+      : lineFeedOffset;
+
+  return {
+    text: content.slice(offset, lineEndOffset),
+    nextOffset: lineFeedOffset + 1,
+    hasTerminator: true,
+  };
+}
+
+/**
+ * Read one exact `---`-delimited block at an expected document offset.
+ * Delimiters must occupy the full line; body rules and fenced examples cannot
+ * be mistaken for frontmatter because callers only advance through adjacent
+ * leading blocks.
+ */
+function readFrontmatterBlock(content: string, offset: number): FrontmatterBlock | null {
+  const openingLine = readMarkdownLine(content, offset);
+  if (openingLine.text !== '---' || !openingLine.hasTerminator) return null;
+
+  const yamlLines: string[] = [];
+  let lineOffset = openingLine.nextOffset;
+
+  while (lineOffset <= content.length) {
+    const line = readMarkdownLine(content, lineOffset);
+    if (line.text === '---') {
+      return { yaml: yamlLines.join('\n'), nextOffset: line.nextOffset };
+    }
+
+    if (!line.hasTerminator) return null;
+
+    yamlLines.push(line.text);
+    lineOffset = line.nextOffset;
+  }
+
+  return null;
+}
+
+/**
+ * Return the YAML from leading frontmatter only. A UTF-8 BOM is allowed before
+ * the first delimiter. When legacy corruption left adjacent frontmatter
+ * blocks, the last contiguous block is authoritative.
+ */
+function extractLeadingFrontmatterYaml(content: string): string | null {
+  const documentStart = content.startsWith('\uFEFF') ? 1 : 0;
+  const firstBlock = readFrontmatterBlock(content, documentStart);
+  if (!firstBlock) return null;
+
+  let yaml = firstBlock.yaml;
+  let nextOffset = firstBlock.nextOffset;
+
+  while (nextOffset < content.length) {
+    const nextBlock = readFrontmatterBlock(content, nextOffset);
+    if (!nextBlock) break;
+
+    yaml = nextBlock.yaml;
+    nextOffset = nextBlock.nextOffset;
+  }
+
+  return yaml;
+}
+
 // ─── YAML frontmatter extraction ─────────────────────────────────────────────
 
 /**
@@ -28,14 +114,10 @@ import type {
  */
 export function extractFrontmatter(content: string): Record<string, unknown> {
   const frontmatter: Record<string, unknown> = {};
+  const yaml = extractLeadingFrontmatterYaml(content);
+  if (yaml === null) return frontmatter;
 
-  // Find ALL frontmatter blocks — if multiple exist (corruption), use the last one
-  const allBlocks = [...content.matchAll(/(?:^|\n)\s*---\r?\n([\s\S]+?)\r?\n---/g)];
-  const match = allBlocks.length > 0 ? allBlocks[allBlocks.length - 1] : null;
-  if (!match) return frontmatter;
-
-  const yaml = match[1];
-  const lines = yaml.split(/\r?\n/);
+  const lines = yaml.split('\n');
 
   // Stack tracks nested objects: [{obj, key, indent}]
   const stack: Array<{ obj: Record<string, unknown> | unknown[]; key: string | null; indent: number }> = [
@@ -210,13 +292,38 @@ function normalizeKeyLinks(val: unknown): MustHaveKeyLink[] {
 // ─── XML task extraction ─────────────────────────────────────────────────────
 
 /**
- * Extract inner text of an XML element from a task body.
- * Handles multiline content and trims whitespace.
+ * Extract inner text from the canonical kebab-case tag, its legacy
+ * snake_case alias, or an mdformat-escaped legacy wrapper. Handles multiline
+ * content and trims whitespace.
  */
 function extractElement(taskBody: string, tagName: string): string {
-  const regex = new RegExp(`<${tagName}>([\\s\\S]*?)</${tagName}>`, 'i');
-  const match = taskBody.match(regex);
-  return match ? match[1].trim() : '';
+  return extractCompatibleTagContent(taskBody, tagName);
+}
+
+function extractCompatibleTagContent(content: string, legacyTagName: string): string {
+  const canonicalTagName = legacyTagName.replaceAll('_', '-');
+  const variants: Array<{ tagName: string; escaped: boolean }> = [
+    { tagName: canonicalTagName, escaped: false },
+  ];
+
+  if (canonicalTagName !== legacyTagName) {
+    variants.push(
+      { tagName: legacyTagName, escaped: true },
+      { tagName: legacyTagName, escaped: false },
+    );
+  }
+
+  for (const variant of variants) {
+    const escapePrefix = variant.escaped ? '\\\\' : '';
+    const regex = new RegExp(
+      `${escapePrefix}<${variant.tagName}>([\\s\\S]*?)${escapePrefix}</${variant.tagName}>`,
+      'i',
+    );
+    const match = content.match(regex);
+    if (match) return match[1].trim();
+  }
+
+  return '';
 }
 
 /**
@@ -231,8 +338,8 @@ function extractTaskType(taskTag: string): string {
  * Parse XML task blocks from the <tasks> section.
  *
  * Uses a regex to match <task ...>...</task> blocks, then extracts
- * inner elements (name, files, read_first, action, verify,
- * acceptance_criteria, done).
+ * inner elements (name, files, read-first, action, verify,
+ * acceptance-criteria, done).
  *
  * Handles:
  * - Multiline <action> blocks (including code snippets with angle brackets)
@@ -308,9 +415,7 @@ export function parseTasks(content: string): PlanTask[] {
  * Extract content of a named XML section (e.g., <objective>...</objective>).
  */
 function extractSection(content: string, sectionName: string): string {
-  const regex = new RegExp(`<${sectionName}>([\\s\\S]*?)</${sectionName}>`, 'i');
-  const match = content.match(regex);
-  return match ? match[1].trim() : '';
+  return extractCompatibleTagContent(content, sectionName);
 }
 
 /**
@@ -329,7 +434,7 @@ function extractContextRefs(content: string): string[] {
 }
 
 /**
- * Extract execution_context references.
+ * Extract execution-context references.
  * Returns an array of file paths (lines starting with @).
  */
 function extractExecutionContext(content: string): string[] {
@@ -351,7 +456,7 @@ function extractExecutionContext(content: string): string[] {
  * Extracts:
  * - YAML frontmatter (phase, wave, depends_on, must_haves, etc.)
  * - <objective> section
- * - <execution_context> references
+ * - <execution-context> references
  * - <context> file references
  * - <task> blocks with all inner elements
  *

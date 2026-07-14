@@ -2,7 +2,7 @@
 
 > `gsd-tools.cjs`에 대한 프로그래밍 방식 API 레퍼런스입니다. 워크플로우와 에이전트가 내부적으로 사용합니다. 사용자 대면 명령어는 [Command Reference](COMMANDS.md)를 참조하세요.
 
----
+______________________________________________________________________
 
 ## 개요
 
@@ -12,17 +12,19 @@
 **모듈:** `get-shit-done/bin/lib/`의 15개 도메인 모듈
 
 **사용법:**
+
 ```bash
 node gsd-tools.cjs <command> [args] [--raw] [--cwd <path>]
 ```
 
 **전역 플래그.**
-| 플래그 | 설명 |
-|------|-------------|
-| `--raw` | 기계 가독형 출력 (JSON 또는 일반 텍스트, 포매팅 없음) |
-| `--cwd <path>` | 작업 디렉터리 재정의 (샌드박스 서브에이전트용) |
 
----
+| 플래그         | 설명                                                  |
+| -------------- | ----------------------------------------------------- |
+| `--raw`        | 기계 가독형 출력 (JSON 또는 일반 텍스트, 포매팅 없음) |
+| `--cwd <path>` | 작업 디렉터리 재정의 (샌드박스 서브에이전트용)        |
+
+______________________________________________________________________
 
 ## State 명령어
 
@@ -76,7 +78,7 @@ node gsd-tools.cjs state-snapshot
 
 현재 위치, 단계, 계획, 상태, 결정, 차단, 메트릭, 최근 활동을 포함한 JSON을 반환합니다.
 
----
+______________________________________________________________________
 
 ## Phase 명령어
 
@@ -108,7 +110,7 @@ node gsd-tools.cjs phase-plan-index <phase>
 node gsd-tools.cjs phases list [--type planned|executed|all] [--phase N] [--include-archived]
 ```
 
----
+______________________________________________________________________
 
 ## Roadmap 명령어
 
@@ -125,7 +127,7 @@ node gsd-tools.cjs roadmap analyze
 node gsd-tools.cjs roadmap update-plan-progress <N>
 ```
 
----
+______________________________________________________________________
 
 ## Config 명령어
 
@@ -145,7 +147,7 @@ node gsd-tools.cjs config-get <key>
 node gsd-tools.cjs config-set-model-profile <profile>
 ```
 
----
+______________________________________________________________________
 
 ## 모델 해석
 
@@ -157,7 +159,7 @@ node gsd-tools.cjs resolve-model <agent-name>
 
 에이전트 이름: `gsd-planner`, `gsd-executor`, `gsd-phase-researcher`, `gsd-project-researcher`, `gsd-research-synthesizer`, `gsd-verifier`, `gsd-plan-checker`, `gsd-integration-checker`, `gsd-roadmapper`, `gsd-debugger`, `gsd-codebase-mapper`, `gsd-nyquist-auditor`
 
----
+______________________________________________________________________
 
 ## Verification 명령어
 
@@ -186,7 +188,7 @@ node gsd-tools.cjs verify artifacts <plan-file>
 node gsd-tools.cjs verify key-links <plan-file>
 ```
 
----
+______________________________________________________________________
 
 ## Validation 명령어
 
@@ -200,7 +202,7 @@ node gsd-tools.cjs validate consistency
 node gsd-tools.cjs validate health [--repair]
 ```
 
----
+______________________________________________________________________
 
 ## Template 명령어
 
@@ -216,7 +218,7 @@ node gsd-tools.cjs template fill <type> --phase N [--plan M] [--name "..."] [--t
 
 `fill`의 템플릿 유형: `summary`, `plan`, `verification`
 
----
+______________________________________________________________________
 
 ## Frontmatter 명령어
 
@@ -236,7 +238,7 @@ node gsd-tools.cjs frontmatter merge <file> --data '{json}'
 node gsd-tools.cjs frontmatter validate <file> --schema plan|summary|verification
 ```
 
----
+______________________________________________________________________
 
 ## Scaffold 명령어
 
@@ -256,7 +258,7 @@ node gsd-tools.cjs scaffold verification --phase N
 node gsd-tools.cjs scaffold phase-dir --phase N --name "phase name"
 ```
 
----
+______________________________________________________________________
 
 ## Init 명령어 (복합 컨텍스트 로드)
 
@@ -284,7 +286,7 @@ INIT=$(node gsd-tools.cjs init execute-phase "1")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
----
+______________________________________________________________________
 
 ## Milestone 명령어
 
@@ -297,7 +299,7 @@ node gsd-tools.cjs requirements mark-complete <ids>
 # 허용 형식: REQ-01,REQ-02 또는 REQ-01 REQ-02 또는 [REQ-01, REQ-02]
 ```
 
----
+______________________________________________________________________
 
 ## 유틸리티 명령어
 
@@ -344,24 +346,24 @@ node gsd-tools.cjs commit <message> [--files f1 f2] [--amend] [--no-verify]
 node gsd-tools.cjs websearch <query> [--limit N] [--freshness day|week|month]
 ```
 
----
+______________________________________________________________________
 
 ## 모듈 아키텍처
 
-| 모듈 | 파일 | 내보내기 |
-|--------|------|---------|
-| Core | `lib/core.cjs` | `error()`, `output()`, `parseArgs()`, 공유 유틸리티 |
-| State | `lib/state.cjs` | 모든 `state` 하위 명령어, `state-snapshot` |
-| Phase | `lib/phase.cjs` | Phase CRUD, `find-phase`, `phase-plan-index`, `phases list` |
-| Roadmap | `lib/roadmap.cjs` | 로드맵 파싱, 단계 추출, 진행률 업데이트 |
-| Config | `lib/config.cjs` | Config 읽기/쓰기, 섹션 초기화 |
-| Verify | `lib/verify.cjs` | 모든 verification 및 validation 명령어 |
-| Template | `lib/template.cjs` | 템플릿 선택 및 변수 채우기 |
-| Frontmatter | `lib/frontmatter.cjs` | YAML 전문 CRUD |
-| Init | `lib/init.cjs` | 모든 워크플로우를 위한 복합 컨텍스트 로드 |
-| Milestone | `lib/milestone.cjs` | 마일스톤 보관, 요구 사항 표시 |
-| Commands | `lib/commands.cjs` | 기타: slug, timestamp, todos, scaffold, stats, websearch |
-| Model Profiles | `lib/model-profiles.cjs` | 프로필 해석 테이블 |
-| UAT | `lib/uat.cjs` | 단계 간 UAT/verification 감사 |
-| Profile Output | `lib/profile-output.cjs` | 개발자 프로필 포매팅 |
-| Profile Pipeline | `lib/profile-pipeline.cjs` | 세션 분석 파이프라인 |
+| 모듈             | 파일                       | 내보내기                                                    |
+| ---------------- | -------------------------- | ----------------------------------------------------------- |
+| Core             | `lib/core.cjs`             | `error()`, `output()`, `parseArgs()`, 공유 유틸리티         |
+| State            | `lib/state.cjs`            | 모든 `state` 하위 명령어, `state-snapshot`                  |
+| Phase            | `lib/phase.cjs`            | Phase CRUD, `find-phase`, `phase-plan-index`, `phases list` |
+| Roadmap          | `lib/roadmap.cjs`          | 로드맵 파싱, 단계 추출, 진행률 업데이트                     |
+| Config           | `lib/config.cjs`           | Config 읽기/쓰기, 섹션 초기화                               |
+| Verify           | `lib/verify.cjs`           | 모든 verification 및 validation 명령어                      |
+| Template         | `lib/template.cjs`         | 템플릿 선택 및 변수 채우기                                  |
+| Frontmatter      | `lib/frontmatter.cjs`      | YAML 전문 CRUD                                              |
+| Init             | `lib/init.cjs`             | 모든 워크플로우를 위한 복합 컨텍스트 로드                   |
+| Milestone        | `lib/milestone.cjs`        | 마일스톤 보관, 요구 사항 표시                               |
+| Commands         | `lib/commands.cjs`         | 기타: slug, timestamp, todos, scaffold, stats, websearch    |
+| Model Profiles   | `lib/model-profiles.cjs`   | 프로필 해석 테이블                                          |
+| UAT              | `lib/uat.cjs`              | 단계 간 UAT/verification 감사                               |
+| Profile Output   | `lib/profile-output.cjs`   | 개발자 프로필 포매팅                                        |
+| Profile Pipeline | `lib/profile-pipeline.cjs` | 세션 분석 파이프라인                                        |

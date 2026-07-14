@@ -134,7 +134,7 @@ describe('autonomous --to N flag (#1644)', () => {
 
   test('success criteria include --to N requirements', () => {
     const content = fs.readFileSync(workflowPath, 'utf8');
-    const criteriaMatch = content.match(/<success_criteria>([\s\S]*?)<\/success_criteria>/);
+    const criteriaMatch = content.match(/<success-criteria>([\s\S]*?)<\/success-criteria>/);
     const criteria = criteriaMatch ? criteriaMatch[1] : '';
     assert.ok(criteria.includes('--to'),
       'success criteria should include --to requirements');

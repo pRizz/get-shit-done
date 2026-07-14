@@ -18,15 +18,17 @@ doesn't belong to any specific phase.
 
 **Parse $ARGUMENTS to determine mode:**
 
-<mode_list>
+<mode-list>
 **If no arguments or $ARGUMENTS is empty:**
 
 List all threads:
+
 ```bash
 ls .planning/threads/*.md 2>/dev/null
 ```
 
 For each thread, read the first few lines to show title and status:
+
 ```
 ## Active Threads
 
@@ -38,39 +40,45 @@ For each thread, read the first few lines to show title and status:
 ```
 
 If no threads exist, show:
+
 ```
 No threads found. Create one with: /gsd-thread <description>
 ```
-</mode_list>
 
-<mode_resume>
+</mode-list>
+
+<mode-resume>
 **If $ARGUMENTS matches an existing thread name (file exists):**
 
 Resume the thread — load its context into the current session:
+
 ```bash
 cat ".planning/threads/${THREAD_NAME}.md"
 ```
 
 Display the thread content and ask what the user wants to work on next.
 Update the thread's status to `IN PROGRESS` if it was `OPEN`.
-</mode_resume>
+</mode-resume>
 
-<mode_create>
+<mode-create>
 **If $ARGUMENTS is a new description (no matching thread file):**
 
 Create a new thread:
 
 1. Generate slug from description:
+
    ```bash
    SLUG=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-slug "$ARGUMENTS" --raw)
    ```
 
-2. Create the threads directory if needed:
+1. Create the threads directory if needed:
+
    ```bash
    mkdir -p .planning/threads
    ```
 
-3. Write the thread file:
+1. Write the thread file:
+
    ```bash
    cat > ".planning/threads/${SLUG}.md" << 'EOF'
    # Thread: {description}
@@ -95,16 +103,18 @@ Create a new thread:
    EOF
    ```
 
-4. If there's relevant context in the current conversation (code snippets,
+1. If there's relevant context in the current conversation (code snippets,
    error messages, investigation results), extract and add it to the Context
    section.
 
-5. Commit:
+1. Commit:
+
    ```bash
    node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: create thread — ${ARGUMENTS}" --files ".planning/threads/${SLUG}.md"
    ```
 
-6. Report:
+1. Report:
+
    ```
    ## 🧵 Thread Created
 
@@ -113,7 +123,8 @@ Create a new thread:
 
    Resume anytime with: /gsd-thread {slug}
    ```
-</mode_create>
+
+</mode-create>
 
 </process>
 

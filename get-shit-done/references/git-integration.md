@@ -2,37 +2,37 @@
 Git integration for GSD framework.
 </overview>
 
-<core_principle>
+<core-principle>
 
 **Commit outcomes, not process.**
 
 The git log should read like a changelog of what shipped, not a diary of planning activity.
-</core_principle>
+</core-principle>
 
-<commit_points>
+<commit-points>
 
-| Event                   | Commit? | Why                                              |
-| ----------------------- | ------- | ------------------------------------------------ |
-| BRIEF + ROADMAP created | YES     | Project initialization                           |
-| PLAN.md created         | NO      | Intermediate - commit with plan completion       |
-| RESEARCH.md created     | NO      | Intermediate                                     |
-| DISCOVERY.md created    | NO      | Intermediate                                     |
-| **Task completed**      | YES     | Atomic unit of work (1 commit per task)         |
-| **Plan completed**      | YES     | Metadata commit (SUMMARY + STATE + ROADMAP)     |
-| Handoff created         | YES     | WIP state preserved                              |
+| Event                   | Commit? | Why                                         |
+| ----------------------- | ------- | ------------------------------------------- |
+| BRIEF + ROADMAP created | YES     | Project initialization                      |
+| PLAN.md created         | NO      | Intermediate - commit with plan completion  |
+| RESEARCH.md created     | NO      | Intermediate                                |
+| DISCOVERY.md created    | NO      | Intermediate                                |
+| **Task completed**      | YES     | Atomic unit of work (1 commit per task)     |
+| **Plan completed**      | YES     | Metadata commit (SUMMARY + STATE + ROADMAP) |
+| Handoff created         | YES     | WIP state preserved                         |
 
-</commit_points>
+</commit-points>
 
-<git_check>
+<git-check>
 
 ```bash
 [ -d .git ] && echo "GIT_EXISTS" || echo "NO_GIT"
 ```
 
 If NO_GIT: Run `git init` silently. GSD projects always get their own repo.
-</git_check>
+</git-check>
 
-<commit_formats>
+<commit-formats>
 
 <format name="initialization">
 ## Project Initialization (brief + roadmap together)
@@ -74,6 +74,7 @@ Each task gets its own commit immediately after completion.
 ```
 
 **Commit types:**
+
 - `feat` - New feature/functionality
 - `fix` - Bug fix
 - `test` - Test-only (TDD RED phase)
@@ -157,11 +158,12 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "wip: [phase-name] p
 ```
 
 </format>
-</commit_formats>
+</commit-formats>
 
-<example_log>
+<example-log>
 
 **Old approach (per-plan commits):**
+
 ```
 a7f2d1 feat(checkout): Stripe payments with webhook verification
 3e9c4b feat(products): catalog with search, filters, and pagination
@@ -171,6 +173,7 @@ a7f2d1 feat(checkout): Stripe payments with webhook verification
 ```
 
 **New approach (per-task commits):**
+
 ```
 # Phase 04 - Checkout
 1a2b3c docs(04-01): complete checkout flow plan
@@ -204,11 +207,12 @@ a7f2d1 feat(checkout): Stripe payments with webhook verification
 
 Each plan produces 2-4 commits (tasks + metadata). Clear, granular, bisectable.
 
-</example_log>
+</example-log>
 
-<anti_patterns>
+<anti-patterns>
 
 **Still don't commit (intermediate artifacts):**
+
 - PLAN.md creation (commit with plan completion)
 - RESEARCH.md (intermediate)
 - DISCOVERY.md (intermediate)
@@ -216,42 +220,47 @@ Each plan produces 2-4 commits (tasks + metadata). Clear, granular, bisectable.
 - "Fixed typo in roadmap"
 
 **Do commit (outcomes):**
+
 - Each task completion (feat/fix/test/refactor)
 - Plan completion metadata (docs)
 - Project initialization (docs)
 
 **Key principle:** Commit working code and shipped outcomes, not planning process.
 
-</anti_patterns>
+</anti-patterns>
 
-<commit_strategy_rationale>
+<commit-strategy-rationale>
 
 ## Why Per-Task Commits?
 
 **Context engineering for AI:**
+
 - Git history becomes primary context source for future Claude sessions
 - `git log --grep="{phase}-{plan}"` shows all work for a plan
 - `git diff <hash>^..<hash>` shows exact changes per task
 - Less reliance on parsing SUMMARY.md = more context for actual work
 
 **Failure recovery:**
+
 - Task 1 committed ✅, Task 2 failed ❌
 - Claude in next session: sees task 1 complete, can retry task 2
 - Can `git reset --hard` to last successful task
 
 **Debugging:**
+
 - `git bisect` finds exact failing task, not just failing plan
 - `git blame` traces line to specific task context
 - Each commit is independently revertable
 
 **Observability:**
+
 - Solo developer + Claude workflow benefits from granular attribution
 - Atomic commits are git best practice
 - "Commit noise" irrelevant when consumer is Claude, not humans
 
-</commit_strategy_rationale>
+</commit-strategy-rationale>
 
-<sub_repos_support>
+<sub-repos-support>
 
 ## Multi-Repo Workspace Support (sub_repos)
 
@@ -275,9 +284,9 @@ Set `commit_docs: false` so planning docs stay local and are not committed to an
 ### How It Works
 
 1. **Auto-detection:** During `/gsd-new-project`, directories with their own `.git` folder are detected and offered for selection as sub-repos. On subsequent runs, `loadConfig` auto-syncs the `sub_repos` list with the filesystem — adding newly created repos and removing deleted ones. This means `config.json` may be rewritten automatically when repos change on disk.
-2. **File grouping:** Code files are grouped by their sub-repo prefix (e.g., `backend/src/api/users.ts` belongs to the `backend/` repo).
-3. **Independent commits:** Each sub-repo receives its own atomic commit via `gsd-tools.cjs commit-to-subrepo`. File paths are made relative to the sub-repo root before staging.
-4. **Planning stays local:** The `.planning/` directory is not committed; it acts as cross-repo coordination.
+1. **File grouping:** Code files are grouped by their sub-repo prefix (e.g., `backend/src/api/users.ts` belongs to the `backend/` repo).
+1. **Independent commits:** Each sub-repo receives its own atomic commit via `gsd-tools.cjs commit-to-subrepo`. File paths are made relative to the sub-repo root before staging.
+1. **Planning stays local:** The `.planning/` directory is not committed; it acts as cross-repo coordination.
 
 ### Commit Routing
 
@@ -292,4 +301,4 @@ This stages `src/api/users.ts` and `src/types/user.ts` in the `backend/` repo, a
 
 Files that don't match any configured sub-repo are reported as unmatched.
 
-</sub_repos_support>
+</sub-repos-support>

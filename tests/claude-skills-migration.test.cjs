@@ -296,10 +296,10 @@ describe('copyCommandsAsClaudeSkills path replacement (#1653)', () => {
         'description: Manager command',
         '---',
         '',
-        '<execution_context>',
+        '<execution-context>',
         '@~/.claude/get-shit-done/workflows/manager.md',
         '@~/.claude/get-shit-done/references/ui-brand.md',
-        '</execution_context>',
+        '</execution-context>',
       ].join('\n')
     );
 

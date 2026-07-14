@@ -2,7 +2,7 @@
 
 This template is used by the complete-milestone workflow to create archive files in `.planning/milestones/`.
 
----
+______________________________________________________________________
 
 ## File Template
 
@@ -32,7 +32,7 @@ Plans:
 
 - [x] {{PHASE}}-01: {{PLAN_DESCRIPTION}}
 - [x] {{PHASE}}-02: {{PLAN_DESCRIPTION}}
-      [... all plans ...]
+  [... all plans ...]
 
 **Details:**
 {{PHASE_DETAILS_FROM_ROADMAP}}
@@ -52,7 +52,7 @@ Plans:
 **Details:**
 {{PHASE_DETAILS_FROM_ROADMAP}}
 
----
+______________________________________________________________________
 
 ## Milestone Summary
 
@@ -87,11 +87,11 @@ Plans:
 
 - Some workflows still have hardcoded paths (fix in Phase 5)
 
----
+______________________________________________________________________
 
 _For current project status, see .planning/ROADMAP.md_
 
----
+______________________________________________________________________
 
 ## Usage Guidelines
 

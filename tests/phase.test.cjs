@@ -535,9 +535,9 @@ Purpose: Self-contained chat that can run parallel to other features.
 Output: Chat component, API endpoints.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/execute-plan.md
-</execution_context>
+</execution-context>
 
 <context>
 @.planning/PROJECT.md

@@ -26,17 +26,18 @@ Check for checkpoint types in the plan:
 
 **Routing by checkpoint type:**
 
-| Checkpoints | Pattern | Execution |
-|-------------|---------|-----------|
-| None | A (autonomous) | Execute full plan + SUMMARY |
-| Verify-only | B (segmented) | Execute segments autonomously; log verification results instead of pausing |
-| Decision | C (main) | Make decisions autonomously based on available context |
+| Checkpoints | Pattern        | Execution                                                                  |
+| ----------- | -------------- | -------------------------------------------------------------------------- |
+| None        | A (autonomous) | Execute full plan + SUMMARY                                                |
+| Verify-only | B (segmented)  | Execute segments autonomously; log verification results instead of pausing |
+| Decision    | C (main)       | Make decisions autonomously based on available context                     |
 
 In headless mode, all checkpoint types are handled autonomously:
+
 - **human-verify** checkpoints: run automated verification, log results, continue
 - **decision** checkpoints: select the recommended option (first option), log the choice, continue
 - **human-action** checkpoints: log as a blocker if it requires credentials/auth; otherwise continue with best-effort automation
-</step>
+  </step>
 
 <step name="load_prompt">
 Read the PLAN.md file. This IS the execution instructions. Follow exactly.
@@ -48,36 +49,37 @@ Read the PLAN.md file. This IS the execution instructions. Follow exactly.
 Deviations are normal — handle via rules below.
 
 1. Read context files from prompt
-2. Per task:
-   - **MANDATORY read_first gate:** If the task has a `<read_first>` field, read every listed file BEFORE making edits.
+1. Per task:
+   - **MANDATORY read_first gate:** If the task has a `<read-first>` field, read every listed file BEFORE making edits.
    - `type="auto"`: Implement with deviation rules. Verify done criteria.
    - `type="checkpoint:*"`: Handle autonomously per parse_segments routing above.
    - **MANDATORY acceptance_criteria check:** After completing each task, verify EVERY criterion before moving to the next task.
-3. Run `<verification>` checks
-4. Confirm `<success_criteria>` met
-5. Document deviations in Summary
-</step>
+1. Run `<verification>` checks
+1. Confirm `<success-criteria>` met
+1. Document deviations in Summary
+   </step>
 
-<authentication_gates>
+<authentication-gates>
 Auth errors during execution are interaction points, not failures.
 
 **Indicators:** "Not authenticated", "Unauthorized", 401/403, "Please run {tool} login", "Set {ENV_VAR}"
 
 **Headless protocol:**
-1. Recognize auth gate
-2. Log the authentication requirement as a blocker event
-3. Continue with remaining non-blocked tasks
-4. Report blocked tasks in summary
-</authentication_gates>
 
-<deviation_rules>
+1. Recognize auth gate
+1. Log the authentication requirement as a blocker event
+1. Continue with remaining non-blocked tasks
+1. Report blocked tasks in summary
+   </authentication-gates>
+
+<deviation-rules>
 | Rule | Trigger | Action | Permission |
 |------|---------|--------|------------|
 | **1: Bug** | Broken behavior, errors, type errors, security vulns | Fix inline, track `[Rule 1 - Bug]` | Auto |
 | **2: Missing Critical** | Missing error handling, validation, auth, CSRF/CORS | Add inline, track `[Rule 2 - Missing Critical]` | Auto |
 | **3: Blocking** | Prevents completion: missing deps, wrong types, broken imports | Fix blocker, track `[Rule 3 - Blocking]` | Auto |
 | **4: Architectural** | Structural change: new DB table, schema change, new service | Log as blocker event; do NOT proceed with architectural changes autonomously | Report |
-</deviation_rules>
+</deviation-rules>
 
 <step name="verification_failure_gate">
 If verification fails, attempt repair autonomously:
@@ -98,9 +100,9 @@ Create SUMMARY.md with:
 
 </process>
 
-<success_criteria>
+<success-criteria>
 - All tasks from PLAN.md completed (or blocked items documented)
 - All verifications pass (or failures documented)
 - SUMMARY.md created with substantive content
 - Deviations tracked and documented
-</success_criteria>
+</success-criteria>

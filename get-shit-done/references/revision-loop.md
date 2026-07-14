@@ -2,14 +2,15 @@
 
 Standard pattern for iterative agent revision with feedback. Used when a checker/validator finds issues and the producing agent needs to revise its output.
 
----
+______________________________________________________________________
 
 ## Pattern: Check-Revise-Escalate (max 3 iterations)
 
 This pattern applies whenever:
+
 1. An agent produces output (plans, imports, gap-closure plans)
-2. A checker/validator evaluates that output
-3. Issues are found that need revision
+1. A checker/validator evaluates that output
+1. Issues are found that need revision
 
 ### Flow
 
@@ -46,15 +47,15 @@ Display iteration progress before each revision spawn:
 When re-spawning the producing agent for revision, pass the checker's YAML-formatted issues. The checker's output contains a `## Issues` heading followed by a YAML block. Parse this block and pass it verbatim to the revision agent.
 
 ```
-<checker_issues>
+<checker-issues>
 The issues below are in YAML format. Each has: dimension, severity, finding,
 affected_field, suggested_fix. Address ALL BLOCKER issues. Address WARNING
 issues where feasible.
 
 {YAML issues block from checker output -- passed verbatim}
-</checker_issues>
+</checker-issues>
 
-<revision_instructions>
+<revision-instructions>
 Address ALL BLOCKER and WARNING issues identified above.
 - For each BLOCKER: make the required change
 - For each WARNING: address or explain why it's acceptable
@@ -62,7 +63,7 @@ Address ALL BLOCKER and WARNING issues identified above.
 - Preserve all content not flagged by the checker
 This is revision iteration {N} of max 3. Previous iteration had {prev_count}
 issues. You must reduce the count or the loop will terminate.
-</revision_instructions>
+</revision-instructions>
 ```
 
 ### After 3 Iterations
@@ -70,24 +71,24 @@ issues. You must reduce the count or the loop will terminate.
 If issues persist after 3 revision cycles:
 
 1. Present remaining issues to the user
-2. Use gate prompt (pattern: yes-no from `references/gate-prompts.md`):
+1. Use gate prompt (pattern: yes-no from `references/gate-prompts.md`):
    question: "Issues remain after 3 revision attempts. Proceed with current output?"
    header: "Proceed?"
    options:
-     - label: "Proceed anyway"   description: "Accept output with remaining issues"
-     - label: "Adjust approach"  description: "Discuss a different approach"
-3. If "Proceed anyway": accept current output and continue
-4. If "Adjust approach" or "Other": discuss with user, then re-enter the producing step with updated context
+   - label: "Proceed anyway" description: "Accept output with remaining issues"
+   - label: "Adjust approach" description: "Discuss a different approach"
+1. If "Proceed anyway": accept current output and continue
+1. If "Adjust approach" or "Other": discuss with user, then re-enter the producing step with updated context
 
 ### Workflow-Specific Variations
 
-| Workflow | Producer Agent | Checker Agent | Notes |
-|----------|---------------|---------------|-------|
-| plan-phase | gsd-planner | gsd-plan-checker | Revision prompt via planner-revision.md |
-| execute-phase | gsd-executor | gsd-verifier | Post-execution verification |
-| discuss-phase | orchestrator | gsd-plan-checker | Inline revision by orchestrator |
+| Workflow      | Producer Agent | Checker Agent    | Notes                                   |
+| ------------- | -------------- | ---------------- | --------------------------------------- |
+| plan-phase    | gsd-planner    | gsd-plan-checker | Revision prompt via planner-revision.md |
+| execute-phase | gsd-executor   | gsd-verifier     | Post-execution verification             |
+| discuss-phase | orchestrator   | gsd-plan-checker | Inline revision by orchestrator         |
 
----
+______________________________________________________________________
 
 ## Important Notes
 

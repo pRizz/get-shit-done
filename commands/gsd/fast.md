@@ -21,9 +21,9 @@ needs research, multi-step planning, or verification. /gsd-fast is for tasks
 you could describe in one sentence and execute in under 2 minutes.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/fast.md
-</execution_context>
+</execution-context>
 
 <process>
 Execute the fast workflow from @~/.claude/get-shit-done/workflows/fast.md end-to-end.

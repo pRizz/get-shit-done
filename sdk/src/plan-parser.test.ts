@@ -36,10 +36,10 @@ Purpose: Self-contained user management that can run parallel to other features.
 Output: User model, API endpoints, and UI components.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/execute-plan.md
 @~/.claude/get-shit-done/templates/summary.md
-</execution_context>
+</execution-context>
 
 <context>
 @.planning/PROJECT.md
@@ -55,13 +55,13 @@ Output: User model, API endpoints, and UI components.
 <task type="auto">
   <name>Task 1: Create User model</name>
   <files>src/models/user.ts</files>
-  <read_first>src/existing/types.ts, src/config/db.ts</read_first>
+  <read-first>src/existing/types.ts, src/config/db.ts</read-first>
   <action>Define User type with id, email, name, createdAt. Export TypeScript interface.</action>
   <verify>tsc --noEmit passes</verify>
-  <acceptance_criteria>
+  <acceptance-criteria>
     - User type is exported from src/models/user.ts
     - Type includes id, email, name, createdAt fields
-  </acceptance_criteria>
+  </acceptance-criteria>
   <done>User type exported and usable</done>
 </task>
 
@@ -88,10 +88,10 @@ Output: User model, API endpoints, and UI components.
 - [ ] API endpoints respond correctly
 </verification>
 
-<success_criteria>
+<success-criteria>
 - All tasks completed
 - User feature works end-to-end
-</success_criteria>
+</success-criteria>
 `;
 
 const MINIMAL_PLAN = `---
@@ -216,6 +216,56 @@ describe('extractFrontmatter', () => {
   it('returns empty object for empty string', () => {
     const result = extractFrontmatter('');
     expect(result).toEqual({});
+  });
+
+  it('supports a UTF-8 BOM and CRLF delimiters', () => {
+    const result = extractFrontmatter('\uFEFF---\r\nphase: 04-windows\r\nwave: 3\r\n---\r\nBody');
+    expect(result).toMatchObject({ phase: '04-windows', wave: 3 });
+  });
+
+  it('uses the last contiguous frontmatter block at the document start', () => {
+    const content = [
+      '---',
+      'phase: stale',
+      '---',
+      '---',
+      'phase: current',
+      'wave: 4',
+      '---',
+      '# Body',
+    ].join('\n');
+
+    expect(extractFrontmatter(content)).toMatchObject({
+      phase: 'current',
+      wave: 4,
+    });
+  });
+
+  it('does not treat a body thematic break as another frontmatter block', () => {
+    const content = [
+      '---',
+      'phase: actual',
+      '---',
+      '',
+      '# Body',
+      '',
+      '---',
+      'phase: body-text',
+      '---',
+    ].join('\n');
+
+    expect(extractFrontmatter(content)).toEqual({ phase: 'actual' });
+  });
+
+  it('ignores frontmatter-like fenced examples in a document body', () => {
+    const content = ['# Example', '', '```yaml', '---', 'phase: sample', '---', '```'].join('\n');
+    expect(extractFrontmatter(content)).toEqual({});
+  });
+
+  it('requires opening and closing delimiters to occupy the full line', () => {
+    expect(extractFrontmatter('--- extra\nphase: invalid\n---')).toEqual({});
+    expect(extractFrontmatter(' ---\nphase: invalid\n---')).toEqual({});
+    expect(extractFrontmatter('---\nphase: invalid\n--- extra')).toEqual({});
   });
 });
 
@@ -390,6 +440,57 @@ describe('parsePlan — sections', () => {
     expect(result.execution_context).toEqual([]);
     // context_refs should be empty when no <context> block
     expect(result.context_refs).toEqual([]);
+  });
+
+  it.each([
+    {
+      syntax: 'canonical kebab-case',
+      executionTag: 'execution-context',
+      readFirstTag: 'read-first',
+      acceptanceCriteriaTag: 'acceptance-criteria',
+      escaped: false,
+    },
+    {
+      syntax: 'legacy snake_case',
+      executionTag: 'execution_context',
+      readFirstTag: 'read_first',
+      acceptanceCriteriaTag: 'acceptance_criteria',
+      escaped: false,
+    },
+    {
+      syntax: 'mdformat-escaped legacy snake_case',
+      executionTag: 'execution_context',
+      readFirstTag: 'read_first',
+      acceptanceCriteriaTag: 'acceptance_criteria',
+      escaped: true,
+    },
+  ])('reads $syntax tags into the existing snake_case fields', (variant) => {
+    const prefix = variant.escaped ? '\\' : '';
+    const content = `
+${prefix}<${variant.executionTag}>
+@workflows/execute-plan.md
+${prefix}</${variant.executionTag}>
+
+<tasks>
+<task type="auto">
+  <name>Compatibility task</name>
+  <files>output.txt</files>
+  ${prefix}<${variant.readFirstTag}>PROJECT.md, STATE.md${prefix}</${variant.readFirstTag}>
+  <action>Create output.txt</action>
+  <verify>test -f output.txt</verify>
+  ${prefix}<${variant.acceptanceCriteriaTag}>
+    - output.txt exists
+  ${prefix}</${variant.acceptanceCriteriaTag}>
+  <done>Complete</done>
+</task>
+</tasks>
+`;
+
+    const result = parsePlan(content);
+
+    expect(result.execution_context).toEqual(['workflows/execute-plan.md']);
+    expect(result.tasks[0].read_first).toEqual(['PROJECT.md', 'STATE.md']);
+    expect(result.tasks[0].acceptance_criteria).toEqual(['output.txt exists']);
   });
 });
 

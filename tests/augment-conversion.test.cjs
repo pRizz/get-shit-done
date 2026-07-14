@@ -66,8 +66,8 @@ Body content.
 `;
 
     const result = convertClaudeCommandToAugmentSkill(input, 'gsd-test');
-    assert.ok(result.includes('<augment_skill_adapter>'), 'adapter header present');
-    assert.ok(result.includes('</augment_skill_adapter>'), 'adapter footer present');
+    assert.ok(result.includes('<augment-skill-adapter>'), 'adapter header present');
+    assert.ok(result.includes('</augment-skill-adapter>'), 'adapter footer present');
     assert.ok(result.includes('launch-process'), 'launch-process tool mentioned');
     assert.ok(result.includes('str-replace-editor'), 'str-replace-editor tool mentioned');
   });

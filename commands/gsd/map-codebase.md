@@ -19,9 +19,9 @@ Each mapper agent explores a focus area and **writes documents directly** to `.p
 Output: .planning/codebase/ folder with 7 structured documents about the codebase state.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/map-codebase.md
-</execution_context>
+</execution-context>
 
 <context>
 Focus area: $ARGUMENTS (optional - if provided, tells agents to focus on specific subsystem)
@@ -30,12 +30,13 @@ Focus area: $ARGUMENTS (optional - if provided, tells agents to focus on specifi
 Check for .planning/STATE.md - loads context if project already initialized
 
 **This command can run:**
+
 - Before /gsd-new-project (brownfield codebases) - creates codebase map first
 - After /gsd-new-project (greenfield codebases) - updates codebase map as code evolves
 - Anytime to refresh codebase understanding
-</context>
+  </context>
 
-<when_to_use>
+<when-to-use>
 **Use map-codebase for:**
 - Brownfield projects before initialization (understand existing code first)
 - Refreshing codebase map after significant changes
@@ -44,9 +45,10 @@ Check for .planning/STATE.md - loads context if project already initialized
 - When STATE.md references outdated codebase info
 
 **Skip map-codebase for:**
+
 - Greenfield projects with no code yet (nothing to map)
-- Trivial codebases (<5 files)
-</when_to_use>
+- Trivial codebases (\<5 files)
+  </when-to-use>
 
 <process>
 1. Check if .planning/codebase/ already exists (offer to refresh or skip)
@@ -62,10 +64,10 @@ Check for .planning/STATE.md - loads context if project already initialized
 7. Offer next steps (typically: /gsd-new-project or /gsd-plan-phase)
 </process>
 
-<success_criteria>
+<success-criteria>
 - [ ] .planning/codebase/ directory created
 - [ ] All 7 codebase documents written by mapper agents
 - [ ] Documents follow template structure
 - [ ] Parallel agents completed without errors
 - [ ] User knows next steps
-</success_criteria>
+</success-criteria>

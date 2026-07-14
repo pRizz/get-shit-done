@@ -21,11 +21,11 @@ Import external plan files into the GSD planning system with conflict detection 
 Future: `--prd` mode for PRD extraction is planned for a follow-up PR.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/import.md
 @~/.claude/get-shit-done/references/ui-brand.md
 @~/.claude/get-shit-done/references/gate-prompts.md
-</execution_context>
+</execution-context>
 
 <context>
 $ARGUMENTS

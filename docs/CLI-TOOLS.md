@@ -2,7 +2,7 @@
 
 > Programmatic API reference for `gsd-tools.cjs`. Used by workflows and agents internally. For user-facing commands, see [Command Reference](COMMANDS.md).
 
----
+______________________________________________________________________
 
 ## Overview
 
@@ -12,17 +12,19 @@
 **Modules:** 17 domain modules in `get-shit-done/bin/lib/`
 
 **Usage:**
+
 ```bash
 node gsd-tools.cjs <command> [args] [--raw] [--cwd <path>]
 ```
 
 **Global Flags:**
-| Flag | Description |
-|------|-------------|
-| `--raw` | Machine-readable output (JSON or plain text, no formatting) |
-| `--cwd <path>` | Override working directory (for sandboxed subagents) |
 
----
+| Flag           | Description                                                 |
+| -------------- | ----------------------------------------------------------- |
+| `--raw`        | Machine-readable output (JSON or plain text, no formatting) |
+| `--cwd <path>` | Override working directory (for sandboxed subagents)        |
+
+______________________________________________________________________
 
 ## State Commands
 
@@ -76,7 +78,7 @@ node gsd-tools.cjs state-snapshot
 
 Returns JSON with: current position, phase, plan, status, decisions, blockers, metrics, last activity.
 
----
+______________________________________________________________________
 
 ## Phase Commands
 
@@ -108,7 +110,7 @@ node gsd-tools.cjs phase-plan-index <phase>
 node gsd-tools.cjs phases list [--type planned|executed|all] [--phase N] [--include-archived]
 ```
 
----
+______________________________________________________________________
 
 ## Roadmap Commands
 
@@ -125,7 +127,7 @@ node gsd-tools.cjs roadmap analyze
 node gsd-tools.cjs roadmap update-plan-progress <N>
 ```
 
----
+______________________________________________________________________
 
 ## Config Commands
 
@@ -158,6 +160,7 @@ gsd-yolo-ralph --agent-cli <selector> [--max-iterations N] [--sleep-seconds N] [
 ```
 
 Behavior:
+
 - Requires a Git repo plus initialized GSD planning assets
 - Requires explicit `--agent-cli <codex|claude|cursor-agent|agent>`; no default launcher is assumed
 - Requires the selected launcher CLI on `PATH` and the matching GSD asset install (`codex`, `claude`, or `cursor`)
@@ -168,7 +171,7 @@ Behavior:
 - Persists iteration logs under `.planning/tmp/yolo-ralph/run-<timestamp>/`
 - Stops on the first `failed` or `stalled` iteration, or when milestone lifecycle work is next
 
----
+______________________________________________________________________
 
 ## Model Resolution
 
@@ -180,7 +183,7 @@ node gsd-tools.cjs resolve-model <agent-name>
 
 Agent names: `gsd-planner`, `gsd-executor`, `gsd-phase-researcher`, `gsd-project-researcher`, `gsd-research-synthesizer`, `gsd-verifier`, `gsd-plan-checker`, `gsd-integration-checker`, `gsd-roadmapper`, `gsd-debugger`, `gsd-codebase-mapper`, `gsd-nyquist-auditor`
 
----
+______________________________________________________________________
 
 ## Verification Commands
 
@@ -209,7 +212,7 @@ node gsd-tools.cjs verify artifacts <plan-file>
 node gsd-tools.cjs verify key-links <plan-file>
 ```
 
----
+______________________________________________________________________
 
 ## Validation Commands
 
@@ -223,7 +226,7 @@ node gsd-tools.cjs validate consistency
 node gsd-tools.cjs validate health [--repair]
 ```
 
----
+______________________________________________________________________
 
 ## Template Commands
 
@@ -239,7 +242,7 @@ node gsd-tools.cjs template fill <type> --phase N [--plan M] [--name "..."] [--t
 
 Template types for `fill`: `summary`, `plan`, `verification`
 
----
+______________________________________________________________________
 
 ## Frontmatter Commands
 
@@ -259,7 +262,29 @@ node gsd-tools.cjs frontmatter merge <file> --data '{json}'
 node gsd-tools.cjs frontmatter validate <file> --schema plan|summary|verification
 ```
 
----
+______________________________________________________________________
+
+## Markdown Formatting Commands
+
+GSD Markdown requires the frontmatter and GFM extensions. Install the pinned formatter stack with Python 3.13 or newer:
+
+```bash
+pipx install 'mdformat==1.0.0' --python python3.13
+pipx inject mdformat 'mdformat-frontmatter==2.1.2' 'mdformat-gfm==1.0.0'
+```
+
+Create the canonical project config, then migrate existing GSD planning artifacts before formatting them:
+
+```bash
+node gsd-tools.cjs mdformat init
+node gsd-tools.cjs mdformat migrate [path] [--check]
+mdformat --check .
+mdformat .
+```
+
+`mdformat init` never overwrites an existing `.mdformat.toml`; merge the settings it reports instead. Migration defaults to `.planning`, updates only recognized GSD marker elements, repairs escaped legacy wrappers (including inline wrappers), and is safe to run repeatedly. Core mdformat without both plugins is unsupported because it can rewrite YAML frontmatter and escape GSD marker names.
+
+______________________________________________________________________
 
 ## Scaffold Commands
 
@@ -279,7 +304,7 @@ node gsd-tools.cjs scaffold verification --phase N
 node gsd-tools.cjs scaffold phase-dir --phase N --name "phase name"
 ```
 
----
+______________________________________________________________________
 
 ## Init Commands (Compound Context Loading)
 
@@ -307,7 +332,7 @@ INIT=$(node gsd-tools.cjs init execute-phase "1")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
----
+______________________________________________________________________
 
 ## Milestone Commands
 
@@ -320,7 +345,7 @@ node gsd-tools.cjs requirements mark-complete <ids>
 # Accepts: REQ-01,REQ-02 or REQ-01 REQ-02 or [REQ-01, REQ-02]
 ```
 
----
+______________________________________________________________________
 
 ## Utility Commands
 
@@ -368,28 +393,29 @@ node gsd-tools.cjs commit <message> [--files f1 f2] [--amend] [--no-verify]
 
 > **`--no-verify`**: Skips pre-commit hooks. Used by parallel executor agents during wave-based execution to avoid build lock contention (e.g., cargo lock fights in Rust projects). The orchestrator runs hooks once after each wave completes. Do not use `--no-verify` during sequential execution — let hooks run normally.
 
+```bash
 # Web search (requires Brave API key)
 node gsd-tools.cjs websearch <query> [--limit N] [--freshness day|week|month]
 ```
 
----
+______________________________________________________________________
 
 ## Module Architecture
 
-| Module | File | Exports |
-|--------|------|---------|
-| Core | `lib/core.cjs` | `error()`, `output()`, `parseArgs()`, shared utilities |
-| State | `lib/state.cjs` | All `state` subcommands, `state-snapshot` |
-| Phase | `lib/phase.cjs` | Phase CRUD, `find-phase`, `phase-plan-index`, `phases list` |
-| Roadmap | `lib/roadmap.cjs` | Roadmap parsing, phase extraction, progress updates |
-| Config | `lib/config.cjs` | Config read/write, section initialization |
-| Verify | `lib/verify.cjs` | All verification and validation commands |
-| Template | `lib/template.cjs` | Template selection and variable filling |
-| Frontmatter | `lib/frontmatter.cjs` | YAML frontmatter CRUD |
-| Init | `lib/init.cjs` | Compound context loading for all workflows |
-| Milestone | `lib/milestone.cjs` | Milestone archival, requirements marking |
-| Commands | `lib/commands.cjs` | Misc: slug, timestamp, todos, scaffold, stats, websearch |
-| Model Profiles | `lib/model-profiles.cjs` | Profile resolution table |
-| UAT | `lib/uat.cjs` | Cross-phase UAT/verification audit |
-| Profile Output | `lib/profile-output.cjs` | Developer profile formatting |
-| Profile Pipeline | `lib/profile-pipeline.cjs` | Session analysis pipeline |
+| Module           | File                       | Exports                                                     |
+| ---------------- | -------------------------- | ----------------------------------------------------------- |
+| Core             | `lib/core.cjs`             | `error()`, `output()`, `parseArgs()`, shared utilities      |
+| State            | `lib/state.cjs`            | All `state` subcommands, `state-snapshot`                   |
+| Phase            | `lib/phase.cjs`            | Phase CRUD, `find-phase`, `phase-plan-index`, `phases list` |
+| Roadmap          | `lib/roadmap.cjs`          | Roadmap parsing, phase extraction, progress updates         |
+| Config           | `lib/config.cjs`           | Config read/write, section initialization                   |
+| Verify           | `lib/verify.cjs`           | All verification and validation commands                    |
+| Template         | `lib/template.cjs`         | Template selection and variable filling                     |
+| Frontmatter      | `lib/frontmatter.cjs`      | YAML frontmatter CRUD                                       |
+| Init             | `lib/init.cjs`             | Compound context loading for all workflows                  |
+| Milestone        | `lib/milestone.cjs`        | Milestone archival, requirements marking                    |
+| Commands         | `lib/commands.cjs`         | Misc: slug, timestamp, todos, scaffold, stats, websearch    |
+| Model Profiles   | `lib/model-profiles.cjs`   | Profile resolution table                                    |
+| UAT              | `lib/uat.cjs`              | Cross-phase UAT/verification audit                          |
+| Profile Output   | `lib/profile-output.cjs`   | Developer profile formatting                                |
+| Profile Pipeline | `lib/profile-pipeline.cjs` | Session analysis pipeline                                   |

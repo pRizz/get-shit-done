@@ -275,12 +275,12 @@ must_haves:
 # Plan: ${id}
 
 <task type="code" name="Create ${id}" files="src/${id}.ts">
-  <read_first>none</read_first>
+  <read-first>none</read-first>
   <action>Create ${id}</action>
   <verify>File exists</verify>
-  <acceptance_criteria>
+  <acceptance-criteria>
     - File exists
-  </acceptance_criteria>
+  </acceptance-criteria>
   <done>Done</done>
 </task>
 `;

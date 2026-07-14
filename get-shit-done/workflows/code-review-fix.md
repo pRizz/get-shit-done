@@ -2,14 +2,14 @@
 Auto-fix issues from REVIEW.md. Validates phase, checks config gate, verifies REVIEW.md exists and has fixable issues, spawns gsd-code-fixer agent, handles --auto iteration loop (capped at 3), commits REVIEW-FIX.md once at the end, and presents results.
 </purpose>
 
-<required_reading>
+<required-reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
-</required_reading>
+</required-reading>
 
-<available_agent_types>
+<available-agent-types>
 - gsd-code-fixer: Applies fixes to code review findings
 - gsd-code-reviewer: Reviews source files for bugs and issues
-</available_agent_types>
+</available-agent-types>
 
 <process>
 
@@ -25,6 +25,7 @@ if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 Parse from init JSON: `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `padded_phase`, `commit_docs`.
 
 **Input sanitization (defense-in-depth):**
+
 ```bash
 # Validate PADDED_PHASE contains only digits and optional dot (e.g., "02", "03.1")
 if ! [[ "$PADDED_PHASE" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
@@ -35,6 +36,7 @@ fi
 
 **Phase validation (before config gate):**
 If `phase_found` is false, report error and exit:
+
 ```
 Error: Phase ${PHASE_ARG} not found. Run /gsd-status to see available phases.
 ```
@@ -68,6 +70,7 @@ Compute review and fix report paths:
 REVIEW_PATH="${PHASE_DIR}/${PADDED_PHASE}-REVIEW.md"
 FIX_REPORT_PATH="${PHASE_DIR}/${PADDED_PHASE}-REVIEW-FIX.md"
 ```
+
 </step>
 
 <step name="check_config_gate">
@@ -78,9 +81,11 @@ CODE_REVIEW_ENABLED=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" confi
 ```
 
 If CODE_REVIEW_ENABLED is "false":
+
 ```
 Code review fix skipped (workflow.code_review=false in config)
 ```
+
 Exit workflow.
 
 Default is true — only skip on explicit false. This check runs AFTER phase validation so invalid phase errors are shown first.
@@ -119,12 +124,15 @@ REVIEW_STATUS=$(REVIEW_PATH="${REVIEW_PATH}" node -e "
 ```
 
 If status is "clean" or "skipped":
+
 ```
 No issues to fix in Phase ${PHASE_ARG} REVIEW.md (status: ${REVIEW_STATUS}).
 ```
+
 Exit workflow.
 
 If status is "unknown":
+
 ```
 Warning: Could not parse REVIEW.md status. Proceeding with fix attempt.
 ```
@@ -190,9 +198,9 @@ Use Task() to spawn agent:
 
 ```
 Task(subagent_type="gsd-code-fixer", prompt="
-<files_to_read>
+<files-to-read>
 ${REVIEW_PATH}
-</files_to_read>
+</files-to-read>
 
 <config>
 phase_dir: ${PHASE_DIR}
@@ -210,15 +218,18 @@ Read REVIEW.md findings, apply fixes, commit each atomically, write REVIEW-FIX.m
 **Agent failure handling:**
 
 If Task() fails:
+
 ```
 Error: Code fix agent failed: ${error_message}
 ```
 
 Check if FIX_REPORT_PATH exists:
+
 - If yes: "Partial success — some fixes may have been committed."
 - If no: "No fixes applied."
 
 Either way:
+
 ```
 Some fix commits may already exist in git history — check git log for fix(${PADDED_PHASE}) commits.
 You can retry with /gsd-code-review-fix ${PHASE_ARG}.
@@ -304,9 +315,9 @@ Do NOT commit the output — the orchestrator handles that.
     echo "Issues remain. Applying fixes for iteration ${ITERATION}..."
     
     Task(subagent_type="gsd-code-fixer", prompt="
-<files_to_read>
+<files-to-read>
 ${REVIEW_PATH}
-</files_to_read>
+</files-to-read>
 
 <config>
 phase_dir: ${PHASE_DIR}
@@ -336,11 +347,12 @@ fi
 ```
 
 Key design decisions for --auto (addresses ALL review HIGH concerns):
+
 1. **Re-review scope**: Uses REVIEW_FILES_ARRAY from original REVIEW.md frontmatter, falling back to full phase scope. Scope is NOT lost between iterations. Uses portable while-read loop (bash 3.2+ compatible, handles spaces in paths).
-2. **Artifact semantics**: REVIEW.md is overwritten by each re-review (latest review state). REVIEW-FIX.md is overwritten by each fixer iteration (latest fix state with iteration count). There is ONE final version of each artifact, not per-iteration copies.
+1. **Artifact semantics**: REVIEW.md is overwritten by each re-review (latest review state). REVIEW-FIX.md is overwritten by each fixer iteration (latest fix state with iteration count). There is ONE final version of each artifact, not per-iteration copies.
    Backup files (.iterN.md) preserve history for post-mortem analysis if iterations degrade.
-3. **Commit timing**: Fix commits happen per-finding inside the agent. REVIEW-FIX.md is NOT committed until step 7 (after ALL iterations complete). Only ONE docs commit for REVIEW-FIX.md, not one per iteration.
-</step>
+1. **Commit timing**: Fix commits happen per-finding inside the agent. REVIEW-FIX.md is NOT committed until step 7 (after ALL iterations complete). Only ONE docs commit for REVIEW-FIX.md, not one per iteration.
+   </step>
 
 <step name="commit_fix_report">
 After ALL iterations complete (or single pass in non-auto mode), validate and commit REVIEW-FIX.md:
@@ -444,6 +456,7 @@ echo ""
 ```
 
 If status is "all_fixed":
+
 ```bash
 if [ "$FIX_STATUS" = "all_fixed" ]; then
   echo "✓ All issues resolved."
@@ -457,6 +470,7 @@ fi
 ```
 
 If status is "partial" or "none_fixed":
+
 ```bash
 if [ "$FIX_STATUS" = "partial" ] || [ "$FIX_STATUS" = "none_fixed" ]; then
   echo "⚠ Some issues could not be fixed automatically."
@@ -474,15 +488,16 @@ fi
 ```bash
 echo "═══════════════════════════════════════════════════════════════"
 ```
+
 </step>
 
 </process>
 
-<platform_notes>
+<platform-notes>
 **Windows:** This workflow uses bash features (arrays, variable expansion, while loops). On Windows, it requires Git Bash or WSL. Native PowerShell is not supported. The CI matrix (Ubuntu/macOS/Windows) runs under Git Bash on Windows runners, which provides bash compatibility.
-</platform_notes>
+</platform-notes>
 
-<success_criteria>
+<success-criteria>
 - [ ] Phase validated before config gate check
 - [ ] Config gate checked (workflow.code_review)
 - [ ] REVIEW.md existence verified (error if missing)
@@ -494,4 +509,4 @@ echo "════════════════════════�
 - [ ] REVIEW-FIX.md committed ONCE after all iterations (not per-iteration)
 - [ ] Missing fix report handled with explicit error message in present_results
 - [ ] Results presented inline with next step suggestion
-</success_criteria>
+</success-criteria>

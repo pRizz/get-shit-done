@@ -93,22 +93,22 @@ Checklist of frequent bug patterns to scan before forming hypotheses. Ordered by
 ## How to Use This Checklist
 
 1. **Before forming any hypothesis**, scan the relevant categories based on the symptom
-2. **Match symptom to pattern** — if the bug involves "undefined is not an object", check Null/Undefined first
-3. **Each checked pattern is a hypothesis candidate** — verify or eliminate with evidence
-4. **If no pattern matches**, proceed to open-ended investigation
+1. **Match symptom to pattern** — if the bug involves "undefined is not an object", check Null/Undefined first
+1. **Each checked pattern is a hypothesis candidate** — verify or eliminate with evidence
+1. **If no pattern matches**, proceed to open-ended investigation
 
 ### Symptom-to-Category Quick Map
 
-| Symptom | Check First |
-|---------|------------|
-| "Cannot read property of undefined/null" | Null/Undefined Access |
-| "X is not a function" | Import/Module, Type/Coercion |
-| Works sometimes, fails sometimes | Async/Timing, State Management |
-| Works locally, fails in CI/prod | Environment/Config |
-| Wrong data displayed | Data Shape, State Management |
-| Off by one item / missing last item | Off-by-One/Boundary |
-| "Unexpected token" / parse error | Data Shape, Type/Coercion |
-| Memory leak / growing resource usage | Async/Timing (cleanup), Scope/Closure |
-| Infinite loop / max call stack | State Management, Async/Timing |
+| Symptom                                  | Check First                           |
+| ---------------------------------------- | ------------------------------------- |
+| "Cannot read property of undefined/null" | Null/Undefined Access                 |
+| "X is not a function"                    | Import/Module, Type/Coercion          |
+| Works sometimes, fails sometimes         | Async/Timing, State Management        |
+| Works locally, fails in CI/prod          | Environment/Config                    |
+| Wrong data displayed                     | Data Shape, State Management          |
+| Off by one item / missing last item      | Off-by-One/Boundary                   |
+| "Unexpected token" / parse error         | Data Shape, Type/Coercion             |
+| Memory leak / growing resource usage     | Async/Timing (cleanup), Scope/Closure |
+| Infinite loop / max call stack           | State Management, Async/Timing        |
 
 </usage>

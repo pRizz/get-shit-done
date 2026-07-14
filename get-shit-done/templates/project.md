@@ -72,44 +72,52 @@ Common types: Tech stack, Timeline, Budget, Dependencies, Compatibility, Perform
 <guidelines>
 
 **What This Is:**
+
 - Current accurate description of the product
 - 2-3 sentences capturing what it does and who it's for
 - Use the user's words and framing
 - Update when the product evolves beyond this description
 
 **Core Value:**
+
 - The single most important thing
 - Everything else can fail; this cannot
 - Drives prioritization when tradeoffs arise
 - Rarely changes; if it does, it's a significant pivot
 
 **Requirements — Validated:**
+
 - Requirements that shipped and proved valuable
 - Format: `- ✓ [Requirement] — [version/phase]`
 - These are locked — changing them requires explicit discussion
 
 **Requirements — Active:**
+
 - Current scope being built toward
 - These are hypotheses until shipped and validated
 - Move to Validated when shipped, Out of Scope if invalidated
 
 **Requirements — Out of Scope:**
+
 - Explicit boundaries on what we're not building
 - Always include reasoning (prevents re-adding later)
 - Includes: considered and rejected, deferred to future, explicitly excluded
 
 **Context:**
+
 - Background that informs implementation decisions
 - Technical environment, prior work, user feedback
 - Known issues or technical debt to address
 - Update as new context emerges
 
 **Constraints:**
+
 - Hard limits on implementation choices
 - Tech stack, timeline, budget, compatibility, dependencies
 - Include the "why" — constraints without rationale get questioned
 
 **Key Decisions:**
+
 - Significant choices that affect future work
 - Add decisions as they're made throughout the project
 - Track outcome when known:
@@ -118,6 +126,7 @@ Common types: Tech stack, Timeline, Budget, Dependencies, Compatibility, Perform
   - — Pending — too early to evaluate
 
 **Last Updated:**
+
 - Always note when and why the document was updated
 - Format: `after Phase 2` or `after v1.0 milestone`
 - Triggers review of whether content is still accurate
@@ -131,17 +140,19 @@ These rules are embedded in the generated PROJECT.md (## Evolution section)
 and implemented by workflows/transition.md and workflows/complete-milestone.md.
 
 **After each phase transition:**
+
 1. Requirements invalidated? → Move to Out of Scope with reason
-2. Requirements validated? → Move to Validated with phase reference
-3. New requirements emerged? → Add to Active
-4. Decisions to log? → Add to Key Decisions
-5. "What This Is" still accurate? → Update if drifted
+1. Requirements validated? → Move to Validated with phase reference
+1. New requirements emerged? → Add to Active
+1. Decisions to log? → Add to Key Decisions
+1. "What This Is" still accurate? → Update if drifted
 
 **After each milestone:**
+
 1. Full review of all sections
-2. Core Value check — still the right priority?
-3. Audit Out of Scope — reasons still valid?
-4. Update Context with current state (users, feedback, metrics)
+1. Core Value check — still the right priority?
+1. Audit Out of Scope — reasons still valid?
+1. Update Context with current state (users, feedback, metrics)
 
 </evolution>
 
@@ -151,16 +162,19 @@ For existing codebases:
 
 1. **Map codebase first** via `/gsd-map-codebase`
 
-2. **Infer Validated requirements** from existing code:
+1. **Infer Validated requirements** from existing code:
+
    - What does the codebase actually do?
    - What patterns are established?
    - What's clearly working and relied upon?
 
-3. **Gather Active requirements** from user:
+1. **Gather Active requirements** from user:
+
    - Present inferred current state
    - Ask what they want to build next
 
-4. **Initialize:**
+1. **Initialize:**
+
    - Validated = inferred from existing code
    - Active = user's goals for this work
    - Out of Scope = boundaries user specifies
@@ -168,7 +182,7 @@ For existing codebases:
 
 </brownfield>
 
-<state_reference>
+<state-reference>
 
 STATE.md references PROJECT.md:
 
@@ -183,4 +197,4 @@ See: .planning/PROJECT.md (updated [date])
 
 This ensures Claude reads current PROJECT.md context.
 
-</state_reference>
+</state-reference>

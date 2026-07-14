@@ -16,9 +16,9 @@ This solves the problem of PR diffs being cluttered with PLAN.md, SUMMARY.md, ST
 changes that are irrelevant to code review.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/pr-branch.md
-</execution_context>
+</execution-context>
 
 <process>
 Execute the pr-branch workflow from @~/.claude/get-shit-done/workflows/pr-branch.md end-to-end.

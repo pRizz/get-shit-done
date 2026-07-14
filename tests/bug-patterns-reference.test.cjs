@@ -96,15 +96,15 @@ describe('debugger agent references bug patterns', () => {
     );
   });
 
-  test('reference is inside <required_reading> block', () => {
+  test('reference is inside <required-reading> block', () => {
     const content = fs.readFileSync(DEBUGGER_AGENT_PATH, 'utf-8');
     const reqReadMatch = content.match(
-      /<required_reading>([\s\S]*?)<\/required_reading>/
+      /<required-reading>([\s\S]*?)<\/required-reading>/
     );
-    assert.ok(reqReadMatch, 'Debugger agent should have a <required_reading> block');
+    assert.ok(reqReadMatch, 'Debugger agent should have a <required-reading> block');
     assert.ok(
       reqReadMatch[1].includes('common-bug-patterns.md'),
-      'common-bug-patterns.md should be inside <required_reading> block'
+      'common-bug-patterns.md should be inside <required-reading> block'
     );
   });
 });

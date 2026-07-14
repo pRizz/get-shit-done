@@ -10,8 +10,8 @@ Display the complete GSD command reference. Output ONLY the reference content. D
 ## Quick Start
 
 1. `/gsd-new-project` - Initialize project (includes research, requirements, roadmap)
-2. `/gsd-plan-phase 1` - Create detailed plan for first phase
-3. `/gsd-execute-phase 1` - Execute the phase
+1. `/gsd-plan-phase 1` - Create detailed plan for first phase
+1. `/gsd-execute-phase 1` - Execute the phase
 
 ## Staying Updated
 
@@ -35,12 +35,14 @@ Use `/gsd-version` to inspect the installed build metadata before or after an up
 Initialize new project through unified flow.
 
 One command takes you from idea to ready-for-planning:
+
 - Deep questioning to understand what you're building
 - Optional domain research (spawns 4 parallel researcher agents)
 - Requirements definition with v1/v2/out-of-scope scoping
 - Roadmap creation with phase breakdown and success criteria
 
 Creates all `.planning/` artifacts:
+
 - `PROJECT.md` — vision and requirements
 - `config.json` — workflow mode (interactive/yolo)
 - `research/` — domain research (if selected)
@@ -209,11 +211,13 @@ Usage: `/gsd-do I want to start a new milestone`
 Execute small, ad-hoc tasks with GSD guarantees but skip optional agents.
 
 Quick mode uses the same system with a shorter path:
+
 - Spawns planner + executor (skips researcher, checker, verifier by default)
 - Quick tasks live in `.planning/quick/` separate from planned phases
 - Updates STATE.md tracking (not ROADMAP.md)
 
 Flags enable additional quality steps:
+
 - `--full` — Complete quality pipeline: discussion + research + plan-checking + verification
 - `--validate` — Plan-checking (max 2 iterations) and post-execution verification only
 - `--discuss` — Lightweight discussion to surface gray areas before planning
@@ -226,7 +230,7 @@ Usage: `/gsd-quick --full`
 Usage: `/gsd-quick --research --validate`
 Result: Creates `.planning/quick/NNN-slug/PLAN.md`, `.planning/quick/NNN-slug/SUMMARY.md`
 
----
+______________________________________________________________________
 
 **`/gsd-fast [description]`**
 Execute a trivial task inline — no subagents, no planning files, no overhead.
@@ -414,7 +418,7 @@ Prerequisites: Phase verified, `gh` CLI installed and authenticated.
 
 Usage: `/gsd-ship 4` or `/gsd-ship 4 --draft`
 
----
+______________________________________________________________________
 
 **`/gsd-review --phase N [--gemini] [--claude] [--codex] [--coderabbit] [--all]`**
 Cross-AI peer review — invoke external AI CLIs to independently review phase plans.
@@ -427,7 +431,7 @@ Cross-AI peer review — invoke external AI CLIs to independently review phase p
 
 Usage: `/gsd-review --phase 3 --all`
 
----
+______________________________________________________________________
 
 **`/gsd-pr-branch [target]`**
 Create a clean branch for pull requests by filtering out .planning/ commits.
@@ -438,7 +442,7 @@ Create a clean branch for pull requests by filtering out .planning/ commits.
 
 Usage: `/gsd-pr-branch` or `/gsd-pr-branch main`
 
----
+______________________________________________________________________
 
 **`/gsd-plant-seed [idea]`**
 Capture a forward-looking idea with trigger conditions for automatic surfacing.
@@ -449,10 +453,11 @@ Capture a forward-looking idea with trigger conditions for automatic surfacing.
 
 Usage: `/gsd-plant-seed "add real-time notifications when we build the events system"`
 
----
+______________________________________________________________________
 
 **`/gsd-audit-uat`**
 Cross-phase audit of all outstanding UAT and verification items.
+
 - Scans every phase for pending, skipped, blocked, and human_needed items
 - Cross-references against codebase to detect stale documentation
 - Produces prioritized human test plan grouped by testability
@@ -602,19 +607,23 @@ Change anytime by editing `.planning/config.json`
 Configure how planning artifacts are managed in `.planning/config.json`:
 
 **`planning.commit_docs`** (default: `true`)
+
 - `true`: Planning artifacts committed to git (standard workflow)
 - `false`: Planning artifacts kept local-only, not committed
 
 When `commit_docs: false`:
+
 - Add `.planning/` to your `.gitignore`
 - Useful for OSS contributions, client projects, or keeping planning private
 - All planning files still work normally, just not tracked in git
 
 **`planning.search_gitignored`** (default: `false`)
+
 - `true`: Add `--no-ignore` to broad ripgrep searches
 - Only needed when `.planning/` is gitignored and you want project-wide searches to include it
 
 Example config:
+
 ```json
 {
   "planning": {
@@ -682,4 +691,4 @@ Example config:
 - Read `.planning/STATE.md` for current context
 - Check `.planning/ROADMAP.md` for phase status
 - Run `/gsd-progress` to check where you're up to
-</reference>
+  </reference>

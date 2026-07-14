@@ -38,30 +38,31 @@ The setting is per-project (stored in `.planning/config.json`).
 ## How Assumptions Mode Works
 
 1. **Init** — Same as discuss mode (load prior context, scout codebase, check todos)
-2. **Deep analysis** — Explore subagent reads 5-15 codebase files related to the phase
-3. **Surface assumptions** — Each assumption includes:
+1. **Deep analysis** — Explore subagent reads 5-15 codebase files related to the phase
+1. **Surface assumptions** — Each assumption includes:
    - What Claude would do and why (citing file paths)
    - What goes wrong if the assumption is incorrect
    - Confidence level (Confident / Likely / Unclear)
-4. **Confirm or correct** — User reviews assumptions, selects any that need changing
-5. **Write CONTEXT.md** — Identical output format to discuss mode
+1. **Confirm or correct** — User reviews assumptions, selects any that need changing
+1. **Write CONTEXT.md** — Identical output format to discuss mode
 
 ## Flag Compatibility
 
-| Flag | `discuss` mode | `assumptions` mode |
-|------|----------------|-------------------|
-| `--auto` | Auto-selects recommended answers | Skips confirm gate, auto-resolves Unclear items |
-| `--batch` | Groups questions in batches | N/A (corrections already batched) |
-| `--text` | Plain-text questions (remote sessions) | Plain-text questions (remote sessions) |
-| `--analyze` | Shows trade-off tables per question | N/A (assumptions include evidence) |
+| Flag        | `discuss` mode                         | `assumptions` mode                              |
+| ----------- | -------------------------------------- | ----------------------------------------------- |
+| `--auto`    | Auto-selects recommended answers       | Skips confirm gate, auto-resolves Unclear items |
+| `--batch`   | Groups questions in batches            | N/A (corrections already batched)               |
+| `--text`    | Plain-text questions (remote sessions) | Plain-text questions (remote sessions)          |
+| `--analyze` | Shows trade-off tables per question    | N/A (assumptions include evidence)              |
 
 ## Output
 
 Both modes produce identical CONTEXT.md with the same 6 sections:
+
 - `<domain>` — Phase boundary
 - `<decisions>` — Locked implementation decisions
-- `<canonical_refs>` — Specs/docs downstream agents must read
-- `<code_context>` — Reusable assets, patterns, integration points
+- `<canonical-refs>` — Specs/docs downstream agents must read
+- `<code-context>` — Reusable assets, patterns, integration points
 - `<specifics>` — User references and preferences
 - `<deferred>` — Ideas noted for future phases
 

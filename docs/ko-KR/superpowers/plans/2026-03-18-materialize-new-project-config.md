@@ -8,7 +8,7 @@
 
 **기술 스택:** Node.js/CommonJS, 기존 gsd-tools CLI, 테스트에는 `node:test`.
 
----
+______________________________________________________________________
 
 ## 배경: 현재 상태
 
@@ -55,18 +55,18 @@
 }
 ```
 
----
+______________________________________________________________________
 
 ## 파일 맵
 
-| 파일 | 액션 | 목적 |
-|------|--------|---------|
-| `get-shit-done/bin/lib/config.cjs` | 수정 | `buildNewProjectConfig()` + `cmdConfigNewProject()` 추가 |
-| `get-shit-done/bin/gsd-tools.cjs` | 수정 | `config-new-project` case 등록 + usage 문자열 업데이트 |
-| `get-shit-done/workflows/new-project.md` | 수정 | Steps 2a + 5: 인라인 JSON 작성을 CLI 호출로 교체 |
-| `tests/config.test.cjs` | 수정 | `config-new-project` 테스트 스위트 추가 |
+| 파일                                     | 액션 | 목적                                                     |
+| ---------------------------------------- | ---- | -------------------------------------------------------- |
+| `get-shit-done/bin/lib/config.cjs`       | 수정 | `buildNewProjectConfig()` + `cmdConfigNewProject()` 추가 |
+| `get-shit-done/bin/gsd-tools.cjs`        | 수정 | `config-new-project` case 등록 + usage 문자열 업데이트   |
+| `get-shit-done/workflows/new-project.md` | 수정 | Steps 2a + 5: 인라인 JSON 작성을 CLI 호출로 교체         |
+| `tests/config.test.cjs`                  | 수정 | `config-new-project` 테스트 스위트 추가                  |
 
----
+______________________________________________________________________
 
 ## 작업 1: config.cjs에 `buildNewProjectConfig`와 `cmdConfigNewProject` 추가
 
@@ -380,7 +380,7 @@ git add get-shit-done/bin/lib/config.cjs tests/config.test.cjs
 git commit -m "feat: add config-new-project command for full config materialization"
 ```
 
----
+______________________________________________________________________
 
 ## 작업 2: gsd-tools.cjs에 `config-new-project` 등록
 
@@ -432,7 +432,7 @@ git add get-shit-done/bin/gsd-tools.cjs
 git commit -m "feat: register config-new-project in gsd-tools CLI router"
 ```
 
----
+______________________________________________________________________
 
 ## 작업 3: config-new-project를 사용하도록 new-project.md 워크플로우 업데이트
 
@@ -443,13 +443,14 @@ git commit -m "feat: register config-new-project in gsd-tools CLI router"
 이것이 핵심 변경사항입니다. 두 곳을 업데이트해야 합니다:
 
 - **Step 2a** (auto 모드 config 생성, 약 168–195번째 줄)
+
 - **Step 5** (대화형 모드 config 생성, 약 470–498번째 줄)
 
 - [ ] **Step 3.1: Step 2a(auto 모드) 업데이트**
 
 Step 2a에서 config.json을 생성하는 블록을 찾으세요:
 
-```markdown
+````markdown
 Create `.planning/config.json` with mode set to "yolo":
 
 ```json
@@ -458,9 +459,9 @@ Create `.planning/config.json` with mode set to "yolo":
   "granularity": "[selected]",
   ...
 }
-```
+````
 
-```
+````
 
 인라인 JSON 작성 지침을 다음으로 교체하세요:
 
@@ -486,11 +487,11 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-new-project "$(cat <
 }
 CHOICES
 )"
-```
+````
 
 The command merges your selections with all runtime defaults (`search_gitignored`, `brave_search`, `git` section), producing a fully-materialized config.
 
-```
+````
 
 - [ ] **Step 3.2: Step 5(대화형 모드) 업데이트**
 
@@ -504,9 +505,9 @@ Create `.planning/config.json` with all settings:
   "mode": "yolo|interactive",
   ...
 }
-```
+````
 
-```
+````
 
 다음으로 교체하세요:
 
@@ -531,18 +532,18 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-new-project "$(cat <
 }
 CHOICES
 )"
-```
+````
 
 The command merges your selections with all runtime defaults (`search_gitignored`, `brave_search`, `git` section), producing a fully-materialized config.
 
-```
+````
 
 - [ ] **Step 3.3: 워크플로우 파일이 올바르게 읽히는지 확인**
 
 ```bash
 cd /Users/diego/Dev/get-shit-done
 grep -n "config-new-project\|config\.json\|CHOICES" get-shit-done/workflows/new-project.md
-```
+````
 
 예상 결과: `config-new-project` 2회 등장(단계당 하나씩), config 생성을 위한 인라인 JSON 템플릿 없음.
 
@@ -554,7 +555,7 @@ git add get-shit-done/workflows/new-project.md
 git commit -m "feat: use config-new-project in new-project workflow for full config materialization"
 ```
 
----
+______________________________________________________________________
 
 ## 작업 4: 검증
 
@@ -652,7 +653,7 @@ node --test tests/ 2>&1 | grep -E "pass|fail|error" | tail -5
 
 예상 결과: 모두 통과, 0개 실패.
 
----
+______________________________________________________________________
 
 ## 부록: 업스트림용 PR 설명
 

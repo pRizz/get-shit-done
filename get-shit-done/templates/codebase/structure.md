@@ -4,7 +4,7 @@ Template for `.planning/codebase/STRUCTURE.md` - captures physical file organiza
 
 **Purpose:** Document where things physically live in the codebase. Answers "where do I put X?"
 
----
+______________________________________________________________________
 
 ## File Template
 
@@ -18,11 +18,13 @@ Template for `.planning/codebase/STRUCTURE.md` - captures physical file organiza
 [ASCII box-drawing tree of top-level directories with purpose - use ├── └── │ characters for tree structure only]
 
 ```
+
 [project-root]/
-├── [dir]/          # [Purpose]
-├── [dir]/          # [Purpose]
-├── [dir]/          # [Purpose]
-└── [file]          # [Purpose]
+├── [dir]/ # [Purpose]
+├── [dir]/ # [Purpose]
+├── [dir]/ # [Purpose]
+└── [file] # [Purpose]
+
 ```
 
 ## Directory Purposes
@@ -114,7 +116,7 @@ Template for `.planning/codebase/STRUCTURE.md` - captures physical file organiza
 *Update when directory structure changes*
 ```
 
-<good_examples>
+<good-examples>
 ```markdown
 # Codebase Structure
 
@@ -140,30 +142,35 @@ get-shit-done/
 ## Directory Purposes
 
 **bin/**
+
 - Purpose: CLI entry points
 - Contains: install.js (installer script)
 - Key files: install.js - handles npx installation
 - Subdirectories: None
 
 **commands/gsd/**
+
 - Purpose: Slash command definitions for Claude Code
-- Contains: *.md files (one per command)
+- Contains: \*.md files (one per command)
 - Key files: new-project.md, plan-phase.md, execute-plan.md
 - Subdirectories: None (flat structure)
 
 **get-shit-done/references/**
+
 - Purpose: Core philosophy and guidance documents
 - Contains: principles.md, questioning.md, plan-format.md
 - Key files: principles.md - system philosophy
 - Subdirectories: None
 
 **get-shit-done/templates/**
+
 - Purpose: Document templates for .planning/ files
 - Contains: Template definitions with frontmatter
 - Key files: project.md, roadmap.md, plan.md, summary.md
 - Subdirectories: codebase/ (new - for stack/architecture/structure templates)
 
 **get-shit-done/workflows/**
+
 - Purpose: Reusable multi-step procedures
 - Contains: Workflow definitions called by commands
 - Key files: execute-plan.md, research-phase.md
@@ -172,78 +179,94 @@ get-shit-done/
 ## Key File Locations
 
 **Entry Points:**
+
 - `bin/install.js` - Installation script (npx entry)
 
 **Configuration:**
+
 - `package.json` - Project metadata, dependencies, bin entry
 - `.gitignore` - Excluded files
 
 **Core Logic:**
+
 - `bin/install.js` - All installation logic (file copying, path replacement)
 
 **Testing:**
+
 - `tests/` - Test files (if present)
 
 **Documentation:**
+
 - `README.md` - User-facing installation and usage guide
 - `CLAUDE.md` - Instructions for Claude Code when working in this repo
 
 ## Naming Conventions
 
 **Files:**
+
 - kebab-case.md: Markdown documents
 - kebab-case.js: JavaScript source files
 - UPPERCASE.md: Important project files (README, CLAUDE, CHANGELOG)
 
 **Directories:**
+
 - kebab-case: All directories
 - Plural for collections: templates/, commands/, workflows/
 
 **Special Patterns:**
+
 - {command-name}.md: Slash command definition
-- *-template.md: Could be used but templates/ directory preferred
+- \*-template.md: Could be used but templates/ directory preferred
 
 ## Where to Add New Code
 
 **New Slash Command:**
+
 - Primary code: `commands/gsd/{command-name}.md`
 - Tests: `tests/commands/{command-name}.test.js` (if testing implemented)
 - Documentation: Update `README.md` with new command
 
 **New Template:**
+
 - Implementation: `get-shit-done/templates/{name}.md`
 - Documentation: Template is self-documenting (includes guidelines)
 
 **New Workflow:**
+
 - Implementation: `get-shit-done/workflows/{name}.md`
 - Usage: Reference from command with `@~/.claude/get-shit-done/workflows/{name}.md`
 
 **New Reference Document:**
+
 - Implementation: `get-shit-done/references/{name}.md`
 - Usage: Reference from commands/workflows as needed
 
 **Utilities:**
+
 - No utilities yet (`install.js` is monolithic)
 - If extracted: `src/utils/`
 
 ## Special Directories
 
 **get-shit-done/**
+
 - Purpose: Resources installed to ~/.claude/
 - Source: Copied by bin/install.js during installation
 - Committed: Yes (source of truth)
 
 **commands/**
+
 - Purpose: Slash commands installed to ~/.claude/commands/
 - Source: Copied by bin/install.js during installation
 - Committed: Yes (source of truth)
 
----
+______________________________________________________________________
 
 *Structure analysis: 2025-01-20*
 *Update when directory structure changes*
+
 ```
-</good_examples>
+</good-examples>
 
 <guidelines>
 **What belongs in STRUCTURE.md:**
@@ -269,12 +292,14 @@ get-shit-done/
 
 **Tree format (ASCII box-drawing characters for structure only):**
 ```
+
 root/
-├── dir1/           # Purpose
-│   ├── subdir/    # Purpose
-│   └── file.ts    # Purpose
-├── dir2/          # Purpose
-└── file.ts        # Purpose
+├── dir1/ # Purpose
+│ ├── subdir/ # Purpose
+│ └── file.ts # Purpose
+├── dir2/ # Purpose
+└── file.ts # Purpose
+
 ```
 
 **Useful for phase planning when:**
@@ -283,3 +308,4 @@ root/
 - Finding where specific logic lives
 - Following existing conventions
 </guidelines>
+```

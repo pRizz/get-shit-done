@@ -18,9 +18,9 @@ Run discuss-phase in recommended-review mode for a single phase.
 This is a thin wrapper over `/gsd-discuss-phase --recommended`.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/recommended-discuss.md
-</execution_context>
+</execution-context>
 
 <context>
 Phase number: $ARGUMENTS (required)
@@ -30,8 +30,8 @@ Phase number: $ARGUMENTS (required)
 Execute the recommended-discuss workflow from @~/.claude/get-shit-done/workflows/recommended-discuss.md end-to-end.
 </process>
 
-<success_criteria>
+<success-criteria>
 - Recommended answers synthesized for the requested phase
 - User sees one consolidated review before CONTEXT.md is written
 - Wrapper delegates to the shared discuss-phase recommendation engine
-</success_criteria>
+</success-criteria>

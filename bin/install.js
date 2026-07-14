@@ -6,6 +6,7 @@ const os = require('os');
 const readline = require('readline');
 const crypto = require('crypto');
 const { execFileSync } = require('child_process');
+const { splitFrontmatterDocument } = require('../get-shit-done/bin/lib/frontmatter.cjs');
 
 // Colors
 const cyan = '\x1b[36m';
@@ -1038,18 +1039,10 @@ function yamlIdentifier(value) {
 }
 
 function extractFrontmatterAndBody(content) {
-  if (!content.startsWith('---')) {
-    return { frontmatter: null, body: content };
-  }
-
-  const endIndex = content.indexOf('---', 3);
-  if (endIndex === -1) {
-    return { frontmatter: null, body: content };
-  }
-
+  const split = splitFrontmatterDocument(content);
   return {
-    frontmatter: content.substring(3, endIndex).trim(),
-    body: content.substring(endIndex + 3),
+    frontmatter: split.frontmatter === null ? null : split.frontmatter.trim(),
+    body: split.body,
   };
 }
 
@@ -1114,7 +1107,7 @@ function convertClaudeToCursorMarkdown(content) {
 }
 
 function getCursorSkillAdapterHeader(skillName) {
-  return `<cursor_skill_adapter>
+  return `<cursor-skill-adapter>
 ## A. Skill Invocation
 - This skill is invoked when the user mentions \`${skillName}\` or describes a task matching this skill.
 - Treat all user text after the skill mention as \`{{GSD_ARGS}}\`.
@@ -1136,7 +1129,7 @@ Use these Cursor tools when executing GSD workflows:
 When the workflow needs to spawn a subagent:
 - Use \`Task(subagent_type="generalPurpose", ...)\`
 - The \`model\` parameter maps to Cursor's model options (e.g., "fast")
-</cursor_skill_adapter>`;
+</cursor-skill-adapter>`;
 }
 
 function convertClaudeCommandToCursorSkill(content, skillName) {
@@ -1232,7 +1225,7 @@ function convertClaudeToWindsurfMarkdown(content) {
 }
 
 function getWindsurfSkillAdapterHeader(skillName) {
-  return `<windsurf_skill_adapter>
+  return `<windsurf-skill-adapter>
 ## A. Skill Invocation
 - This skill is invoked when the user mentions \`${skillName}\` or describes a task matching this skill.
 - Treat all user text after the skill mention as \`{{GSD_ARGS}}\`.
@@ -1254,7 +1247,7 @@ Use these Windsurf tools when executing GSD workflows:
 When the workflow needs to spawn a subagent:
 - Use \`Task(subagent_type="generalPurpose", ...)\`
 - The \`model\` parameter maps to Windsurf's model options (e.g., "fast")
-</windsurf_skill_adapter>`;
+</windsurf-skill-adapter>`;
 }
 
 function convertClaudeCommandToWindsurfSkill(content, skillName) {
@@ -1354,7 +1347,7 @@ function convertClaudeToAugmentMarkdown(content) {
 }
 
 function getAugmentSkillAdapterHeader(skillName) {
-  return `<augment_skill_adapter>
+  return `<augment-skill-adapter>
 ## A. Skill Invocation
 - This skill is invoked when the user mentions \`${skillName}\` or describes a task matching this skill.
 - Treat all user text after the skill mention as \`{{GSD_ARGS}}\`.
@@ -1380,7 +1373,7 @@ Use these Augment tools when executing GSD workflows:
 When the workflow needs to spawn a subagent:
 - Use the built-in subagent spawning capability
 - Define agent prompts in \`.augment/agents/\` directory
-</augment_skill_adapter>`;
+</augment-skill-adapter>`;
 }
 
 function convertClaudeCommandToAugmentSkill(content, skillName) {
@@ -1679,7 +1672,7 @@ function scanCodexManagedClaudeRuntimeLeaks(targetDir) {
 
 function getCodexSkillAdapterHeader(skillName) {
   const invocation = `$${skillName}`;
-  return `<codex_skill_adapter>
+  return `<codex-skill-adapter>
 ## A. Skill Invocation
 - This skill is invoked by mentioning \`${invocation}\`.
 - Treat all user text after \`${invocation}\` as \`{{GSD_ARGS}}\`.
@@ -1709,7 +1702,7 @@ GSD workflows use \`Task(...)\` (Claude Code syntax). Translate to Codex collabo
 Direct mapping:
 - \`Task(subagent_type="X", prompt="Y")\` → \`spawn_agent(agent_type="X", message="Y")\`
 - \`Task(model="...")\` → omit (Codex uses per-role config, not inline model selection)
-- \`fork_context: false\` by default — GSD agents load their own context via \`<files_to_read>\` blocks
+- \`fork_context: false\` by default — GSD agents load their own context via \`<files-to-read>\` blocks
 
 Parallel fan-out:
 - Spawn multiple agents → collect agent IDs → \`wait(ids)\` for all to complete
@@ -1730,7 +1723,7 @@ Skill resolution order:
 - First check local project install: \`./.codex/skills/<skill>/SKILL.md\`
 - If missing, fallback to global install: \`$HOME/.codex/skills/<skill>/SKILL.md\`
 - If neither exists, stop with a clear missing-skill error naming the unresolved skill
-</codex_skill_adapter>`;
+</codex-skill-adapter>`;
 }
 
 function convertClaudeCommandToCodexSkill(content, skillName) {
@@ -1752,7 +1745,7 @@ function convertClaudeCommandToCodexSkill(content, skillName) {
 
 /**
  * Convert Claude Code agent markdown to Codex agent format.
- * Applies base markdown conversions, then adds a <codex_agent_role> header
+ * Applies base markdown conversions, then adds a <codex-agent-role> header
  * and cleans up frontmatter (removes tools/color fields).
  */
 function convertClaudeAgentToCodexAgent(content) {
@@ -1765,11 +1758,11 @@ function convertClaudeAgentToCodexAgent(content) {
   const description = extractFrontmatterField(frontmatter, 'description') || '';
   const tools = extractFrontmatterField(frontmatter, 'tools') || '';
 
-  const roleHeader = `<codex_agent_role>
+  const roleHeader = `<codex-agent-role>
 role: ${name}
 tools: ${tools}
 purpose: ${toSingleLine(description)}
-</codex_agent_role>`;
+</codex-agent-role>`;
 
   const cleanFrontmatter = `---\nname: ${yamlQuote(name)}\ndescription: ${yamlQuote(toSingleLine(description))}\n---`;
 
@@ -3679,13 +3672,8 @@ function stripSubTags(content) {
  * - mcp__* tools: must be excluded (auto-discovered at runtime)
  */
 function convertClaudeToGeminiAgent(content) {
-  if (!content.startsWith('---')) return content;
-
-  const endIndex = content.indexOf('---', 3);
-  if (endIndex === -1) return content;
-
-  const frontmatter = content.substring(3, endIndex).trim();
-  const body = content.substring(endIndex + 3);
+  const { frontmatter, body } = extractFrontmatterAndBody(content);
+  if (!frontmatter) return content;
 
   const lines = frontmatter.split('\n');
   const newLines = [];
@@ -3789,19 +3777,8 @@ function convertClaudeToOpencodeFrontmatter(content, { isAgent = false } = {}) {
   // Runtime-neutral agent name replacement (#766)
   convertedContent = neutralizeAgentReferences(convertedContent, 'AGENTS.md');
 
-  // Check if content has frontmatter
-  if (!convertedContent.startsWith('---')) {
-    return convertedContent;
-  }
-
-  // Find the end of frontmatter
-  const endIndex = convertedContent.indexOf('---', 3);
-  if (endIndex === -1) {
-    return convertedContent;
-  }
-
-  const frontmatter = convertedContent.substring(3, endIndex).trim();
-  const body = convertedContent.substring(endIndex + 3);
+  const { frontmatter, body } = extractFrontmatterAndBody(convertedContent);
+  if (!frontmatter) return convertedContent;
 
   // Parse frontmatter line by line (simple YAML parsing)
   const lines = frontmatter.split('\n');
@@ -3945,19 +3922,8 @@ function convertClaudeToKiloFrontmatter(content, { isAgent = false } = {}) {
   // Runtime-neutral agent name replacement (#766)
   convertedContent = neutralizeAgentReferences(convertedContent, 'AGENTS.md');
 
-  // Check if content has frontmatter
-  if (!convertedContent.startsWith('---')) {
-    return convertedContent;
-  }
-
-  // Find the end of frontmatter
-  const endIndex = convertedContent.indexOf('---', 3);
-  if (endIndex === -1) {
-    return convertedContent;
-  }
-
-  const frontmatter = convertedContent.substring(3, endIndex).trim();
-  const body = convertedContent.substring(endIndex + 3);
+  const { frontmatter, body } = extractFrontmatterAndBody(convertedContent);
+  if (!frontmatter) return convertedContent;
 
   // Parse frontmatter line by line (simple YAML parsing)
   const lines = frontmatter.split('\n');
@@ -4105,18 +4071,13 @@ function convertClaudeToKiloFrontmatter(content, { isAgent = false } = {}) {
  * @returns {string} - TOML content
  */
 function convertClaudeToGeminiToml(content) {
-  // Check if content has frontmatter
-  if (!content.startsWith('---')) {
+  const split = extractFrontmatterAndBody(content);
+  if (!split.frontmatter) {
     return `prompt = ${JSON.stringify(content)}\n`;
   }
 
-  const endIndex = content.indexOf('---', 3);
-  if (endIndex === -1) {
-    return `prompt = ${JSON.stringify(content)}\n`;
-  }
-
-  const frontmatter = content.substring(3, endIndex).trim();
-  const body = content.substring(endIndex + 3).trim();
+  const frontmatter = split.frontmatter;
+  const body = split.body.trim();
 
   // Extract description from frontmatter
   let description = '';
@@ -7045,6 +7006,7 @@ function installAllRuntimes(runtimes, isGlobal, isInteractive) {
 // Test-only exports — skip main logic when loaded as a module for testing
 if (process.env.GSD_TEST_MODE) {
   module.exports = {
+    extractFrontmatterAndBody,
     yamlIdentifier,
     getCodexSkillAdapterHeader,
     convertClaudeCommandToCursorSkill,

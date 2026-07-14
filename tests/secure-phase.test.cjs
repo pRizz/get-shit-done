@@ -69,24 +69,24 @@ describe('SECURE: gsd-security-auditor agent', () => {
     assert.ok(content.includes('</role>'), 'must close <role> section');
   });
 
-  test('has <execution_flow> section', () => {
+  test('has <execution-flow> section', () => {
     const content = fs.readFileSync(agentPath, 'utf-8');
-    assert.ok(content.includes('<execution_flow>'), 'must have <execution_flow> section');
-    assert.ok(content.includes('</execution_flow>'), 'must close <execution_flow> section');
+    assert.ok(content.includes('<execution-flow>'), 'must have <execution-flow> section');
+    assert.ok(content.includes('</execution-flow>'), 'must close <execution-flow> section');
   });
 
-  test('has <structured_returns> with SECURED, OPEN_THREATS, ESCALATE', () => {
+  test('has <structured-returns> with SECURED, OPEN_THREATS, ESCALATE', () => {
     const content = fs.readFileSync(agentPath, 'utf-8');
-    assert.ok(content.includes('<structured_returns>'), 'must have <structured_returns> section');
+    assert.ok(content.includes('<structured-returns>'), 'must have <structured-returns> section');
     assert.ok(content.includes('## SECURED'), 'must have SECURED return type');
     assert.ok(content.includes('## OPEN_THREATS'), 'must have OPEN_THREATS return type');
     assert.ok(content.includes('## ESCALATE'), 'must have ESCALATE return type');
   });
 
-  test('has <success_criteria> section', () => {
+  test('has <success-criteria> section', () => {
     const content = fs.readFileSync(agentPath, 'utf-8');
-    assert.ok(content.includes('<success_criteria>'), 'must have <success_criteria> section');
-    assert.ok(content.includes('</success_criteria>'), 'must close <success_criteria> section');
+    assert.ok(content.includes('<success-criteria>'), 'must have <success-criteria> section');
+    assert.ok(content.includes('</success-criteria>'), 'must close <success-criteria> section');
   });
 
   test('has READ-ONLY rule — does NOT modify implementation files', () => {
@@ -192,12 +192,12 @@ describe('SECURE: secure-phase workflow file', () => {
   test('has success_criteria section', () => {
     const content = fs.readFileSync(wfPath, 'utf-8');
     assert.ok(
-      content.includes('<success_criteria>'),
-      'must have <success_criteria> section'
+      content.includes('<success-criteria>'),
+      'must have <success-criteria> section'
     );
     assert.ok(
-      content.includes('</success_criteria>'),
-      'must close <success_criteria> section'
+      content.includes('</success-criteria>'),
+      'must close <success-criteria> section'
     );
   });
 });

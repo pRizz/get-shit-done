@@ -45,7 +45,7 @@ npx get-shit-done-cc@latest
 
 </div>
 
----
+______________________________________________________________________
 
 ## Por que eu criei isso
 
@@ -59,13 +59,13 @@ O sistema dá ao Claude tudo que ele precisa para fazer o trabalho *e* validar o
 
 — **TÂCHES**
 
----
+______________________________________________________________________
 
 Vibe coding ganhou má fama. Você descreve algo, a IA gera código, e sai um resultado inconsistente que quebra em escala.
 
 O GSD corrige isso. É a camada de engenharia de contexto que torna o Claude Code confiável.
 
----
+______________________________________________________________________
 
 ## Para quem é
 
@@ -83,7 +83,7 @@ Quality gates embutidos capturam problemas reais: detecção de schema drift sin
 - **Redução de contexto** — Truncamento de Markdown e ordenação de prompts cache-friendly para menor uso de tokens
 - **4 novos runtimes** — Trae, Kilo, Augment e Cline (12 runtimes no total)
 
----
+______________________________________________________________________
 
 ## Primeiros passos
 
@@ -92,10 +92,12 @@ npx get-shit-done-cc@latest
 ```
 
 O instalador pede:
+
 1. **Runtime** — Claude Code, OpenCode, Gemini, Kilo, Codex, Copilot, Cursor, Windsurf, Antigravity, Augment, Trae, Cline, ou todos
-2. **Local** — Global (todos os projetos) ou local (apenas projeto atual)
+1. **Local** — Global (todos os projetos) ou local (apenas projeto atual)
 
 Verifique com:
+
 - Claude Code / Gemini / Copilot / Antigravity: `/gsd-help`
 - OpenCode / Kilo / Augment / Trae: `/gsd-help`
 - Codex: `$gsd-help`
@@ -177,7 +179,7 @@ claude --dangerously-skip-permissions
 > [!TIP]
 > Esse é o modo pensado para o GSD: aprovar `date` e `git commit` 50 vezes mata a produtividade.
 
----
+______________________________________________________________________
 
 ## Como funciona
 
@@ -190,10 +192,11 @@ claude --dangerously-skip-permissions
 ```
 
 O sistema:
+
 1. **Pergunta** até entender seu objetivo
-2. **Pesquisa** o domínio com agentes em paralelo
-3. **Extrai requisitos** (v1, v2 e fora de escopo)
-4. **Monta roadmap** por fases
+1. **Pesquisa** o domínio com agentes em paralelo
+1. **Extrai requisitos** (v1, v2 e fora de escopo)
+1. **Monta roadmap** por fases
 
 **Cria:** `PROJECT.md`, `REQUIREMENTS.md`, `ROADMAP.md`, `STATE.md`, `.planning/research/`
 
@@ -214,8 +217,8 @@ Captura suas preferências de implementação antes do planejamento.
 ```
 
 1. Pesquisa abordagens
-2. Cria 2-3 planos atômicos em XML
-3. Verifica contra os requisitos
+1. Cria 2-3 planos atômicos em XML
+1. Verifica contra os requisitos
 
 **Cria:** `{phase_num}-RESEARCH.md`, `{phase_num}-{N}-PLAN.md`
 
@@ -226,9 +229,9 @@ Captura suas preferências de implementação antes do planejamento.
 ```
 
 1. Executa planos em ondas
-2. Contexto novo por plano
-3. Commit atômico por tarefa
-4. Verifica contra objetivos
+1. Contexto novo por plano
+1. Commit atômico por tarefa
+1. Verifica contra objetivos
 
 **Cria:** `{phase_num}-{N}-SUMMARY.md`, `{phase_num}-VERIFICATION.md`
 
@@ -268,24 +271,24 @@ Ou deixe o GSD decidir:
 
 Para tarefas ad-hoc sem ciclo completo de planejamento.
 
----
+______________________________________________________________________
 
 ## Por que funciona
 
 ### Engenharia de contexto
 
-| Arquivo | Papel |
-|---------|-------|
-| `PROJECT.md` | Visão do projeto |
-| `research/` | Conhecimento do ecossistema |
-| `REQUIREMENTS.md` | Escopo v1/v2 |
-| `ROADMAP.md` | Direção e progresso |
-| `STATE.md` | Memória entre sessões |
-| `PLAN.md` | Tarefa atômica com XML |
-| `SUMMARY.md` | O que mudou |
-| `todos/` | Ideias para depois |
-| `threads/` | Contexto persistente |
-| `seeds/` | Ideias para próximos marcos |
+| Arquivo           | Papel                       |
+| ----------------- | --------------------------- |
+| `PROJECT.md`      | Visão do projeto            |
+| `research/`       | Conhecimento do ecossistema |
+| `REQUIREMENTS.md` | Escopo v1/v2                |
+| `ROADMAP.md`      | Direção e progresso         |
+| `STATE.md`        | Memória entre sessões       |
+| `PLAN.md`         | Tarefa atômica com XML      |
+| `SUMMARY.md`      | O que mudou                 |
+| `todos/`          | Ideias para depois          |
+| `threads/`        | Contexto persistente        |
+| `seeds/`          | Ideias para próximos marcos |
 
 ### Formato XML de prompt
 
@@ -311,39 +314,39 @@ Um orquestrador leve chama agentes especializados para pesquisa, planejamento, e
 
 Cada tarefa gera commit próprio, facilitando `git bisect`, rollback e rastreabilidade.
 
----
+______________________________________________________________________
 
 ## Comandos
 
 ### Fluxo principal
 
-| Comando | O que faz |
-|---------|-----------|
-| `/gsd-new-project [--auto]` | Inicializa projeto completo |
+| Comando                                                 | O que faz                                                                            |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `/gsd-new-project [--auto]`                             | Inicializa projeto completo                                                          |
 | `/gsd-discuss-phase [N] [--auto] [--analyze] [--chain]` | Captura decisões antes do plano (`--chain` encadeia automaticamente em plan+execute) |
-| `/gsd-plan-phase [N] [--auto] [--reviews]` | Pesquisa + plano + validação |
-| `/gsd-execute-phase <N>` | Executa planos em ondas paralelas |
-| `/gsd-verify-work [N]` | UAT manual |
-| `/gsd-ship [N] [--draft]` | Cria PR da fase validada |
-| `/gsd-next` | Avança automaticamente para o próximo passo |
-| `/gsd-fast <text>` | Tarefas triviais sem planejamento |
-| `/gsd-complete-milestone` | Fecha o marco e marca release |
-| `/gsd-new-milestone [name]` | Inicia próximo marco |
+| `/gsd-plan-phase [N] [--auto] [--reviews]`              | Pesquisa + plano + validação                                                         |
+| `/gsd-execute-phase <N>`                                | Executa planos em ondas paralelas                                                    |
+| `/gsd-verify-work [N]`                                  | UAT manual                                                                           |
+| `/gsd-ship [N] [--draft]`                               | Cria PR da fase validada                                                             |
+| `/gsd-next`                                             | Avança automaticamente para o próximo passo                                          |
+| `/gsd-fast <text>`                                      | Tarefas triviais sem planejamento                                                    |
+| `/gsd-complete-milestone`                               | Fecha o marco e marca release                                                        |
+| `/gsd-new-milestone [name]`                             | Inicia próximo marco                                                                 |
 
 ### Qualidade e utilidades
 
-| Comando | O que faz |
-|---------|-----------|
-| `/gsd-review` | Peer review com múltiplas IAs |
-| `/gsd-pr-branch` | Cria branch limpa para PR |
-| `/gsd-settings` | Configura perfis e agentes |
-| `/gsd-set-profile <profile>` | Troca perfil (quality/balanced/budget/inherit) |
+| Comando                                        | O que faz                                                                                                    |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `/gsd-review`                                  | Peer review com múltiplas IAs                                                                                |
+| `/gsd-pr-branch`                               | Cria branch limpa para PR                                                                                    |
+| `/gsd-settings`                                | Configura perfis e agentes                                                                                   |
+| `/gsd-set-profile <profile>`                   | Troca perfil (quality/balanced/budget/inherit)                                                               |
 | `/gsd-quick [--full] [--discuss] [--research]` | Execução rápida com garantias do GSD (`--full` ativa todas as etapas, `--validate` ativa apenas verificação) |
-| `/gsd-health [--repair]` | Verifica e repara `.planning/` |
+| `/gsd-health [--repair]`                       | Verifica e repara `.planning/`                                                                               |
 
 > Para a lista completa de comandos e opções, use `/gsd-help`.
 
----
+______________________________________________________________________
 
 ## Configuração
 
@@ -352,32 +355,34 @@ Você pode configurar no `/gsd-new-project` ou ajustar depois com `/gsd-settings
 
 ### Ajustes principais
 
-| Configuração | Opções | Padrão | Controle |
-|--------------|--------|--------|----------|
-| `mode` | `yolo`, `interactive` | `interactive` | Autoaprovar vs confirmar etapas |
-| `granularity` | `coarse`, `standard`, `fine` | `standard` | Granularidade de fases/planos |
+| Configuração  | Opções                       | Padrão        | Controle                        |
+| ------------- | ---------------------------- | ------------- | ------------------------------- |
+| `mode`        | `yolo`, `interactive`        | `interactive` | Autoaprovar vs confirmar etapas |
+| `granularity` | `coarse`, `standard`, `fine` | `standard`    | Granularidade de fases/planos   |
 
 ### Perfis de modelo
 
-| Perfil | Planejamento | Execução | Verificação |
-|--------|--------------|----------|-------------|
-| `quality` | Opus | Opus | Sonnet |
-| `balanced` | Opus | Sonnet | Sonnet |
-| `budget` | Sonnet | Sonnet | Haiku |
-| `inherit` | Inherit | Inherit | Inherit |
+| Perfil     | Planejamento | Execução | Verificação |
+| ---------- | ------------ | -------- | ----------- |
+| `quality`  | Opus         | Opus     | Sonnet      |
+| `balanced` | Opus         | Sonnet   | Sonnet      |
+| `budget`   | Sonnet       | Sonnet   | Haiku       |
+| `inherit`  | Inherit      | Inherit  | Inherit     |
 
 Troca rápida:
+
 ```
 /gsd-set-profile budget
 ```
 
----
+______________________________________________________________________
 
 ## Segurança
 
 ### Endurecimento embutido
 
 O GSD inclui proteções como:
+
 - prevenção de path traversal
 - detecção de prompt injection
 - validação de argumentos de shell
@@ -403,19 +408,22 @@ Adicione padrões sensíveis ao deny list do Claude Code:
 }
 ```
 
----
+______________________________________________________________________
 
 ## Solução de problemas
 
 **Comandos não apareceram após instalar?**
+
 - Reinicie o runtime
 - Verifique se os arquivos foram instalados no diretório correto
 
 **Comandos não funcionam como esperado?**
+
 - Rode `/gsd-help` ou `/gsd-version`
 - Reinstale com `npx get-shit-done-cc@latest`
 
 **Em Docker/container?**
+
 - Defina `CLAUDE_CONFIG_DIR` antes da instalação:
 
 ```bash
@@ -452,18 +460,18 @@ npx get-shit-done-cc --trae --local --uninstall
 npx get-shit-done-cc --cline --local --uninstall
 ```
 
----
+______________________________________________________________________
 
 ## Community Ports
 
 OpenCode, Gemini CLI, Kilo e Codex agora são suportados nativamente via `npx get-shit-done-cc`.
 
-| Projeto | Plataforma | Descrição |
-|---------|------------|-----------|
-| [gsd-opencode](https://github.com/rokicool/gsd-opencode) | OpenCode | Adaptação original para OpenCode |
-| gsd-gemini (archived) | Gemini CLI | Adaptação original para Gemini por uberfuzzy |
+| Projeto                                                  | Plataforma | Descrição                                    |
+| -------------------------------------------------------- | ---------- | -------------------------------------------- |
+| [gsd-opencode](https://github.com/rokicool/gsd-opencode) | OpenCode   | Adaptação original para OpenCode             |
+| gsd-gemini (archived)                                    | Gemini CLI | Adaptação original para Gemini por uberfuzzy |
 
----
+______________________________________________________________________
 
 ## Star History
 
@@ -475,13 +483,13 @@ OpenCode, Gemini CLI, Kilo e Codex agora são suportados nativamente via `npx ge
  </picture>
 </a>
 
----
+______________________________________________________________________
 
 ## Licença
 
 Licença MIT. Veja [LICENSE](LICENSE).
 
----
+______________________________________________________________________
 
 <div align="center">
 

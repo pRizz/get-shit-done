@@ -1,8 +1,8 @@
-<planning_config>
+<planning-config>
 
 `.planning/` 目录行为的配置选项。
 
-<config_schema>
+<config-schema>
 ```json
 "planning": {
   "commit_docs": true,
@@ -15,23 +15,25 @@
 }
 ```
 
-| 选项 | 默认值 | 描述 |
-|--------|---------|-------------|
-| `commit_docs` | `true` | 是否将规划工件提交到 git |
-| `search_gitignored` | `false` | 在广泛 rg 搜索中添加 `--no-ignore` |
-| `git.branching_strategy` | `"none"` | Git 分支策略：`"none"`、`"phase"` 或 `"milestone"` |
-| `git.phase_branch_template` | `"gsd/phase-{phase}-{slug}"` | 阶段策略的分支模板 |
-| `git.milestone_branch_template` | `"gsd/{milestone}-{slug}"` | 里程碑策略的分支模板 |
-</config_schema>
+| 选项                            | 默认值                       | 描述                                               |
+| ------------------------------- | ---------------------------- | -------------------------------------------------- |
+| `commit_docs`                   | `true`                       | 是否将规划工件提交到 git                           |
+| `search_gitignored`             | `false`                      | 在广泛 rg 搜索中添加 `--no-ignore`                 |
+| `git.branching_strategy`        | `"none"`                     | Git 分支策略：`"none"`、`"phase"` 或 `"milestone"` |
+| `git.phase_branch_template`     | `"gsd/phase-{phase}-{slug}"` | 阶段策略的分支模板                                 |
+| `git.milestone_branch_template` | `"gsd/{milestone}-{slug}"`   | 里程碑策略的分支模板                               |
+| </config-schema>                |                              |                                                    |
 
-<commit_docs_behavior>
+<commit-docs-behavior>
 
 **当 `commit_docs: true`（默认）：**
+
 - 规划文件正常提交
 - SUMMARY.md、STATE.md、ROADMAP.md 在 git 中跟踪
 - 规划决策的完整历史保留
 
 **当 `commit_docs: false`：**
+
 - 跳过 `.planning/` 文件的所有 `git add`/`git commit`
 - 用户必须将 `.planning/` 添加到 `.gitignore`
 - 适用于：OSS 贡献、客户项目、保持规划私有
@@ -63,28 +65,31 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: update state"
 
 CLI 在内部检查 `commit_docs` 配置和 gitignore 状态 —— 无需手动条件判断。
 
-</commit_docs_behavior>
+</commit-docs-behavior>
 
-<search_behavior>
+<search-behavior>
 
 **当 `search_gitignored: false`（默认）：**
+
 - 标准 rg 行为（尊重 .gitignore）
 - 直接路径搜索有效：`rg "pattern" .planning/` 找到文件
 - 广泛搜索跳过 gitignored：`rg "pattern"` 跳过 `.planning/`
 
 **当 `search_gitignored: true`:**
+
 - 在应该包含 `.planning/` 的广泛 rg 搜索中添加 `--no-ignore`
 - 仅在搜索整个仓库并期望 `.planning/` 匹配时需要
 
 **注意：** 大多数 GSD 操作使用直接文件读取或显式路径，无论 gitignore 状态如何都有效。
 
-</search_behavior>
+</search-behavior>
 
-<setup_uncommitted_mode>
+<setup-uncommitted-mode>
 
 使用未提交模式：
 
 1. **设置配置：**
+
    ```json
    "planning": {
      "commit_docs": false,
@@ -92,36 +97,40 @@ CLI 在内部检查 `commit_docs` 配置和 gitignore 状态 —— 无需手动
    }
    ```
 
-2. **添加到 .gitignore：**
+1. **添加到 .gitignore：**
+
    ```
    .planning/
    ```
 
-3. **已存在的跟踪文件：** 如果 `.planning/` 之前被跟踪：
+1. **已存在的跟踪文件：** 如果 `.planning/` 之前被跟踪：
+
    ```bash
    git rm -r --cached .planning/
    git commit -m "chore: stop tracking planning docs"
    ```
 
-4. **分支合并：** 当使用 `branching_strategy: phase` 或 `milestone` 时，`complete-milestone` 工作流在 `commit_docs: false` 时自动从暂存区移除 `.planning/` 文件，然后才进行合并提交。
+1. **分支合并：** 当使用 `branching_strategy: phase` 或 `milestone` 时，`complete-milestone` 工作流在 `commit_docs: false` 时自动从暂存区移除 `.planning/` 文件，然后才进行合并提交。
 
-</setup_uncommitted_mode>
+</setup-uncommitted-mode>
 
-<branching_strategy_behavior>
+<branching-strategy-behavior>
 
 **分支策略：**
 
-| 策略 | 创建分支时机 | 分支范围 | 合并点 |
-|----------|---------------------|--------------|-------------|
-| `none` | 从不 | N/A | N/A |
-| `phase` | `execute-phase` 开始时 | 单个阶段 | 阶段后用户手动合并 |
+| 策略        | 创建分支时机                 | 分支范围   | 合并点                  |
+| ----------- | ---------------------------- | ---------- | ----------------------- |
+| `none`      | 从不                         | N/A        | N/A                     |
+| `phase`     | `execute-phase` 开始时       | 单个阶段   | 阶段后用户手动合并      |
 | `milestone` | 里程碑第一个 `execute-phase` | 整个里程碑 | `complete-milestone` 时 |
 
 **当 `git.branching_strategy: "none"`（默认）：**
+
 - 所有工作提交到当前分支
 - 标准 GSD 行为
 
 **当 `git.branching_strategy: "phase"`：**
+
 - `execute-phase` 在执行前创建/切换到分支
 - 分支名来自 `phase_branch_template`（如 `gsd/phase-03-authentication`）
 - 所有计划提交到该分支
@@ -129,6 +138,7 @@ CLI 在内部检查 `commit_docs` 配置和 gitignore 状态 —— 无需手动
 - `complete-milestone` 提供合并所有阶段分支的选项
 
 **当 `git.branching_strategy: "milestone"`：**
+
 - 里程碑的第一个 `execute-phase` 创建里程碑分支
 - 分支名来自 `milestone_branch_template`（如 `gsd/v1.0-mvp`）
 - 里程碑中所有阶段提交到同一分支
@@ -136,15 +146,16 @@ CLI 在内部检查 `commit_docs` 配置和 gitignore 状态 —— 无需手动
 
 **模板变量：**
 
-| 变量 | 可用于 | 描述 |
-|----------|--------------|-------------|
-| `{phase}` | phase_branch_template | 零填充阶段号（如 "03"） |
-| `{slug}` | 两者 | 小写、连字符名称 |
+| 变量          | 可用于                    | 描述                    |
+| ------------- | ------------------------- | ----------------------- |
+| `{phase}`     | phase_branch_template     | 零填充阶段号（如 "03"） |
+| `{slug}`      | 两者                      | 小写、连字符名称        |
 | `{milestone}` | milestone_branch_template | 里程碑版本（如 "v1.0"） |
 
 **检查配置：**
 
 使用 `init execute-phase` 返回所有配置为 JSON：
+
 ```bash
 INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init execute-phase "1")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
@@ -152,6 +163,7 @@ if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
 或使用 `state load` 获取配置值：
+
 ```bash
 INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" state load)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
@@ -178,23 +190,23 @@ fi
 
 **complete-milestone 时的合并选项：**
 
-| 选项 | Git 命令 | 结果 |
-|--------|-------------|--------|
+| 选项                | Git 命令             | 结果                 |
+| ------------------- | -------------------- | -------------------- |
 | Squash 合并（推荐） | `git merge --squash` | 每个分支单个干净提交 |
-| 带历史合并 | `git merge --no-ff` | 保留所有单独提交 |
-| 不合并直接删除 | `git branch -D` | 丢弃分支工作 |
-| 保留分支 | （无） | 后续手动处理 |
+| 带历史合并          | `git merge --no-ff`  | 保留所有单独提交     |
+| 不合并直接删除      | `git branch -D`      | 丢弃分支工作         |
+| 保留分支            | （无）               | 后续手动处理         |
 
 推荐 Squash 合并 —— 保持 main 分支历史干净，同时在分支中保留完整开发历史（直到删除）。
 
 **使用场景：**
 
-| 策略 | 最适合 |
-|----------|----------|
-| `none` | 独立开发、简单项目 |
-| `phase` | 每阶段代码审查、细粒度回滚、团队协作 |
+| 策略        | 最适合                                |
+| ----------- | ------------------------------------- |
+| `none`      | 独立开发、简单项目                    |
+| `phase`     | 每阶段代码审查、细粒度回滚、团队协作  |
 | `milestone` | 发布分支、预发布环境、每个版本一个 PR |
 
-</branching_strategy_behavior>
+</branching-strategy-behavior>
 
-</planning_config>
+</planning-config>

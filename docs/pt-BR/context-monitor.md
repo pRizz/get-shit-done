@@ -4,7 +4,7 @@ O monitor de contexto ajuda a evitar degradação de qualidade em sessões longa
 
 Para detalhes completos de implementação, veja [context-monitor.md em inglês](../context-monitor.md).
 
----
+______________________________________________________________________
 
 ## Objetivos
 
@@ -15,9 +15,9 @@ Para detalhes completos de implementação, veja [context-monitor.md em inglês]
 ## Como funciona
 
 1. coleta sinais de uso da janela de contexto
-2. compara com limiares de alerta
-3. emite avisos progressivos
-4. sugere retomada por artefatos persistentes
+1. compara com limiares de alerta
+1. emite avisos progressivos
+1. sugere retomada por artefatos persistentes
 
 ## Estratégia recomendada
 
@@ -34,7 +34,7 @@ Para detalhes completos de implementação, veja [context-monitor.md em inglês]
 /gsd-progress
 ```
 
----
+______________________________________________________________________
 
 > [!TIP]
 > O monitor não substitui boas práticas de escopo. Planos pequenos e verificáveis continuam sendo o principal fator de qualidade.

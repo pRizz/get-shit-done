@@ -58,14 +58,14 @@ describe('gates taxonomy (#1715)', () => {
     );
     // Verify table header row
     assert.ok(
-      content.includes('| Workflow |'),
+      /^\|\s*Workflow\s*\|/m.test(content),
       'Gate Matrix must contain a table with Workflow column'
     );
     // Verify key workflow rows exist
     assert.ok(content.includes('plan-phase'), 'Gate Matrix must reference plan-phase');
     assert.ok(content.includes('execute-phase'), 'Gate Matrix must reference execute-phase');
     assert.ok(content.includes('verify-work'), 'Gate Matrix must reference verify-work');
-    assert.ok(content.includes('| next |'), 'Gate Matrix must reference next workflow');
+    assert.ok(/^\|\s*next\s*\|/m.test(content), 'Gate Matrix must reference next workflow');
   });
 
   test('plan-phase.md references gates.md', () => {
@@ -90,13 +90,13 @@ describe('gates taxonomy (#1715)', () => {
     const planChecker = path.join(ROOT, 'agents', 'gsd-plan-checker.md');
     const content = fs.readFileSync(planChecker, 'utf-8');
     assert.ok(
-      content.includes('<required_reading>'),
-      'gsd-plan-checker.md must have a <required_reading> block'
+      content.includes('<required-reading>'),
+      'gsd-plan-checker.md must have a <required-reading> block'
     );
-    const reqBlock = content.split('<required_reading>')[1].split('</required_reading>')[0];
+    const reqBlock = content.split('<required-reading>')[1].split('</required-reading>')[0];
     assert.ok(
       reqBlock.includes('references/gates.md'),
-      'gsd-plan-checker.md must reference gates.md inside <required_reading>'
+      'gsd-plan-checker.md must reference gates.md inside <required-reading>'
     );
   });
 
@@ -104,13 +104,13 @@ describe('gates taxonomy (#1715)', () => {
     const verifier = path.join(ROOT, 'agents', 'gsd-verifier.md');
     const content = fs.readFileSync(verifier, 'utf-8');
     assert.ok(
-      content.includes('<required_reading>'),
-      'gsd-verifier.md must have a <required_reading> block'
+      content.includes('<required-reading>'),
+      'gsd-verifier.md must have a <required-reading> block'
     );
-    const reqBlock = content.split('<required_reading>')[1].split('</required_reading>')[0];
+    const reqBlock = content.split('<required-reading>')[1].split('</required-reading>')[0];
     assert.ok(
       reqBlock.includes('references/gates.md'),
-      'gsd-verifier.md must reference gates.md inside <required_reading>'
+      'gsd-verifier.md must reference gates.md inside <required-reading>'
     );
   });
 

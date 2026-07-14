@@ -4,13 +4,13 @@ Archive accumulated phase directories from completed milestones into `.planning/
 
 </purpose>
 
-<required_reading>
+<required-reading>
 
 1. `.planning/MILESTONES.md`
-2. `.planning/milestones/` directory listing
-3. `.planning/phases/` directory listing
+1. `.planning/milestones/` directory listing
+1. `.planning/phases/` directory listing
 
-</required_reading>
+</required-reading>
 
 <process>
 
@@ -141,7 +141,7 @@ Archived:
 
 </process>
 
-<success_criteria>
+<success-criteria>
 
 - [ ] All completed milestones without existing phase archives identified
 - [ ] Phase membership determined from archived ROADMAP snapshots
@@ -149,4 +149,4 @@ Archived:
 - [ ] Phase directories moved to `.planning/milestones/v{X.Y}-phases/`
 - [ ] Changes committed
 
-</success_criteria>
+</success-criteria>

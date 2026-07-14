@@ -2,14 +2,14 @@
 Verify threat mitigations for a completed phase. Confirm PLAN.md threat register dispositions are resolved. Update SECURITY.md.
 </purpose>
 
-<required_reading>
+<required-reading>
 @~/.claude/get-shit-done/references/ui-brand.md
-</required_reading>
+</required-reading>
 
-<available_agent_types>
+<available-agent-types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
 - gsd-security-auditor — Verifies threat mitigation coverage
-</available_agent_types>
+</available-agent-types>
 
 <process>
 
@@ -48,7 +48,7 @@ SUMMARY_FILES=$(ls "${PHASE_DIR}"/*-SUMMARY.md 2>/dev/null)
 
 ### 2a. Read Phase Artifacts
 
-Read PLAN.md — extract `<threat_model>` block: trust boundaries, STRIDE register (`threat_id`, `category`, `component`, `disposition`, `mitigation_plan`).
+Read PLAN.md — extract `<threat-model>` block: trust boundaries, STRIDE register (`threat_id`, `category`, `component`, `disposition`, `mitigation_plan`).
 
 ### 2b. Read Summary Threat Flags
 
@@ -62,10 +62,10 @@ Per threat: `{ threat_id, category, component, disposition, mitigation_pattern, 
 
 Classify each threat:
 
-| Status | Criteria |
-|--------|----------|
+| Status | Criteria                                                                           |
+| ------ | ---------------------------------------------------------------------------------- |
 | CLOSED | mitigation found OR accepted risk documented in SECURITY.md OR transfer documented |
-| OPEN | none of the above |
+| OPEN   | none of the above                                                                  |
 
 Build: `{ threat_id, category, component, disposition, status, evidence }`
 
@@ -74,17 +74,18 @@ If `threats_open: 0` → skip to Step 6 directly.
 ## 4. Present Threat Plan
 
 Call AskUserQuestion with threat table and options:
+
 1. "Verify all open threats" → Step 5
-2. "Accept all open — document in accepted risks log" → add to SECURITY.md accepted risks, set all CLOSED, Step 6
-3. "Cancel" → exit
+1. "Accept all open — document in accepted risks log" → add to SECURITY.md accepted risks, set all CLOSED, Step 6
+1. "Cancel" → exit
 
 ## 5. Spawn gsd-security-auditor
 
 ```
 Task(
   prompt="Read ~/.claude/agents/gsd-security-auditor.md for instructions.\n\n" +
-    "<files_to_read>{PLAN, SUMMARY, impl files, SECURITY.md}</files_to_read>" +
-    "<threat_register>{threat register}</threat_register>" +
+    "<files-to-read>{PLAN, SUMMARY, impl files, SECURITY.md}</files-to-read>" +
+    "<threat-register>{threat register}</threat-register>" +
     "<config>asvs_level: {SECURITY_ASVS}, block_on: {SECURITY_BLOCK_ON}</config>" +
     "<constraints>Never modify implementation files. Verify mitigations exist — do not scan for new threats. Escalate implementation gaps.</constraints>" +
     "${AGENT_SKILLS_AUDITOR}",
@@ -95,6 +96,7 @@ Task(
 ```
 
 Handle return:
+
 - `## SECURED` → record closures → Step 6
 - `## OPEN_THREATS` → record closed + open, present user with accept/block choice → Step 6
 - `## ESCALATE` → present to user → Step 6
@@ -102,11 +104,13 @@ Handle return:
 ## 6. Write/Update SECURITY.md
 
 **State B (create):**
+
 1. Read template from `~/.claude/get-shit-done/templates/SECURITY.md`
-2. Fill: frontmatter, threat register, accepted risks, audit trail
-3. Write to `${PHASE_DIR}/${PADDED_PHASE}-SECURITY.md`
+1. Fill: frontmatter, threat register, accepted risks, audit trail
+1. Write to `${PHASE_DIR}/${PADDED_PHASE}-SECURITY.md`
 
 **State A (update):**
+
 1. Update threat register statuses, append to audit trail:
 
 ```markdown
@@ -138,6 +142,7 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs(phase-${PHASE}
 ## 8. Results + Routing
 
 **Secured (threats_open: 0):**
+
 ```
 GSD > PHASE {N} THREAT-SECURE
 threats_open: 0 — all threats have dispositions.
@@ -149,7 +154,7 @@ Display `/clear` reminder.
 
 </process>
 
-<success_criteria>
+<success-criteria>
 - [ ] Security enforcement checked — exit if false
 - [ ] Input state detected (A/B/C) — state C exits cleanly
 - [ ] PLAN.md threat model parsed, register built
@@ -161,4 +166,4 @@ Display `/clear` reminder.
 - [ ] SECURITY.md created or updated
 - [ ] threats_open > 0 BLOCKS advancement (no next-phase routing emitted)
 - [ ] Results with routing presented on success
-</success_criteria>
+</success-criteria>

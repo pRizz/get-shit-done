@@ -144,6 +144,7 @@ BASE_ARGS="$ARGUMENTS"
 ```bash
 Skill(skill="gsd-discuss-phase", args="${BASE_ARGS} --yolo --chain --lifecycle-id ${PHASE_LIFECYCLE_ID} --lifecycle-mode yolo")
 ```
+
 Then continue to inspect_single_phase_result.
 </step>
 
@@ -162,6 +163,7 @@ Parse from `INIT`: `milestone_version`, `milestone_name`, `phase_count`, `comple
 Parse from `ROADMAP`: `phases[]`.
 
 Use the same filtering rules as `gsd-autonomous`:
+
 - keep phases where `disk_status !== "complete"` OR `roadmap_complete === false`
 - if `--from N` is present, filter out phases below N
 - if `--to N` is present, filter out phases above N
@@ -222,6 +224,7 @@ VERIFY_STATUS=$(grep "^status:" "${phase_dir}"/*-VERIFICATION.md 2>/dev/null | h
 **If `VERIFY_STATUS` is not `passed`:**
 
 Display:
+
 ```
 Phase ${PHASE}: verification status is ${VERIFY_STATUS:-unknown}. Skipping commit/push.
 ```
@@ -237,6 +240,7 @@ LIFECYCLE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" verify lifecycl
 ```
 
 If `valid` is `false`, display:
+
 ```
 Phase ${PHASE}: lifecycle validation failed. Skipping commit/push.
 
@@ -281,14 +285,16 @@ git push --set-upstream origin "${CURRENT_BRANCH}"
 ```
 
 Display:
+
 ```
 Phase ${phase_number} pushed from ${CURRENT_BRANCH}.
 ```
+
 </step>
 
 </process>
 
-<success_criteria>
+<success-criteria>
 - Explicit single-phase routing still works unchanged
 - No-argument routing auto-selects the current incomplete phase or next pending phase
 - Auto-selected previews explain why the phase was chosen
@@ -299,4 +305,4 @@ Phase ${phase_number} pushed from ${CURRENT_BRANCH}.
 - Dirty trees receive a deterministic phase-scoped final commit before push
 - Existing upstream is preferred; otherwise upstream is created on `origin`
 - Strict push never creates or switches to a different branch during finalization
-</success_criteria>
+</success-criteria>

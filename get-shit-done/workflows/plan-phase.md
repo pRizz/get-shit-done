@@ -2,7 +2,7 @@
 Create executable phase prompts (PLAN.md files) for a roadmap phase with integrated research and verification. Default flow: Research (if needed) -> Plan -> Verify -> Done. Orchestrates gsd-phase-researcher, gsd-planner, and gsd-plan-checker agents with a revision loop (max 3 iterations).
 </purpose>
 
-<required_reading>
+<required-reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
 
 @~/.claude/get-shit-done/references/ui-brand.md
@@ -10,14 +10,14 @@ Read all files referenced by the invoking prompt's execution_context before star
 @~/.claude/get-shit-done/references/gate-prompts.md
 @~/.claude/get-shit-done/references/agent-contracts.md
 @~/.claude/get-shit-done/references/gates.md
-</required_reading>
+</required-reading>
 
-<available_agent_types>
+<available-agent-types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
 - gsd-phase-researcher — Researches technical approaches for a phase
 - gsd-planner — Creates detailed plans from phase scope
 - gsd-plan-checker — Reviews plan quality before execution
-</available_agent_types>
+</available-agent-types>
 
 <process>
 
@@ -40,7 +40,7 @@ Parse JSON for: `researcher_model`, `planner_model`, `checker_model`, `research_
 
 **If `response_language` is set:** Include `response_language: {value}` in all spawned subagent prompts so any user-facing output stays in the configured language.
 
-**File paths (for <files_to_read> blocks):** `state_path`, `roadmap_path`, `requirements_path`, `context_path`, `research_path`, `verification_path`, `uat_path`, `reviews_path`. These are null if files don't exist.
+**File paths (for <files-to-read> blocks):** `state_path`, `roadmap_path`, `requirements_path`, `context_path`, `research_path`, `verification_path`, `uat_path`, `reviews_path`. These are null if files don't exist.
 
 **If `planning_exists` is false:** Error — run `/gsd-new-project` first.
 
@@ -98,6 +98,7 @@ fi
 **If no phase number:** Detect next unplanned phase from roadmap.
 
 **If `phase_found` is false:** Validate phase exists in ROADMAP.md. If valid, create the directory using `phase_slug` and `padded_phase` from init:
+
 ```bash
 mkdir -p ".planning/phases/${padded_phase}-${phase_slug}"
 ```
@@ -113,6 +114,7 @@ mkdir -p ".planning/phases/${padded_phase}-${phase_slug}"
 **If `--reviews` AND `has_reviews` is false (no REVIEWS.md in phase dir):**
 
 Error:
+
 ```
 No REVIEWS.md found for Phase {N}. Run reviews first:
 
@@ -120,6 +122,7 @@ No REVIEWS.md found for Phase {N}. Run reviews first:
 
 Then re-run /gsd-plan-phase {N} --reviews
 ```
+
 Exit workflow.
 
 ## 3. Validate Phase
@@ -137,6 +140,7 @@ PHASE_INFO=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" roadmap get-ph
 **If `--prd <filepath>` provided:**
 
 1. Read the PRD file:
+
 ```bash
 PRD_CONTENT=$(cat "$PRD_FILE" 2>/dev/null)
 if [ -z "$PRD_CONTENT" ]; then
@@ -146,6 +150,7 @@ fi
 ```
 
 2. Display banner:
+
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  GSD ► PRD EXPRESS PATH
@@ -156,13 +161,15 @@ Generating CONTEXT.md from requirements...
 ```
 
 3. Parse the PRD content and generate CONTEXT.md. The orchestrator should:
+
    - Extract all requirements, user stories, acceptance criteria, and constraints from the PRD
    - Map each to a locked decision (everything in the PRD is treated as a locked decision)
    - Identify any areas the PRD doesn't cover and mark as "Claude's Discretion"
    - **Extract canonical refs** from ROADMAP.md for this phase, plus any specs/ADRs referenced in the PRD — expand to full file paths (MANDATORY)
    - Create CONTEXT.md in the phase directory
 
-4. Write CONTEXT.md:
+1. Write CONTEXT.md:
+
 ```markdown
 ---
 generated_by: gsd-plan-phase
@@ -196,7 +203,7 @@ generated_at: ${NOW_TS}
 
 </decisions>
 
-<canonical_refs>
+<canonical-refs>
 ## Canonical References
 
 **Downstream agents MUST read these before planning or implementing.**
@@ -209,7 +216,7 @@ Use full relative paths. Group by topic area.]
 
 [If no external specs: "No external specs — requirements fully captured in decisions above"]
 
-</canonical_refs>
+</canonical-refs>
 
 <specifics>
 ## Specific Ideas
@@ -233,6 +240,7 @@ Use full relative paths. Group by topic area.]
 ```
 
 5. Commit:
+
 ```bash
 node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs(${padded_phase}): generate context from PRD" --files "${phase_dir}/${padded_phase}-CONTEXT.md"
 ```
@@ -252,11 +260,13 @@ If `context_path` is not null, display: `Using phase context from: ${context_pat
 **If `context_path` is null (no CONTEXT.md exists):**
 
 Read discuss mode for context gate label:
+
 ```bash
 DISCUSS_MODE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.discuss_mode 2>/dev/null || echo "discuss")
 ```
 
 If `TEXT_MODE` is true, present as a plain-text numbered list:
+
 ```
 No CONTEXT.md found for Phase {X}. Plans will use research and requirements only — your design preferences won't be included.
 
@@ -270,19 +280,21 @@ Enter number:
 ```
 
 Otherwise use AskUserQuestion:
+
 - header: "No context"
 - question: "No CONTEXT.md found for Phase {X}. Plans will use research and requirements only — your design preferences won't be included. Continue or capture context first?"
 - options:
   - "Continue without context" — Plan using research + requirements only
-  If `DISCUSS_MODE` is `"assumptions"`:
+    If `DISCUSS_MODE` is `"assumptions"`:
   - "Gather context (assumptions mode)" — Analyze codebase and surface assumptions before planning
-  If `DISCUSS_MODE` is `"discuss"` (or unset):
+    If `DISCUSS_MODE` is `"discuss"` (or unset):
   - "Run discuss-phase first" — Capture design decisions before planning
 
 If "Continue without context":
+
 - Set `PHASE_LIFECYCLE_MODE="direct-fallback"`
 - Proceed to step 5
-If "Run discuss-phase first":
+  If "Run discuss-phase first":
   **IMPORTANT:** Do NOT invoke discuss-phase as a nested Skill/Task call — AskUserQuestion
   does not work correctly in nested subcontexts (#1009). Instead, display the command
   and exit so the user runs it as a top-level command:
@@ -305,6 +317,7 @@ If "Run discuss-phase first":
 Ask the user whether to research, with a contextual recommendation based on the phase:
 
 If `TEXT_MODE` is true, present as a plain-text numbered list:
+
 ```
 Research before planning Phase {X}: {phase_name}?
 
@@ -315,6 +328,7 @@ Enter number:
 ```
 
 Otherwise use AskUserQuestion:
+
 ```
 AskUserQuestion([
   {
@@ -334,6 +348,7 @@ If user selects "Skip research": skip to step 6.
 **If `--auto` and `research_enabled` is false:** Skip research silently (preserves automated behavior).
 
 Display banner:
+
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  GSD ► RESEARCHING PHASE {X}
@@ -356,21 +371,21 @@ Research how to implement Phase {phase_number}: {phase_name}
 Answer: "What do I need to know to PLAN this phase well?"
 </objective>
 
-<files_to_read>
+<files-to-read>
 - {context_path} (USER DECISIONS from /gsd-discuss-phase)
 - {requirements_path} (Project requirements)
 - {state_path} (Project decisions and history)
-</files_to_read>
+</files-to-read>
 
 ${AGENT_SKILLS_RESEARCHER}
 
-<additional_context>
+<additional-context>
 **Phase description:** {phase_description}
 **Phase requirement IDs (MUST address):** {phase_req_ids}
 
 **Project instructions:** Prefer the root project instruction file resolved during preflight (`./AGENTS.md` first, `./CLAUDE.md` fallback). If neither file exists, warn and continue without repo-specific rules. Follow project-specific guidelines from whichever file exists.
 **Project skills:** Check .claude/skills/ or .agents/skills/ directory (if either exists) — read SKILL.md files, research should account for project skill patterns
-</additional_context>
+</additional-context>
 
 <output>
 Write to: {phase_dir}/{phase_num}-RESEARCH.md
@@ -398,6 +413,7 @@ Skip if `nyquist_validation_enabled` is false OR `research_enabled` is false.
 If `research_enabled` is false and `nyquist_validation_enabled` is true: warn "Nyquist validation enabled but research disabled — VALIDATION.md cannot be created without RESEARCH.md. Plans will lack validation requirements (Dimension 8)." Continue to step 6.
 
 **But Nyquist is not applicable for this run** when all of the following are true:
+
 - `research_enabled` is false
 - `has_research` is false
 - no `--research` flag was provided
@@ -409,15 +425,18 @@ grep -l "## Validation Architecture" "${PHASE_DIR}"/*-RESEARCH.md 2>/dev/null ||
 ```
 
 **If found:**
+
 1. Read template: `~/.claude/get-shit-done/templates/VALIDATION.md`
-2. Write to `${PHASE_DIR}/${PADDED_PHASE}-VALIDATION.md` (use Write tool)
-3. Fill frontmatter: `{N}` → phase number, `{phase-slug}` → slug, `{date}` → current date
-4. Verify:
+1. Write to `${PHASE_DIR}/${PADDED_PHASE}-VALIDATION.md` (use Write tool)
+1. Fill frontmatter: `{N}` → phase number, `{phase-slug}` → slug, `{date}` → current date
+1. Verify:
+
 ```bash
 test -f "${PHASE_DIR}/${PADDED_PHASE}-VALIDATION.md" && echo "VALIDATION_CREATED=true" || echo "VALIDATION_CREATED=false"
 ```
+
 5. If `VALIDATION_CREATED=false`: STOP — do not proceed to Step 6
-6. If `commit_docs`: `commit "docs(phase-${PHASE}): add validation strategy"`
+1. If `commit_docs`: `commit "docs(phase-${PHASE}): add validation strategy"`
 
 **If not found:** Warn and continue — plans may fail Dimension 8.
 
@@ -440,7 +459,7 @@ SECURITY_BLOCK=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get
  GSD ► SECURITY THREAT MODEL REQUIRED (ASVS L{SECURITY_ASVS})
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Each PLAN.md must include a <threat_model> block.
+Each PLAN.md must include a <threat-model> block.
 Block on: {SECURITY_BLOCK} severity threats.
 Opt out: set security_enforcement: false in .planning/config.json
 ```
@@ -469,6 +488,7 @@ HAS_UI=$?
 **If `HAS_UI` is 0 (frontend indicators found):**
 
 Check for existing UI-SPEC:
+
 ```bash
 UI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-UI-SPEC.md 2>/dev/null | head -1)
 ```
@@ -478,6 +498,7 @@ UI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-UI-SPEC.md 2>/dev/null | head -1)
 **If UI-SPEC.md missing AND `UI_GATE_CFG` is `true`:**
 
 Read auto-chain state:
+
 ```bash
 AUTO_CHAIN=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow._auto_chain_active 2>/dev/null || echo "false")
 ```
@@ -485,19 +506,24 @@ AUTO_CHAIN=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get wor
 **If `AUTO_CHAIN` is `true` (running inside a `--chain` or `--auto` pipeline):**
 
 Auto-generate UI-SPEC without prompting:
+
 ```
 Skill(skill="gsd-ui-phase", args="${PHASE} --auto ${GSD_WS}")
 ```
+
 After `gsd-ui-phase` returns, re-read:
+
 ```bash
 UI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-UI-SPEC.md 2>/dev/null | head -1)
 UI_SPEC_PATH="${UI_SPEC_FILE}"
 ```
+
 Continue to step 6.
 
 **If `AUTO_CHAIN` is `false` (manual invocation):**
 
 If `TEXT_MODE` is true, present as a plain-text numbered list:
+
 ```
 Phase {N} has frontend indicators but no UI-SPEC.md. Generate a design contract before planning?
 
@@ -509,6 +535,7 @@ Enter number:
 ```
 
 Otherwise use AskUserQuestion:
+
 - header: "UI Design Contract"
 - question: "Phase {N} has frontend indicators but no UI-SPEC.md. Generate a design contract before planning?"
 - options:
@@ -530,13 +557,13 @@ PHASE_SECTION=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" roadmap get
 
 Scan `PHASE_SECTION`, `CONTEXT.md` (if loaded), and `RESEARCH.md` (if exists) for file paths matching these ORM patterns:
 
-| ORM | File Patterns |
-|-----|--------------|
-| Payload CMS | `src/collections/**/*.ts`, `src/globals/**/*.ts` |
-| Prisma | `prisma/schema.prisma`, `prisma/schema/*.prisma` |
-| Drizzle | `drizzle/schema.ts`, `src/db/schema.ts`, `drizzle/*.ts` |
-| Supabase | `supabase/migrations/*.sql` |
-| TypeORM | `src/entities/**/*.ts`, `src/migrations/**/*.ts` |
+| ORM         | File Patterns                                           |
+| ----------- | ------------------------------------------------------- |
+| Payload CMS | `src/collections/**/*.ts`, `src/globals/**/*.ts`        |
+| Prisma      | `prisma/schema.prisma`, `prisma/schema/*.prisma`        |
+| Drizzle     | `drizzle/schema.ts`, `src/db/schema.ts`, `drizzle/*.ts` |
+| Supabase    | `supabase/migrations/*.sql`                             |
+| TypeORM     | `src/entities/**/*.ts`, `src/migrations/**/*.ts`        |
 
 Also check if any existing PLAN.md files for this phase already reference these file patterns in `files_modified`.
 
@@ -546,18 +573,18 @@ Set `SCHEMA_PUSH_REQUIRED=true` and `SCHEMA_ORM={detected_orm}`.
 
 Determine the push command for the detected ORM:
 
-| ORM | Push Command | Non-TTY Workaround |
-|-----|-------------|-------------------|
-| Payload CMS | `npx payload migrate` | `CI=true PAYLOAD_MIGRATING=true npx payload migrate` |
-| Prisma | `npx prisma db push` | `npx prisma db push --accept-data-loss` (if destructive) |
-| Drizzle | `npx drizzle-kit push` | `npx drizzle-kit push` |
-| Supabase | `supabase db push` | Set `SUPABASE_ACCESS_TOKEN` env var |
-| TypeORM | `npx typeorm migration:run` | `npx typeorm migration:run -d src/data-source.ts` |
+| ORM         | Push Command                | Non-TTY Workaround                                       |
+| ----------- | --------------------------- | -------------------------------------------------------- |
+| Payload CMS | `npx payload migrate`       | `CI=true PAYLOAD_MIGRATING=true npx payload migrate`     |
+| Prisma      | `npx prisma db push`        | `npx prisma db push --accept-data-loss` (if destructive) |
+| Drizzle     | `npx drizzle-kit push`      | `npx drizzle-kit push`                                   |
+| Supabase    | `supabase db push`          | Set `SUPABASE_ACCESS_TOKEN` env var                      |
+| TypeORM     | `npx typeorm migration:run` | `npx typeorm migration:run -d src/data-source.ts`        |
 
 Inject the following into the planner prompt (step 8) as an additional constraint:
 
 ```markdown
-<schema_push_requirement>
+<schema-push-requirement>
 **[BLOCKING] Schema Push Required**
 
 This phase modifies schema-relevant files ({detected_files}). The planner MUST include
@@ -573,7 +600,7 @@ modifications are complete but BEFORE verification.
 This task is mandatory — the phase CANNOT pass verification without it. Build and
 type checks will pass without the push (types come from config, not the live database),
 creating a false-positive verification state.
-</schema_push_requirement>
+</schema-push-requirement>
 ```
 
 Display: `Schema files detected ({SCHEMA_ORM}) — [BLOCKING] push task will be injected into plans`
@@ -611,6 +638,7 @@ REVIEWS_PATH=$(_gsd_field "$INIT" reviews_path)
 Skip if `nyquist_validation_enabled` is false OR `research_enabled` is false.
 
 Also skip if all of the following are true:
+
 - `research_enabled` is false
 - `has_research` is false
 - no `--research` flag was provided
@@ -622,16 +650,18 @@ VALIDATION_EXISTS=$(ls "${PHASE_DIR}"/*-VALIDATION.md 2>/dev/null | head -1)
 ```
 
 If missing and Nyquist is still enabled/applicable — ask user:
+
 1. Re-run: `/gsd-plan-phase {PHASE} --research ${GSD_WS}`
-2. Disable Nyquist with the exact command:
+1. Disable Nyquist with the exact command:
    `node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-set workflow.nyquist_validation false`
-3. Continue anyway (plans fail Dimension 8)
+1. Continue anyway (plans fail Dimension 8)
 
 Proceed to Step 8 only if user selects 2 or 3.
 
 ## 8. Spawn gsd-planner Agent
 
 Display banner:
+
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  GSD ► PLANNING PHASE {X}
@@ -643,11 +673,11 @@ Display banner:
 Planner prompt:
 
 ```markdown
-<planning_context>
+<planning-context>
 **Phase:** {phase_number}
 **Mode:** {standard | gap_closure | reviews}
 
-<files_to_read>
+<files-to-read>
 - {state_path} (Project State)
 - {roadmap_path} (Roadmap)
 - {requirements_path} (Requirements)
@@ -662,7 +692,7 @@ ${CONTEXT_WINDOW >= 500000 ? `
 - Prior phase CONTEXT.md files (locked decisions from earlier phases — maintain consistency)
 - Prior phase SUMMARY.md files (what was actually built — reuse patterns, avoid duplication)
 ` : ''}
-</files_to_read>
+</files-to-read>
 
 ${AGENT_SKILLS_PLANNER}
 
@@ -671,27 +701,27 @@ ${AGENT_SKILLS_PLANNER}
 **Project instructions:** Prefer the root project instruction file resolved during preflight (`./AGENTS.md` first, `./CLAUDE.md` fallback). If neither file exists, warn and continue without repo-specific rules. Follow project-specific guidelines from whichever file exists.
 **Project skills:** Check .claude/skills/ or .agents/skills/ directory (if either exists) — read SKILL.md files, plans should account for project skill rules
 
-</planning_context>
+</planning-context>
 
-<downstream_consumer>
+<downstream-consumer>
 Output consumed by /gsd-execute-phase. Plans need:
 - Frontmatter (wave, depends_on, files_modified, autonomous)
 - Tasks in XML format with read_first and acceptance_criteria fields (MANDATORY on every task)
 - Verification criteria
 - must_haves for goal-backward verification
-</downstream_consumer>
+</downstream-consumer>
 
-<deep_work_rules>
+<deep-work-rules>
 ## Anti-Shallow Execution Rules (MANDATORY)
 
 Every task MUST include these fields — they are NOT optional:
 
-1. **`<read_first>`** — Files the executor MUST read before touching anything. Always include:
+1. **`<read-first>`** — Files the executor MUST read before touching anything. Always include:
    - The file being modified (so executor sees current state, not assumptions)
    - Any "source of truth" file referenced in CONTEXT.md (reference implementations, existing patterns, config files, schemas)
    - Any file whose patterns, signatures, types, or conventions must be replicated or respected
 
-2. **`<acceptance_criteria>`** — Verifiable conditions that prove the task was done correctly. Rules:
+2. **`<acceptance-criteria>`** — Verifiable conditions that prove the task was done correctly. Rules:
    - Every criterion must be checkable with grep, file read, test command, or CLI output
    - NEVER use subjective language ("looks correct", "properly configured", "consistent with")
    - ALWAYS include exact strings, patterns, values, or command outputs that must be present
@@ -708,19 +738,19 @@ Every task MUST include these fields — they are NOT optional:
    - The executor should be able to complete the task from the action text alone, without needing to read CONTEXT.md or reference files (read_first is for verification, not discovery)
 
 **Why this matters:** Executor agents work from the plan text. Vague instructions like "update the config to match production" produce shallow one-line changes. Concrete instructions like "add DATABASE_URL=postgresql://... , set POOL_SIZE=20, add REDIS_URL=redis://..." produce complete work. The cost of verbose plans is far less than the cost of re-doing shallow execution.
-</deep_work_rules>
+</deep-work-rules>
 
-<quality_gate>
+<quality-gate>
 - [ ] PLAN.md files created in phase directory
 - [ ] Each plan has valid frontmatter
 - [ ] Tasks are specific and actionable
-- [ ] Every task has `<read_first>` with at least the file being modified
-- [ ] Every task has `<acceptance_criteria>` with grep-verifiable conditions
+- [ ] Every task has `<read-first>` with at least the file being modified
+- [ ] Every task has `<acceptance-criteria>` with grep-verifiable conditions
 - [ ] Every `<action>` contains concrete values (no "align X with Y" without specifying what)
 - [ ] Dependencies correctly identified
 - [ ] Waves assigned for parallel execution
 - [ ] must_haves derived from phase goal
-</quality_gate>
+</quality-gate>
 ```
 
 ```
@@ -744,11 +774,13 @@ Task(
 When the planner returns `## PHASE SPLIT RECOMMENDED`, it means the phase has too many decisions to implement at full fidelity within the plan budget. The planner proposes groupings.
 
 **Extract from planner return:**
+
 - Proposed sub-phases (e.g., "17a: processing core (D-01 to D-19)", "17b: billing + config UX (D-20 to D-27)")
 - Which D-XX decisions go in each sub-phase
 - Why the split is necessary (decision count, complexity estimate)
 
 **Present to user:**
+
 ```
 ## Phase {X} is too complex for full-fidelity implementation
 
@@ -774,6 +806,7 @@ Use AskUserQuestion with these 3 options.
 ## 10. Spawn gsd-plan-checker Agent
 
 Display banner:
+
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  GSD ► VERIFYING PLANS
@@ -785,17 +818,17 @@ Display banner:
 Checker prompt:
 
 ```markdown
-<verification_context>
+<verification-context>
 **Phase:** {phase_number}
 **Phase Goal:** {goal from ROADMAP}
 
-<files_to_read>
+<files-to-read>
 - {PHASE_DIR}/*-PLAN.md (Plans to verify)
 - {roadmap_path} (Roadmap)
 - {requirements_path} (Requirements)
 - {context_path} (USER DECISIONS from /gsd-discuss-phase)
 - {research_path} (Technical Research — includes Validation Architecture)
-</files_to_read>
+</files-to-read>
 
 ${AGENT_SKILLS_CHECKER}
 
@@ -803,12 +836,12 @@ ${AGENT_SKILLS_CHECKER}
 
 **Project instructions:** Prefer the root project instruction file resolved during preflight (`./AGENTS.md` first, `./CLAUDE.md` fallback). If neither file exists, warn and continue without repo-specific rules. Verify plans honor project guidelines from whichever file exists.
 **Project skills:** Check .claude/skills/ or .agents/skills/ directory (if either exists) — verify plans account for project skill rules
-</verification_context>
+</verification-context>
 
-<expected_output>
+<expected-output>
 - ## VERIFICATION PASSED — all checks pass
 - ## ISSUES FOUND — structured issue list
-</expected_output>
+</expected-output>
 ```
 
 ```
@@ -857,41 +890,41 @@ Parse issue count from checker return: count BLOCKER + WARNING entries in the YA
 Display: `Revision iteration {N}/3 -- {blocker_count} blockers, {warning_count} warnings`
 
 **Stall detection:** If `issue_count >= prev_issue_count`:
-  Display: `Revision loop stalled — issue count not decreasing ({issue_count} issues remain after {N} iterations)`
+Display: `Revision loop stalled — issue count not decreasing ({issue_count} issues remain after {N} iterations)`
 
-  **If `stall_reentry_count < 2`:**
-    Ask user:
-      Question: "Issues remain after {N} revision attempts with no progress. Proceed with current output?"
-      Options: "Proceed anyway" | "Adjust approach"
-    If "Proceed anyway": accept current plans and continue to step 13.
-    If "Adjust approach": increment `stall_reentry_count`, open freeform discussion, then re-enter step 8 (full replanning). Note: re-entry resets `iteration_count` and `prev_issue_count` but `stall_reentry_count` persists across re-entries and is capped at 2.
+**If `stall_reentry_count < 2`:**
+Ask user:
+Question: "Issues remain after {N} revision attempts with no progress. Proceed with current output?"
+Options: "Proceed anyway" | "Adjust approach"
+If "Proceed anyway": accept current plans and continue to step 13.
+If "Adjust approach": increment `stall_reentry_count`, open freeform discussion, then re-enter step 8 (full replanning). Note: re-entry resets `iteration_count` and `prev_issue_count` but `stall_reentry_count` persists across re-entries and is capped at 2.
 
-  **If `stall_reentry_count >= 2`:**
-    Display: `Stall persists after 2 re-planning attempts. The following issues could not be resolved automatically:`
-    List the remaining issues from the checker.
-    Suggest: "Consider resolving these issues manually or running `/gsd-debug` to investigate root causes."
-    Options: "Proceed anyway" | "Abandon"
-    If "Proceed anyway": accept current plans and continue to step 13.
-    If "Abandon": stop workflow.
+**If `stall_reentry_count >= 2`:**
+Display: `Stall persists after 2 re-planning attempts. The following issues could not be resolved automatically:`
+List the remaining issues from the checker.
+Suggest: "Consider resolving these issues manually or running `/gsd-debug` to investigate root causes."
+Options: "Proceed anyway" | "Abandon"
+If "Proceed anyway": accept current plans and continue to step 13.
+If "Abandon": stop workflow.
 
 Set `prev_issue_count = issue_count`.
 
 Revision prompt:
 
 ```markdown
-<revision_context>
+<revision-context>
 **Phase:** {phase_number}
 **Mode:** revision
 
-<files_to_read>
+<files-to-read>
 - {PHASE_DIR}/*-PLAN.md (Existing plans)
 - {context_path} (USER DECISIONS from /gsd-discuss-phase)
-</files_to_read>
+</files-to-read>
 
 ${AGENT_SKILLS_PLANNER}
 
 **Checker issues:** {structured_issues_from_checker}
-</revision_context>
+</revision-context>
 
 <instructions>
 Make targeted updates to address checker issues.
@@ -924,6 +957,7 @@ After plans pass the checker (or checker is skipped), verify that all phase requ
 **Skip if:** `phase_req_ids` is null or TBD (no requirements mapped to this phase).
 
 **Step 1: Extract requirement IDs claimed by plans**
+
 ```bash
 # Collect all requirement IDs from plan frontmatter
 PLAN_REQS=$(grep -h "requirements_addressed\|requirements:" ${PHASE_DIR}/*-PLAN.md 2>/dev/null | tr -d '[]' | tr ',' '\n' | sed 's/^[[:space:]]*//' | sort -u)
@@ -932,6 +966,7 @@ PLAN_REQS=$(grep -h "requirements_addressed\|requirements:" ${PHASE_DIR}/*-PLAN.
 **Step 2: Compare against phase requirements from ROADMAP**
 
 For each REQ-ID in `phase_req_ids`:
+
 - If REQ-ID appears in `PLAN_REQS` → covered ✓
 - If REQ-ID does NOT appear in any plan → uncovered ✗
 
@@ -942,12 +977,15 @@ Read CONTEXT.md `<decisions>` section. Extract feature/capability names. Check e
 **Step 4: Report**
 
 If all requirements covered and no dropped features:
+
 ```
 ✓ Requirements coverage: {N}/{N} REQ-IDs covered by plans
 ```
+
 → Proceed to step 14.
 
 If gaps found:
+
 ```
 ## ⚠ Requirements Coverage Gap
 
@@ -980,26 +1018,27 @@ This updates STATUS to "Ready to execute", sets the correct plan count, and time
 
 ## 14. Present Final Status
 
-Route to `<offer_next>` OR `auto_advance` depending on flags/config.
+Route to `<offer-next>` OR `auto_advance` depending on flags/config.
 
 ## 15. Auto-Advance Check
 
 Check for auto-advance trigger:
 
 1. Parse `--auto` and `--chain` flags from $ARGUMENTS
-2. **Sync chain flag with intent** — if user invoked manually (no `--auto` and no `--chain`), clear the ephemeral chain flag from any previous interrupted `--auto` chain. This does NOT touch `workflow.auto_advance` (the user's persistent settings preference):
+1. **Sync chain flag with intent** — if user invoked manually (no `--auto` and no `--chain`), clear the ephemeral chain flag from any previous interrupted `--auto` chain. This does NOT touch `workflow.auto_advance` (the user's persistent settings preference):
    ```bash
    if [[ ! "$ARGUMENTS" =~ --auto ]] && [[ ! "$ARGUMENTS" =~ --chain ]]; then
      node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-set workflow._auto_chain_active false 2>/dev/null
    fi
    ```
-3. Read both the chain flag and user preference:
+1. Read both the chain flag and user preference:
    ```bash
    AUTO_CHAIN=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow._auto_chain_active 2>/dev/null || echo "false")
    AUTO_CFG=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.auto_advance 2>/dev/null || echo "false")
    ```
 
 **If `--auto` or `--chain` flag present AND `AUTO_CHAIN` is not true:** Persist chain flag to config (handles direct invocation without prior discuss-phase):
+
 ```bash
 if ([[ "$ARGUMENTS" =~ --auto ]] || [[ "$ARGUMENTS" =~ --chain ]]) && [[ "$AUTO_CHAIN" != "true" ]]; then
   node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-set workflow._auto_chain_active true
@@ -1009,6 +1048,7 @@ fi
 **If `--auto` or `--chain` flag present OR `AUTO_CHAIN` is true OR `AUTO_CFG` is true:**
 
 Display banner:
+
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  GSD ► AUTO-ADVANCING TO EXECUTE
@@ -1018,6 +1058,7 @@ Plans ready. Launching execute-phase...
 ```
 
 Launch execute-phase using the Skill tool to avoid nested Task sessions (which cause runtime freezes due to deep agent nesting):
+
 ```
 Skill(skill="gsd-execute-phase", args="${PHASE} --auto --no-transition ${GSD_WS}")
 ```
@@ -1025,6 +1066,7 @@ Skill(skill="gsd-execute-phase", args="${PHASE} --auto --no-transition ${GSD_WS}
 The `--no-transition` flag tells execute-phase to return status after verification instead of chaining further. This keeps the auto-advance chain flat — each phase runs at the same nesting level rather than spawning deeper Task agents.
 
 **Handle execute-phase return:**
+
 - **PHASE COMPLETE** → Display final summary:
   ```
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1044,23 +1086,23 @@ The `--no-transition` flag tells execute-phase to return status after verificati
   ```
 
 **If neither `--auto` nor config enabled:**
-Route to `<offer_next>` (existing behavior).
+Route to `<offer-next>` (existing behavior).
 
 </process>
 
-<offer_next>
+<offer-next>
 Output this markdown directly (not as a code block):
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- GSD ► PHASE {X} PLANNED ✓
+GSD ► PHASE {X} PLANNED ✓
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 **Phase {X}: {Name}** — {N} plan(s) in {M} wave(s)
 
-| Wave | Plans | What it builds |
-|------|-------|----------------|
-| 1    | 01, 02 | [objectives] |
-| 2    | 03     | [objective]  |
+| Wave | Plans  | What it builds |
+| ---- | ------ | -------------- |
+| 1    | 01, 02 | [objectives]   |
+| 2    | 03     | [objective]    |
 
 Research: {Completed | Used existing | Skipped}
 Verification: {Passed | Passed with override | Skipped}
@@ -1078,39 +1120,42 @@ Verification: {Passed | Passed with override | Skipped}
 ───────────────────────────────────────────────────────────────
 
 **Also available:**
-- cat .planning/phases/{phase-dir}/*-PLAN.md — review plans
+
+- cat .planning/phases/{phase-dir}/\*-PLAN.md — review plans
 - /gsd-plan-phase {X} --research — re-research first
 - /gsd-review --phase {X} --all — peer review plans with external AIs
 - /gsd-plan-phase {X} --reviews — replan incorporating review feedback
 
 ───────────────────────────────────────────────────────────────
-</offer_next>
+</offer-next>
 
-<windows_troubleshooting>
+<windows-troubleshooting>
 **Windows users:** If plan-phase freezes during agent spawning (common on Windows due to
 stdio deadlocks with MCP servers — see Claude Code issue anthropics/claude-code#28126):
 
 1. **Force-kill:** Close the terminal (Ctrl+C may not work)
-2. **Clean up orphaned processes:**
+1. **Clean up orphaned processes:**
    ```powershell
    # Kill orphaned node processes from stale MCP servers
    Get-Process node -ErrorAction SilentlyContinue | Where-Object {$_.StartTime -lt (Get-Date).AddHours(-1)} | Stop-Process -Force
    ```
-3. **Clean up stale task directories:**
+1. **Clean up stale task directories:**
    ```powershell
    # Remove stale subagent task dirs (Claude Code never cleans these on crash)
    Remove-Item -Recurse -Force "$env:USERPROFILE\.claude\tasks\*" -ErrorAction SilentlyContinue
    ```
-4. **Reduce MCP server count:** Temporarily disable non-essential MCP servers in settings.json
-5. **Retry:** Restart Claude Code and run `/gsd-plan-phase` again
+1. **Reduce MCP server count:** Temporarily disable non-essential MCP servers in settings.json
+1. **Retry:** Restart Claude Code and run `/gsd-plan-phase` again
 
 If freezes persist, try `--skip-research` to reduce the agent chain from 3 to 2 agents:
+
 ```
 /gsd-plan-phase N --skip-research
 ```
-</windows_troubleshooting>
 
-<success_criteria>
+</windows-troubleshooting>
+
+<success-criteria>
 - [ ] .planning/ directory validated
 - [ ] Phase validated against roadmap
 - [ ] Phase directory created if needed
@@ -1124,4 +1169,4 @@ If freezes persist, try `--skip-research` to reduce the agent chain from 3 to 2 
 - [ ] Verification passed OR user override OR max iterations with user decision
 - [ ] User sees status between agent spawns
 - [ ] User knows next steps
-</success_criteria>
+</success-criteria>

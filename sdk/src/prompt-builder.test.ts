@@ -68,9 +68,9 @@ permissionMode: acceptEdits
 You are a GSD plan executor. You execute PLAN.md files atomically.
 </role>
 
-<execution_flow>
+<execution-flow>
 Some flow content
-</execution_flow>`;
+</execution-flow>`;
 
 // ─── parseAgentTools ─────────────────────────────────────────────────────────
 

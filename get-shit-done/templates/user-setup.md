@@ -4,11 +4,11 @@ Template for `.planning/phases/XX-name/{phase}-USER-SETUP.md` - human-required c
 
 **Purpose:** Document setup tasks that literally require human action - account creation, dashboard configuration, secret retrieval. Claude automates everything possible; this file captures only what remains.
 
----
+______________________________________________________________________
 
 ## File Template
 
-```markdown
+````markdown
 # Phase {X}: User Setup Required
 
 **Generated:** [YYYY-MM-DD]
@@ -47,15 +47,17 @@ After completing setup, verify with:
 
 ```bash
 # [Verification commands]
-```
+````
 
 Expected results:
+
 - [What success looks like]
 
----
+______________________________________________________________________
 
 **Once all items complete:** Mark status as "Complete" at top of file.
-```
+
+````
 
 ---
 
@@ -91,32 +93,33 @@ user_setup:
     local_dev:
       - "Run: stripe listen --forward-to localhost:3000/api/webhooks/stripe"
       - "Use the webhook secret from CLI output for local testing"
-```
+````
 
----
+______________________________________________________________________
 
 ## The Automation-First Rule
 
 **USER-SETUP.md contains ONLY what Claude literally cannot do.**
 
-| Claude CAN Do (not in USER-SETUP) | Claude CANNOT Do (→ USER-SETUP) |
-|-----------------------------------|--------------------------------|
-| `npm install stripe` | Create Stripe account |
-| Write webhook handler code | Get API keys from dashboard |
-| Create `.env.local` file structure | Copy actual secret values |
-| Run `stripe listen` | Authenticate Stripe CLI (browser OAuth) |
-| Configure package.json | Access external service dashboards |
-| Write any code | Retrieve secrets from third-party systems |
+| Claude CAN Do (not in USER-SETUP)  | Claude CANNOT Do (→ USER-SETUP)           |
+| ---------------------------------- | ----------------------------------------- |
+| `npm install stripe`               | Create Stripe account                     |
+| Write webhook handler code         | Get API keys from dashboard               |
+| Create `.env.local` file structure | Copy actual secret values                 |
+| Run `stripe listen`                | Authenticate Stripe CLI (browser OAuth)   |
+| Configure package.json             | Access external service dashboards        |
+| Write any code                     | Retrieve secrets from third-party systems |
 
 **The test:** "Does this require a human in a browser, accessing an account Claude doesn't have credentials for?"
+
 - Yes → USER-SETUP.md
 - No → Claude does it automatically
 
----
+______________________________________________________________________
 
 ## Service-Specific Examples
 
-<stripe_example>
+<stripe-example>
 ```markdown
 # Phase 10: User Setup Required
 
@@ -128,11 +131,11 @@ Complete these items for Stripe integration to function.
 
 ## Environment Variables
 
-| Status | Variable | Source | Add to |
-|--------|----------|--------|--------|
-| [ ] | `STRIPE_SECRET_KEY` | Stripe Dashboard → Developers → API keys → Secret key | `.env.local` |
-| [ ] | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe Dashboard → Developers → API keys → Publishable key | `.env.local` |
-| [ ] | `STRIPE_WEBHOOK_SECRET` | Stripe Dashboard → Developers → Webhooks → [endpoint] → Signing secret | `.env.local` |
+| Status | Variable                             | Source                                                                 | Add to       |
+| ------ | ------------------------------------ | ---------------------------------------------------------------------- | ------------ |
+| [ ]    | `STRIPE_SECRET_KEY`                  | Stripe Dashboard → Developers → API keys → Secret key                  | `.env.local` |
+| [ ]    | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe Dashboard → Developers → API keys → Publishable key             | `.env.local` |
+| [ ]    | `STRIPE_WEBHOOK_SECRET`              | Stripe Dashboard → Developers → Webhooks → [endpoint] → Signing secret | `.env.local` |
 
 ## Account Setup
 
@@ -143,6 +146,7 @@ Complete these items for Stripe integration to function.
 ## Dashboard Configuration
 
 - [ ] **Create webhook endpoint**
+
   - Location: Stripe Dashboard → Developers → Webhooks → Add endpoint
   - Endpoint URL: `https://[your-domain]/api/webhooks/stripe`
   - Events to send:
@@ -152,6 +156,7 @@ Complete these items for Stripe integration to function.
     - `customer.subscription.deleted`
 
 - [ ] **Create products and prices** (if using subscription tiers)
+
   - Location: Stripe Dashboard → Products → Add product
   - Create each subscription tier
   - Copy Price IDs to:
@@ -161,9 +166,11 @@ Complete these items for Stripe integration to function.
 ## Local Development
 
 For local webhook testing:
+
 ```bash
 stripe listen --forward-to localhost:3000/api/webhooks/stripe
 ```
+
 Use the webhook signing secret from CLI output (starts with `whsec_`).
 
 ## Verification
@@ -185,13 +192,14 @@ curl -X POST http://localhost:3000/api/webhooks/stripe \
 
 Expected: Build passes, webhook returns 400 (signature validation working).
 
----
+______________________________________________________________________
 
 **Once all items complete:** Mark status as "Complete" at top of file.
-```
-</stripe_example>
 
-<supabase_example>
+````
+</stripe-example>
+
+<supabase-example>
 ```markdown
 # Phase 2: User Setup Required
 
@@ -237,15 +245,16 @@ grep SUPABASE .env.local
 
 # Verify connection (run in project directory)
 npx supabase status
-```
+````
 
----
+______________________________________________________________________
 
 **Once all items complete:** Mark status as "Complete" at top of file.
-```
-</supabase_example>
 
-<sendgrid_example>
+````
+</supabase-example>
+
+<sendgrid-example>
 ```markdown
 # Phase 5: User Setup Required
 
@@ -292,13 +301,14 @@ grep SENDGRID .env.local
 curl -X POST http://localhost:3000/api/test-email \
   -H "Content-Type: application/json" \
   -d '{"to": "your@email.com"}'
-```
+````
 
----
+______________________________________________________________________
 
 **Once all items complete:** Mark status as "Complete" at top of file.
+
 ```
-</sendgrid_example>
+</sendgrid-example>
 
 ---
 
@@ -309,3 +319,4 @@ curl -X POST http://localhost:3000/api/test-email \
 **Naming:** `{phase}-USER-SETUP.md` matches the phase number pattern.
 **Status tracking:** User marks checkboxes and updates status line when complete.
 **Searchability:** `grep -r "USER-SETUP" .planning/` finds all phases with user requirements.
+```

@@ -53,7 +53,7 @@ describe('recommended and yolo wrapper commands', () => {
       const content = fs.readFileSync(path.join(COMMANDS_DIR, file), 'utf8');
       assert.ok(content.startsWith('---\nname:'), `${file} should start with frontmatter`);
       assert.ok(content.includes('description:'), `${file} should include description frontmatter`);
-      assert.ok(content.includes('<execution_context>'), `${file} should declare execution_context`);
+      assert.ok(content.includes('<execution-context>'), `${file} should declare execution_context`);
     });
   }
 

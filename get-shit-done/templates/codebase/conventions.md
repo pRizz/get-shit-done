@@ -4,7 +4,7 @@ Template for `.planning/codebase/CONVENTIONS.md` - captures coding style and pat
 
 **Purpose:** Document how code is written in this codebase. Prescriptive guide for Claude to match existing style.
 
----
+______________________________________________________________________
 
 ## File Template
 
@@ -130,7 +130,7 @@ Template for `.planning/codebase/CONVENTIONS.md` - captures coding style and pat
 *Update when patterns change*
 ```
 
-<good_examples>
+<good-examples>
 ```markdown
 # Coding Conventions
 
@@ -139,21 +139,25 @@ Template for `.planning/codebase/CONVENTIONS.md` - captures coding style and pat
 ## Naming Patterns
 
 **Files:**
+
 - kebab-case for all files (command-handler.ts, user-service.ts)
-- *.test.ts alongside source files
+- \*.test.ts alongside source files
 - index.ts for barrel exports
 
 **Functions:**
+
 - camelCase for all functions
 - No special prefix for async functions
 - handleEventName for event handlers (handleClick, handleSubmit)
 
 **Variables:**
+
 - camelCase for variables
 - UPPER_SNAKE_CASE for constants (MAX_RETRIES, API_BASE_URL)
 - No underscore prefix (no private marker in TS)
 
 **Types:**
+
 - PascalCase for interfaces, no I prefix (User, not IUser)
 - PascalCase for type aliases (UserConfig, ResponseData)
 - PascalCase for enum names, UPPER_CASE for values (Status.PENDING)
@@ -161,6 +165,7 @@ Template for `.planning/codebase/CONVENTIONS.md` - captures coding style and pat
 ## Code Style
 
 **Formatting:**
+
 - Prettier with .prettierrc
 - 100 character line length
 - Single quotes for strings
@@ -168,6 +173,7 @@ Template for `.planning/codebase/CONVENTIONS.md` - captures coding style and pat
 - 2 space indentation
 
 **Linting:**
+
 - ESLint with eslint.config.js
 - Extends @typescript-eslint/recommended
 - No console.log in production code (use logger)
@@ -176,28 +182,33 @@ Template for `.planning/codebase/CONVENTIONS.md` - captures coding style and pat
 ## Import Organization
 
 **Order:**
+
 1. External packages (react, express, commander)
-2. Internal modules (@/lib, @/services)
-3. Relative imports (./utils, ../types)
-4. Type imports (import type { User })
+1. Internal modules (@/lib, @/services)
+1. Relative imports (./utils, ../types)
+1. Type imports (import type { User })
 
 **Grouping:**
+
 - Blank line between groups
 - Alphabetical within each group
 - Type imports last within each group
 
 **Path Aliases:**
+
 - @/ maps to src/
 - No other aliases defined
 
 ## Error Handling
 
 **Patterns:**
+
 - Throw errors, catch at boundaries (route handlers, main functions)
 - Extend Error class for custom errors (ValidationError, NotFoundError)
 - Async functions use try/catch, no .catch() chains
 
 **Error Types:**
+
 - Throw on invalid input, missing dependencies, invariant violations
 - Log error with context before throwing: logger.error({ err, userId }, 'Failed to process')
 - Include cause in error message: new Error('Failed to X', { cause: originalError })
@@ -205,10 +216,12 @@ Template for `.planning/codebase/CONVENTIONS.md` - captures coding style and pat
 ## Logging
 
 **Framework:**
+
 - pino logger instance exported from lib/logger.ts
 - Levels: debug, info, warn, error (no trace)
 
 **Patterns:**
+
 - Structured logging with context: logger.info({ userId, action }, 'User action')
 - Log at service boundaries, not in utility functions
 - Log state transitions, external API calls, errors
@@ -217,55 +230,64 @@ Template for `.planning/codebase/CONVENTIONS.md` - captures coding style and pat
 ## Comments
 
 **When to Comment:**
+
 - Explain why, not what: // Retry 3 times because API has transient failures
 - Document business rules: // Users must verify email within 24 hours
 - Explain non-obvious algorithms or workarounds
 - Avoid obvious comments: // set count to 0
 
 **JSDoc/TSDoc:**
+
 - Required for public API functions
 - Optional for internal functions if signature is self-explanatory
 - Use @param, @returns, @throws tags
 
 **TODO Comments:**
+
 - Format: // TODO: description (no username, using git blame)
 - Link to issue if exists: // TODO: Fix race condition (issue #123)
 
 ## Function Design
 
 **Size:**
+
 - Keep under 50 lines
 - Extract helpers for complex logic
 - One level of abstraction per function
 
 **Parameters:**
+
 - Max 3 parameters
 - Use options object for 4+ parameters: function create(options: CreateOptions)
 - Destructure in parameter list: function process({ id, name }: ProcessParams)
 
 **Return Values:**
+
 - Explicit return statements
 - Return early for guard clauses
-- Use Result<T, E> type for expected failures
+- Use Result\<T, E> type for expected failures
 
 ## Module Design
 
 **Exports:**
+
 - Named exports preferred
 - Default exports only for React components
 - Export public API from index.ts barrel files
 
 **Barrel Files:**
+
 - index.ts re-exports public API
 - Keep internal helpers private (don't export from index)
 - Avoid circular dependencies (import from specific files if needed)
 
----
+______________________________________________________________________
 
 *Convention analysis: 2025-01-20*
 *Update when patterns change*
+
 ```
-</good_examples>
+</good-examples>
 
 <guidelines>
 **What belongs in CONVENTIONS.md:**
@@ -305,3 +327,4 @@ Template for `.planning/codebase/CONVENTIONS.md` - captures coding style and pat
 - Look for config files (.prettierrc, eslint.config.js)
 - Note patterns in imports, comments, function signatures
 </guidelines>
+```

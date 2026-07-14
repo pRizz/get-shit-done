@@ -14,7 +14,7 @@ npm install
 npm test
 ```
 
----
+______________________________________________________________________
 
 ## Types of Contributions
 
@@ -25,14 +25,15 @@ GSD accepts three types of contributions. Each type has a different process and 
 A fix corrects something that is broken, crashes, produces wrong output, or behaves contrary to documented behavior.
 
 **Process:**
+
 1. Open a [Bug Report issue](https://github.com/gsd-build/get-shit-done/issues/new?template=bug_report.yml) — fill it out completely.
-2. Wait for a maintainer to confirm it is a bug (label: `confirmed-bug`). For obvious, reproducible bugs this is typically fast.
-3. Fix it. Write a test that would have caught the bug.
-4. Open a PR using the [Fix PR template](.github/PULL_REQUEST_TEMPLATE/fix.md) — link the confirmed issue.
+1. Wait for a maintainer to confirm it is a bug (label: `confirmed-bug`). For obvious, reproducible bugs this is typically fast.
+1. Fix it. Write a test that would have caught the bug.
+1. Open a PR using the [Fix PR template](.github/PULL_REQUEST_TEMPLATE/fix.md) — link the confirmed issue.
 
 **Rejection reasons:** Not reproducible, works-as-designed, duplicate of an existing issue.
 
----
+______________________________________________________________________
 
 ### ⚡ Enhancement
 
@@ -41,14 +42,15 @@ An enhancement improves an existing feature — better output, faster execution,
 **The bar:** Enhancements must have a scoped written proposal approved by a maintainer before any code is written. A PR for an enhancement will be closed without review if the linked issue does not carry the `approved-enhancement` label.
 
 **Process:**
-1. Open an [Enhancement issue](https://github.com/gsd-build/get-shit-done/issues/new?template=enhancement.yml) with the full proposal.  The issue template requires: the problem being solved, the concrete benefit, the scope of changes, and alternatives considered.
-2. **Wait for maintainer approval.** A maintainer must label the issue `approved-enhancement` before you write a single line of code. Do not open a PR against an unapproved enhancement issue — it will be closed.
-3. Write the code. Keep the scope exactly as approved. If scope creep occurs, comment on the issue and get re-approval before continuing.
-4. Open a PR using the [Enhancement PR template](.github/PULL_REQUEST_TEMPLATE/enhancement.md) — link the approved issue.
+
+1. Open an [Enhancement issue](https://github.com/gsd-build/get-shit-done/issues/new?template=enhancement.yml) with the full proposal. The issue template requires: the problem being solved, the concrete benefit, the scope of changes, and alternatives considered.
+1. **Wait for maintainer approval.** A maintainer must label the issue `approved-enhancement` before you write a single line of code. Do not open a PR against an unapproved enhancement issue — it will be closed.
+1. Write the code. Keep the scope exactly as approved. If scope creep occurs, comment on the issue and get re-approval before continuing.
+1. Open a PR using the [Enhancement PR template](.github/PULL_REQUEST_TEMPLATE/enhancement.md) — link the approved issue.
 
 **Rejection reasons:** Issue not labeled `approved-enhancement`, scope exceeds what was approved, no written proposal, duplicate of existing behavior.
 
----
+______________________________________________________________________
 
 ### ✨ Feature
 
@@ -57,15 +59,16 @@ A feature adds something new — a new command, a new workflow, a new concept, a
 **The bar:** Features require a complete written specification approved by a maintainer before any code is written. A PR for a feature will be closed without review if the linked issue does not carry the `approved-feature` label. Incomplete specs are closed, not revised by maintainers.
 
 **Process:**
+
 1. **Discuss first** — check [Discussions](https://github.com/gsd-build/get-shit-done/discussions) to see if the idea has been raised. If it has and was declined, don't open a new issue.
-2. Open a [Feature Request issue](https://github.com/gsd-build/get-shit-done/issues/new?template=feature_request.yml) with the complete spec. The template requires: the solo-developer problem being solved, what is being added, full scope of affected files and systems, user stories, acceptance criteria, and assessment of maintenance burden.
-3. **Wait for maintainer approval.** A maintainer must label the issue `approved-feature` before you write a single line of code. Approval is not guaranteed — GSD is intentionally lean and many valid ideas are declined because they conflict with the project's design philosophy.
-4. Write the code. Implement exactly the approved spec. Changes to scope require re-approval.
-5. Open a PR using the [Feature PR template](.github/PULL_REQUEST_TEMPLATE/feature.md) — link the approved issue.
+1. Open a [Feature Request issue](https://github.com/gsd-build/get-shit-done/issues/new?template=feature_request.yml) with the complete spec. The template requires: the solo-developer problem being solved, what is being added, full scope of affected files and systems, user stories, acceptance criteria, and assessment of maintenance burden.
+1. **Wait for maintainer approval.** A maintainer must label the issue `approved-feature` before you write a single line of code. Approval is not guaranteed — GSD is intentionally lean and many valid ideas are declined because they conflict with the project's design philosophy.
+1. Write the code. Implement exactly the approved spec. Changes to scope require re-approval.
+1. Open a PR using the [Feature PR template](.github/PULL_REQUEST_TEMPLATE/feature.md) — link the approved issue.
 
 **Rejection reasons:** Issue not labeled `approved-feature`, spec is incomplete, scope exceeds what was approved, feature conflicts with GSD's solo-developer focus, maintenance burden too high.
 
----
+______________________________________________________________________
 
 ## The Issue-First Rule — No Exceptions
 
@@ -77,7 +80,7 @@ For **features**: open the issue, get `approved-feature`, then code.
 
 PRs that arrive without a properly-labeled linked issue are closed automatically. This is not a bureaucratic hurdle — it protects you from spending time on work that will be rejected, and it protects maintainers from reviewing code for changes that were never agreed to.
 
----
+______________________________________________________________________
 
 ## Pull Request Guidelines
 
@@ -162,13 +165,13 @@ Import helpers from `tests/helpers.cjs` instead of inlining temp directory creat
 const { createTempProject, createTempGitProject, createTempDir, cleanup, runGsdTools } = require('./helpers.cjs');
 ```
 
-| Helper | Creates | Use When |
-|--------|---------|----------|
-| `createTempProject(prefix?)` | tmpDir with `.planning/phases/` | Testing GSD tools that need planning structure |
-| `createTempGitProject(prefix?)` | Same + git init + initial commit | Testing git-dependent features |
-| `createTempDir(prefix?)` | Bare temp directory | Testing features that don't need `.planning/` |
-| `cleanup(tmpDir)` | Removes directory recursively | Always use in `afterEach` |
-| `runGsdTools(args, cwd, env?)` | Executes gsd-tools.cjs | Testing CLI commands |
+| Helper                          | Creates                          | Use When                                       |
+| ------------------------------- | -------------------------------- | ---------------------------------------------- |
+| `createTempProject(prefix?)`    | tmpDir with `.planning/phases/`  | Testing GSD tools that need planning structure |
+| `createTempGitProject(prefix?)` | Same + git init + initial commit | Testing git-dependent features                 |
+| `createTempDir(prefix?)`        | Bare temp directory              | Testing features that don't need `.planning/`  |
+| `cleanup(tmpDir)`               | Removes directory recursively    | Always use in `afterEach`                      |
+| `runGsdTools(args, cwd, env?)`  | Executes gsd-tools.cjs           | Testing CLI commands                           |
 
 ### Test Structure
 
@@ -232,17 +235,19 @@ const content = `
 
 **Node 22 is the minimum supported version.** Node 24 is the primary CI target. All tests must pass on both.
 
-| Version | Status |
-|---------|--------|
+| Version     | Status                                                                             |
+| ----------- | ---------------------------------------------------------------------------------- |
 | **Node 22** | Minimum required — Active LTS until October 2026, Maintenance LTS until April 2027 |
-| **Node 24** | Primary CI target — current Active LTS, all tests must pass |
-| Node 26 | Forward-compatible target — avoid deprecated APIs |
+| **Node 24** | Primary CI target — current Active LTS, all tests must pass                        |
+| Node 26     | Forward-compatible target — avoid deprecated APIs                                  |
 
 Do not use:
+
 - Deprecated APIs
 - APIs not available in Node 22
 
 Safe to use:
+
 - `node:test` — stable since Node 18, fully featured in 24
 - `describe`/`it`/`test` — all supported
 - `beforeEach`/`afterEach`/`before`/`after` — all supported

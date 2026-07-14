@@ -1,9 +1,9 @@
 # Referência de Ferramentas CLI
 
-Resumo em Português das ferramentas CLI do GSD.  
+Resumo em Português das ferramentas CLI do GSD.\
 Para API completa (assinaturas, argumentos e comportamento detalhado), consulte [CLI-TOOLS.md em inglês](../CLI-TOOLS.md).
 
----
+______________________________________________________________________
 
 ## Objetivo
 
@@ -53,7 +53,7 @@ As ferramentas CLI permitem que comandos e agentes do GSD executem ações padro
 - Registre saídas em arquivos canônicos de fase
 - Garanta que toda tarefa tenha critério claro de done/verify
 
----
+______________________________________________________________________
 
 ## Fluxo típico (programático)
 
@@ -66,7 +66,7 @@ Ler contexto do projeto
  -> retornar resumo para o orquestrador
 ```
 
----
+______________________________________________________________________
 
 > [!NOTE]
 > Este arquivo é um guia prático em Português para quem integra ou estende workflows. Para contratos estritos e detalhes técnicos completos, use o documento original em inglês.

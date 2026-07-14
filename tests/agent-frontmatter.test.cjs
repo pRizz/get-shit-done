@@ -152,9 +152,9 @@ describe('SPAWN: spawn type consistency', () => {
     );
   });
 
-  test('workflows spawning named agents have <available_agent_types> listing (#1357)', () => {
+  test('workflows spawning named agents have <available-agent-types> listing (#1357)', () => {
     // After /clear, Claude Code re-reads workflow instructions but loses agent
-    // context. Without an <available_agent_types> section, the orchestrator may
+    // context. Without an <available-agent-types> section, the orchestrator may
     // fall back to general-purpose, silently breaking agent capabilities.
     // PR #1139 added this to plan-phase and execute-phase but missed all other
     // workflows that spawn named GSD agents.
@@ -172,26 +172,26 @@ describe('SPAWN: spawn type consistency', () => {
 
         if (namedAgents.length === 0) continue;
 
-        // Workflow spawns named agents — must have <available_agent_types>
+        // Workflow spawns named agents — must have <available-agent-types>
         assert.ok(
-          content.includes('<available_agent_types>'),
+          content.includes('<available-agent-types>'),
           `${file} spawns named agents (${[...new Set(namedAgents)].join(', ')}) ` +
-          `but has no <available_agent_types> section — after /clear, the ` +
+          `but has no <available-agent-types> section — after /clear, the ` +
           `orchestrator may fall back to general-purpose (#1357)`
         );
 
         // Every spawned agent type must appear in the listing
         for (const agent of new Set(namedAgents)) {
           const agentTypesMatch = content.match(
-            /<available_agent_types>([\s\S]*?)<\/available_agent_types>/
+            /<available-agent-types>([\s\S]*?)<\/available-agent-types>/
           );
           assert.ok(
             agentTypesMatch,
-            `${file} has malformed <available_agent_types> section`
+            `${file} has malformed <available-agent-types> section`
           );
           assert.ok(
             agentTypesMatch[1].includes(agent),
-            `${file} spawns ${agent} but does not list it in <available_agent_types>`
+            `${file} spawns ${agent} but does not list it in <available-agent-types>`
           );
         }
       }

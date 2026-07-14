@@ -4,35 +4,38 @@
 
 ## 配置定义
 
-| 代理 | `quality` | `balanced` | `budget` |
-|-------|-----------|------------|----------|
-| gsd-planner | opus | opus | sonnet |
-| gsd-roadmapper | opus | sonnet | sonnet |
-| gsd-executor | opus | sonnet | sonnet |
-| gsd-phase-researcher | opus | sonnet | haiku |
-| gsd-project-researcher | opus | sonnet | haiku |
-| gsd-research-synthesizer | sonnet | sonnet | haiku |
-| gsd-debugger | opus | sonnet | sonnet |
-| gsd-codebase-mapper | sonnet | haiku | haiku |
-| gsd-verifier | sonnet | sonnet | haiku |
-| gsd-plan-checker | sonnet | sonnet | haiku |
-| gsd-integration-checker | sonnet | sonnet | haiku |
-| gsd-nyquist-auditor | sonnet | sonnet | haiku |
+| 代理                     | `quality` | `balanced` | `budget` |
+| ------------------------ | --------- | ---------- | -------- |
+| gsd-planner              | opus      | opus       | sonnet   |
+| gsd-roadmapper           | opus      | sonnet     | sonnet   |
+| gsd-executor             | opus      | sonnet     | sonnet   |
+| gsd-phase-researcher     | opus      | sonnet     | haiku    |
+| gsd-project-researcher   | opus      | sonnet     | haiku    |
+| gsd-research-synthesizer | sonnet    | sonnet     | haiku    |
+| gsd-debugger             | opus      | sonnet     | sonnet   |
+| gsd-codebase-mapper      | sonnet    | haiku      | haiku    |
+| gsd-verifier             | sonnet    | sonnet     | haiku    |
+| gsd-plan-checker         | sonnet    | sonnet     | haiku    |
+| gsd-integration-checker  | sonnet    | sonnet     | haiku    |
+| gsd-nyquist-auditor      | sonnet    | sonnet     | haiku    |
 
 ## 配置理念
 
 **quality** - 最大推理能力
+
 - 所有决策代理使用 Opus
 - 只读验证使用 Sonnet
 - 适用场景：有配额可用、关键架构工作
 
 **balanced**（默认）- 智能分配
+
 - 仅规划（架构决策发生的地方）使用 Opus
 - 执行和研究使用 Sonnet（遵循明确指令）
 - 验证使用 Sonnet（需要推理，不仅仅是模式匹配）
 - 适用场景：正常开发、质量与成本的良好平衡
 
 **budget** - 最小化 Opus 使用
+
 - 编写代码的使用 Sonnet
 - 研究和验证使用 Haiku
 - 适用场景：节省配额、大量工作、不太关键的阶段
@@ -69,6 +72,7 @@
 运行时：`/gsd-set-profile <profile>`
 
 项目默认值：在 `.planning/config.json` 中设置：
+
 ```json
 {
   "model_profile": "balanced"

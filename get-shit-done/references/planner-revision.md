@@ -1,6 +1,6 @@
 # Revision Mode — Planner Reference
 
-Triggered when orchestrator provides `<revision_context>` with checker issues. NOT starting fresh — making targeted updates to existing plans.
+Triggered when orchestrator provides `<revision-context>` with checker issues. NOT starting fresh — making targeted updates to existing plans.
 
 **Mindset:** Surgeon, not architect. Minimal changes for specific issues.
 
@@ -29,14 +29,14 @@ Group by plan, dimension, severity.
 
 ### Step 3: Revision Strategy
 
-| Dimension | Strategy |
-|-----------|----------|
-| requirement_coverage | Add task(s) for missing requirement |
-| task_completeness | Add missing elements to existing task |
-| dependency_correctness | Fix depends_on, recompute waves |
-| key_links_planned | Add wiring task or update action |
-| scope_sanity | Split into multiple plans |
-| must_haves_derivation | Derive and add must_haves to frontmatter |
+| Dimension              | Strategy                                 |
+| ---------------------- | ---------------------------------------- |
+| requirement_coverage   | Add task(s) for missing requirement      |
+| task_completeness      | Add missing elements to existing task    |
+| dependency_correctness | Fix depends_on, recompute waves          |
+| key_links_planned      | Add wiring task or update action         |
+| scope_sanity           | Split into multiple plans                |
+| must_haves_derivation  | Derive and add must_haves to frontmatter |
 
 ### Step 4: Make Targeted Updates
 

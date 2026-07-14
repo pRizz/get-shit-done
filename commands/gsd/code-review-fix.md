@@ -11,10 +11,12 @@ allowed-tools:
   - Edit
   - Task
 ---
+
 <objective>
 Auto-fix issues found by code review. Reads REVIEW.md from the specified phase, spawns gsd-code-fixer agent to apply fixes, and produces REVIEW-FIX.md summary.
 
 Arguments:
+
 - Phase number (required) — which phase's REVIEW.md to fix (e.g., "2" or "02")
 - `--all` (optional) — include Info findings in fix scope (default: Critical + Warning only)
 - `--auto` (optional) — enable fix + re-review iteration loop, capped at 3 iterations
@@ -22,14 +24,15 @@ Arguments:
 Output: {padded_phase}-REVIEW-FIX.md in phase directory + inline summary of fixes applied
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/code-review-fix.md
-</execution_context>
+</execution-context>
 
 <context>
 Phase: $ARGUMENTS (first positional argument is phase number)
 
 Optional flags parsed from $ARGUMENTS:
+
 - `--all` — Include Info findings in fix scope. Default behavior fixes Critical + Warning only.
 - `--auto` — Enable fix + re-review iteration loop. After applying fixes, re-run code-review at same depth. If new issues found, iterate. Cap at 3 iterations total. Without this flag, single fix pass only.
 
@@ -42,6 +45,7 @@ This command is a thin dispatch layer. It parses arguments and delegates to the 
 Execute the code-review-fix workflow from @~/.claude/get-shit-done/workflows/code-review-fix.md end-to-end.
 
 The workflow (not this command) enforces these gates:
+
 - Phase validation (before config gate)
 - Config gate check (workflow.code_review)
 - REVIEW.md existence check (error if missing)
@@ -49,4 +53,4 @@ The workflow (not this command) enforces these gates:
 - Agent spawning (gsd-code-fixer)
 - Iteration loop (if --auto, capped at 3 iterations)
 - Result presentation (inline summary + next steps)
-</process>
+  </process>

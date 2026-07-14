@@ -8,10 +8,10 @@ parallel milestone work by multiple Claude Code instances on the same codebase.
 ## Resolution Priority
 
 1. `--ws <name>` flag (explicit, highest priority)
-2. `GSD_WORKSTREAM` environment variable (per-instance)
-3. Session-scoped active workstream pointer in temp storage (per runtime session / terminal)
-4. `.planning/active-workstream` file (legacy shared fallback when no session key exists)
-5. `null` — flat mode (no workstreams)
+1. `GSD_WORKSTREAM` environment variable (per-instance)
+1. Session-scoped active workstream pointer in temp storage (per runtime session / terminal)
+1. `.planning/active-workstream` file (legacy shared fallback when no session key exists)
+1. `null` — flat mode (no workstreams)
 
 ## Why session-scoped pointers exist
 
@@ -32,8 +32,8 @@ When GSD resolves the session-scoped pointer in step 3 above, it uses this order
    `CLAUDE_SESSION_ID`, `CLAUDE_CODE_SSE_PORT`, `OPENCODE_SESSION_ID`,
    `GEMINI_SESSION_ID`, `CURSOR_SESSION_ID`, `WINDSURF_SESSION_ID`,
    `TERM_SESSION_ID`, `WT_SESSION`, `TMUX_PANE`, and `ZELLIJ_SESSION_NAME`
-2. `TTY` or `SSH_TTY` if the shell/runtime already exposes the terminal path
-3. A single best-effort `tty` probe, but only when stdin is interactive
+1. `TTY` or `SSH_TTY` if the shell/runtime already exposes the terminal path
+1. A single best-effort `tty` probe, but only when stdin is interactive
 
 If none of those produce a stable identity, GSD does not keep probing. It falls
 back directly to the legacy shared `.planning/active-workstream` file.
@@ -62,6 +62,7 @@ and broader temp hygiene is left to OS temp cleanup or future maintenance work.
 ## Routing Propagation
 
 All workflow routing commands include `${GSD_WS}` which:
+
 - Expands to `--ws <name>` when a workstream is active
 - Expands to empty string in flat mode (backward compatible)
 

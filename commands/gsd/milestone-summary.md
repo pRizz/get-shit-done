@@ -18,9 +18,9 @@ Purpose: Enable new team members to understand a completed project by reading on
 Output: MILESTONE_SUMMARY written to `.planning/reports/`, presented inline, optional interactive Q&A.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/milestone-summary.md
-</execution_context>
+</execution-context>
 
 <context>
 **Project files:**
@@ -33,14 +33,15 @@ Output: MILESTONE_SUMMARY written to `.planning/reports/`, presented inline, opt
 - `.planning/phases/*-*/` (SUMMARY.md, VERIFICATION.md, CONTEXT.md, RESEARCH.md)
 
 **User input:**
+
 - Version: $ARGUMENTS (optional — defaults to current/latest milestone)
-</context>
+  </context>
 
 <process>
 Read and execute the milestone-summary workflow from @~/.claude/get-shit-done/workflows/milestone-summary.md end-to-end.
 </process>
 
-<success_criteria>
+<success-criteria>
 - Milestone version resolved (from args, STATE.md, or archive scan)
 - All available artifacts read (ROADMAP, REQUIREMENTS, CONTEXT, SUMMARY, VERIFICATION, RESEARCH, RETROSPECTIVE)
 - Summary document written to `.planning/reports/MILESTONE_SUMMARY-v{version}.md`
@@ -48,4 +49,4 @@ Read and execute the milestone-summary workflow from @~/.claude/get-shit-done/wo
 - Summary presented inline to user
 - Interactive Q&A offered
 - STATE.md updated
-</success_criteria>
+</success-criteria>

@@ -7,6 +7,7 @@ allowed-tools:
   - Read
   - AskUserQuestion
 ---
+
 <context>
 **Arguments:**
 - `<workspace-name>` (required) — Name of the workspace to remove
@@ -16,10 +17,10 @@ allowed-tools:
 Remove a workspace directory after confirmation. For worktree strategy, runs `git worktree remove` for each member repo first. Refuses if any repo has uncommitted changes.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/remove-workspace.md
 @~/.claude/get-shit-done/references/ui-brand.md
-</execution_context>
+</execution-context>
 
 <process>
 Execute the remove-workspace workflow from @~/.claude/get-shit-done/workflows/remove-workspace.md end-to-end.

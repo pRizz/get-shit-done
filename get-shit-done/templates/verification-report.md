@@ -2,7 +2,7 @@
 
 Template for `.planning/phases/XX-name/{phase_num}-VERIFICATION.md` — phase goal verification results.
 
----
+______________________________________________________________________
 
 ## File Template
 
@@ -163,33 +163,37 @@ None — all verifiable items checked programmatically.
 *Verifier: Claude (subagent)*
 ```
 
----
+______________________________________________________________________
 
 ## Guidelines
 
 **Status values:**
+
 - `passed` — All must-haves verified, no blockers
 - `gaps_found` — One or more critical gaps found
 - `human_needed` — Automated checks pass but human verification required
 
 **Evidence types:**
+
 - For EXISTS: "File at path, exports X"
 - For SUBSTANTIVE: "N lines, has patterns X, Y, Z"
 - For WIRED: "Line N: code that connects A to B"
 - For FAILED: "Missing because X" or "Stub because Y"
 
 **Severity levels:**
+
 - 🛑 Blocker: Prevents goal achievement, must fix
 - ⚠️ Warning: Indicates incomplete but doesn't block
 - ℹ️ Info: Notable but not problematic
 
 **Fix plan generation:**
+
 - Only generate if gaps_found
 - Group related fixes into single plans
 - Keep to 2-3 tasks per plan
 - Include verification task in each plan
 
----
+______________________________________________________________________
 
 ## Example
 

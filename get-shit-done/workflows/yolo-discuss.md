@@ -67,6 +67,7 @@ Options:
 ```
 
 Branch on the answer:
+
 - `Discuss current phase` → `PHASE="${selected_phase}"`, `AUTO_SELECTION_REASON="${selection_reason}"`
 - `Switch to next pending phase` → `PHASE="${alternative_phase.number}"`, `AUTO_SELECTION_REASON="${alternative_phase.selection_reason}"`
 - `Cancel` → stop with `Cancelled.`
@@ -82,6 +83,7 @@ Options:
 ```
 
 Branch on the answer:
+
 - `Discuss current phase` → `PHASE="${selected_phase}"`, `AUTO_SELECTION_REASON="${selection_reason}"`
 - `Cancel` → stop with `Cancelled.`
 
@@ -113,6 +115,7 @@ Phase ${PHASE} not found in roadmap.
 
 Use /gsd-progress to see available phases.
 ```
+
 </step>
 
 <step name="preview">
@@ -132,6 +135,7 @@ Display a compact preview before delegation:
 ```
  Reason: ${AUTO_SELECTION_REASON}
 ```
+
 </step>
 
 <step name="delegate">
@@ -154,11 +158,11 @@ No wrapper-level sub-agent is needed because the downstream workflow already own
 
 </process>
 
-<success_criteria>
+<success-criteria>
 - Explicit single-phase usage still works unchanged
 - No-argument usage auto-selects the next appropriate phase
 - Auto-selected discuss runs stop for confirmation when the current phase already has plans
 - Wrapper previews the phase and high-level steps before delegation
 - Wrapper delegates to `/gsd-discuss-phase --yolo`
 - Yolo behavior comes from the shared discuss workflow
-</success_criteria>
+</success-criteria>

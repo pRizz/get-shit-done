@@ -7,10 +7,11 @@ Template for `.planning/phases/XX-name/{phase_num}-CONTEXT.md` - captures implem
 **Key principle:** Categories are NOT predefined. They emerge from what was actually discussed for THIS phase. A CLI phase has CLI-relevant sections, a UI phase has UI-relevant sections.
 
 **Downstream consumers:**
+
 - `gsd-phase-researcher` — Reads decisions to focus research (e.g., "card layout" → research card component patterns)
 - `gsd-planner` — Reads decisions to create specific tasks (e.g., "infinite scroll" → task includes virtualization)
 
----
+______________________________________________________________________
 
 ## File Template
 
@@ -54,7 +55,7 @@ Template for `.planning/phases/XX-name/{phase_num}-CONTEXT.md` - captures implem
 
 </specifics>
 
-<canonical_refs>
+<canonical-refs>
 ## Canonical References
 
 **Downstream agents MUST read these before planning or implementing.**
@@ -70,9 +71,9 @@ Template for `.planning/phases/XX-name/{phase_num}-CONTEXT.md` - captures implem
 
 [If the project has no external specs: "No external specs — requirements are fully captured in decisions above"]
 
-</canonical_refs>
+</canonical-refs>
 
-<code_context>
+<code-context>
 ## Existing Code Insights
 
 ### Reusable Assets
@@ -84,7 +85,7 @@ Template for `.planning/phases/XX-name/{phase_num}-CONTEXT.md` - captures implem
 ### Integration Points
 - [Where new code connects to existing system]
 
-</code_context>
+</code-context>
 
 <deferred>
 ## Deferred Ideas
@@ -101,7 +102,7 @@ Template for `.planning/phases/XX-name/{phase_num}-CONTEXT.md` - captures implem
 *Context gathered: [date]*
 ```
 
-<good_examples>
+<good-examples>
 
 **Example 1: Visual feature (Post Feed)**
 
@@ -142,7 +143,7 @@ Display posts from followed users in a scrollable feed. Users can view posts and
 
 </decisions>
 
-<canonical_refs>
+<canonical-refs>
 ## Canonical References
 
 ### Feed display
@@ -152,7 +153,7 @@ Display posts from followed users in a scrollable feed. Users can view posts and
 ### Empty states
 - `docs/design/empty-states.md` — Empty state patterns, illustration guidelines
 
-</canonical_refs>
+</canonical-refs>
 
 <specifics>
 ## Specific Ideas
@@ -216,14 +217,14 @@ CLI command to backup database to local file or S3. Supports full and incrementa
 
 </decisions>
 
-<canonical_refs>
+<canonical-refs>
 ## Canonical References
 
 ### Backup CLI
 - `docs/features/backup-restore.md` — Backup requirements, supported backends, encryption spec
 - `docs/decisions/adr-007-cli-conventions.md` — Flag naming, exit codes, output format standards
 
-</canonical_refs>
+</canonical-refs>
 
 <specifics>
 ## Specific Ideas
@@ -287,14 +288,14 @@ Organize existing photo library into structured folders. Handle duplicates and a
 
 </decisions>
 
-<canonical_refs>
+<canonical-refs>
 ## Canonical References
 
 ### Organization rules
 - `docs/features/photo-organization.md` — Grouping rules, duplicate policy, naming spec
 - `docs/decisions/adr-003-exif-handling.md` — EXIF extraction strategy, fallback for missing metadata
 
-</canonical_refs>
+</canonical-refs>
 
 <specifics>
 ## Specific Ideas
@@ -318,7 +319,7 @@ Organize existing photo library into structured folders. Handle duplicates and a
 *Context gathered: 2025-01-20*
 ```
 
-</good_examples>
+</good-examples>
 
 <guidelines>
 **This template captures DECISIONS for downstream agents.**
@@ -326,27 +327,31 @@ Organize existing photo library into structured folders. Handle duplicates and a
 The output should answer: "What does the researcher need to investigate? What choices are locked for the planner?"
 
 **Good content (concrete decisions):**
+
 - "Card-based layout, not timeline"
 - "Retry 3 times on network failure, then fail"
 - "Group by year, then by month"
 - "JSON for programmatic use, table for humans"
 
 **Bad content (too vague):**
+
 - "Should feel modern and clean"
 - "Good user experience"
 - "Fast and responsive"
 - "Easy to use"
 
 **After creation:**
+
 - File lives in phase directory: `.planning/phases/XX-name/{phase_num}-CONTEXT.md`
 - `gsd-phase-researcher` uses decisions to focus investigation AND reads canonical_refs to know WHAT docs to study
 - `gsd-planner` uses decisions + research to create executable tasks AND reads canonical_refs to verify alignment
 - Downstream agents should NOT need to ask the user again about captured decisions
 
 **CRITICAL — Canonical references:**
-- The `<canonical_refs>` section is MANDATORY. Every CONTEXT.md must have one.
+
+- The `<canonical-refs>` section is MANDATORY. Every CONTEXT.md must have one.
 - If your project has external specs, ADRs, or design docs, list them with full relative paths grouped by topic
 - If ROADMAP.md lists `Canonical refs:` per phase, extract and expand those
 - Inline mentions like "see ADR-019" scattered in decisions are useless to downstream agents — they need full paths and section references in a dedicated section they can find
 - If no external specs exist, say so explicitly — don't silently omit the section
-</guidelines>
+  </guidelines>

@@ -23,6 +23,7 @@ command -v opencode >/dev/null 2>&1 && echo "opencode:available" || echo "openco
 ```
 
 Parse flags from `$ARGUMENTS`:
+
 - `--gemini` → include Gemini
 - `--claude` → include Claude
 - `--codex` → include Codex
@@ -32,6 +33,7 @@ Parse flags from `$ARGUMENTS`:
 - No flags → include all available
 
 If no CLIs are available:
+
 ```
 No external AI CLIs found. Install at least one:
 - gemini: https://github.com/google-gemini/gemini-cli
@@ -41,6 +43,7 @@ No external AI CLIs found. Install at least one:
 
 Then run /gsd-review again.
 ```
+
 Exit.
 
 Determine which CLI to skip based on the current runtime environment:
@@ -61,11 +64,12 @@ fi
 ```
 
 Rules:
+
 - If `SELF_CLI="none"` → invoke ALL available CLIs (no skip)
 - If `SELF_CLI="claude"` → skip claude, use gemini/codex
 - If `SELF_CLI="auto"` → the executing AI identifies itself and skips its own CLI
 - At least one DIFFERENT CLI must be available for the review to proceed.
-</step>
+  </step>
 
 <step name="gather_context">
 Collect phase artifacts for the review prompt:
@@ -78,13 +82,14 @@ if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 Read from init: `phase_dir`, `phase_number`, `padded_phase`.
 
 Then read:
+
 1. `.planning/PROJECT.md` (first 80 lines — project context)
-2. Phase section from `.planning/ROADMAP.md`
-3. All `*-PLAN.md` files in the phase directory
-4. `*-CONTEXT.md` if present (user decisions)
-5. `*-RESEARCH.md` if present (domain research)
-6. `.planning/REQUIREMENTS.md` (requirements this phase addresses)
-</step>
+1. Phase section from `.planning/ROADMAP.md`
+1. All `*-PLAN.md` files in the phase directory
+1. `*-CONTEXT.md` if present (user decisions)
+1. `*-RESEARCH.md` if present (domain research)
+1. `.planning/REQUIREMENTS.md` (requirements this phase addresses)
+   </step>
 
 <step name="build_prompt">
 Build a structured review prompt:
@@ -142,16 +147,19 @@ Write to a temp file: `/tmp/gsd-review-prompt-{phase}.md`
 For each selected CLI, invoke in sequence (not parallel — avoid rate limits):
 
 **Gemini:**
+
 ```bash
 gemini -p "$(cat /tmp/gsd-review-prompt-{phase}.md)" 2>/dev/null > /tmp/gsd-review-gemini-{phase}.md
 ```
 
 **Claude (separate session):**
+
 ```bash
 claude -p "$(cat /tmp/gsd-review-prompt-{phase}.md)" 2>/dev/null > /tmp/gsd-review-claude-{phase}.md
 ```
 
 **Codex:**
+
 ```bash
 codex exec --skip-git-repo-check "$(cat /tmp/gsd-review-prompt-{phase}.md)" 2>/dev/null > /tmp/gsd-review-codex-{phase}.md
 ```
@@ -165,6 +173,7 @@ coderabbit review --prompt-only 2>/dev/null > /tmp/gsd-review-coderabbit-{phase}
 ```
 
 **OpenCode (via GitHub Copilot):**
+
 ```bash
 cat /tmp/gsd-review-prompt-{phase}.md | opencode run - 2>/dev/null > /tmp/gsd-review-opencode-{phase}.md
 if [ ! -s /tmp/gsd-review-opencode-{phase}.md ]; then
@@ -175,6 +184,7 @@ fi
 If a CLI fails, log the error and continue with remaining CLIs.
 
 Display progress:
+
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  GSD ► CROSS-AI REVIEW — Phase {N}
@@ -183,6 +193,7 @@ Display progress:
 ◆ Reviewing with {CLI}... done ✓
 ◆ Reviewing with {CLI}... done ✓
 ```
+
 </step>
 
 <step name="write_reviews">
@@ -243,9 +254,11 @@ plans_reviewed: [{list of PLAN.md files}]
 ```
 
 Commit:
+
 ```bash
 node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: cross-AI review for phase {N}" --files {phase_dir}/{padded_phase}-REVIEWS.md
 ```
+
 </step>
 
 <step name="present_results">
@@ -272,10 +285,10 @@ Clean up temp files.
 
 </process>
 
-<success_criteria>
+<success-criteria>
 - [ ] At least one external CLI invoked successfully
 - [ ] REVIEWS.md written with structured feedback
 - [ ] Consensus summary synthesized from multiple reviewers
 - [ ] Temp files cleaned up
 - [ ] User knows how to use feedback (/gsd-plan-phase --reviews)
-</success_criteria>
+</success-criteria>

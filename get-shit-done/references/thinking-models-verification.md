@@ -9,7 +9,7 @@ Source: Curated from [thinking-partner](https://github.com/mattnowdev/thinking-p
 **Inversion** and **Confirmation Bias Counter** both look for failures but serve different purposes. Run them in sequence:
 
 1. **Inversion FIRST** (brainstorm): generate 3 ways this could be wrong
-2. **Confirmation Bias Counter SECOND** (structured check): find one partial requirement, one misleading test, one uncovered error path
+1. **Confirmation Bias Counter SECOND** (structured check): find one partial requirement, one misleading test, one uncovered error path
 
 Inversion generates the list; Confirmation Bias Counter is the discipline to verify items on it.
 
@@ -43,7 +43,7 @@ For each task estimated as "simple" or "small", check: does it touch more than 2
 
 For each plan, ask: "What would happen if the executor followed this plan EXACTLY as written but encountered a common failure: dependency version mismatch, API returning unexpected format, file already modified by prior plan?" If the plan has no contingency path and the `<action>` steps assume success at every point, flag as WARNING: "No error recovery path for task T{n}."
 
----
+______________________________________________________________________
 
 ## When NOT to Think
 

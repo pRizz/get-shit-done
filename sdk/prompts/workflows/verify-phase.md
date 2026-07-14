@@ -3,18 +3,19 @@ Verify phase goal achievement through goal-backward analysis. Check that the cod
 Headless SDK variant — runs autonomously without interactive prompts.
 </purpose>
 
-<core_principle>
+<core-principle>
 **Task completion does not equal goal achievement.**
 
 A task "create chat component" can be marked complete when the component is a placeholder. The task was done — but the goal "working chat interface" was not achieved.
 
 Goal-backward verification:
+
 1. What must be TRUE for the goal to be achieved?
-2. What must EXIST for those truths to hold?
-3. What must be WIRED for those artifacts to function?
+1. What must EXIST for those truths to hold?
+1. What must be WIRED for those artifacts to function?
 
 Then verify each level against the actual codebase.
-</core_principle>
+</core-principle>
 
 <process>
 
@@ -57,13 +58,13 @@ Three-level verification:
 **Level 2 — Substantive:** File has real content (not stub/placeholder). Check line count, expected patterns.
 **Level 3 — Wired:** File is imported AND used by other code.
 
-| Exists | Substantive | Wired | Status |
-|--------|-------------|-------|--------|
-| Yes    | Yes         | Yes   | VERIFIED |
-| Yes    | Yes         | No    | ORPHANED |
-| Yes    | No          | -     | STUB |
-| No     | -           | -     | MISSING |
-</step>
+| Exists  | Substantive | Wired | Status   |
+| ------- | ----------- | ----- | -------- |
+| Yes     | Yes         | Yes   | VERIFIED |
+| Yes     | Yes         | No    | ORPHANED |
+| Yes     | No          | -     | STUB     |
+| No      | -           | -     | MISSING  |
+| </step> |             |       |          |
 
 <step name="verify_wiring">
 Key links are critical connections. If broken, the goal fails even with all artifacts present.
@@ -78,12 +79,12 @@ For each requirement mapped to this phase: identify supporting truths/artifacts,
 <step name="scan_antipatterns">
 Scan files modified in this phase for:
 
-| Pattern | Severity |
-|---------|----------|
-| TODO/FIXME/XXX/HACK | Warning |
-| Placeholder content | Blocker |
-| Empty returns | Warning |
-| Log-only functions | Warning |
+| Pattern             | Severity |
+| ------------------- | -------- |
+| TODO/FIXME/XXX/HACK | Warning  |
+| Placeholder content | Blocker  |
+| Empty returns       | Warning  |
+| Log-only functions  | Warning  |
 
 Categorize: Blocker (prevents goal) | Warning (incomplete) | Info (notable).
 </step>
@@ -102,6 +103,7 @@ Before reporting gaps, cross-reference each gap against later phases in the mile
 For each potential gap: check if a later phase's goal or success criteria explicitly covers the concern. If there is a clear match, move the gap to a `deferred` list with the matching phase reference and evidence. Only defer when there is specific evidence -- vague matches should remain as real gaps.
 
 Deferred items do not affect status. Recalculate after filtering:
+
 - Gaps list empty, no human items -> passed
 - Gaps list empty, human items exist -> human_needed (not applicable in SDK headless mode)
 - Gaps list still has items -> gaps_found
@@ -128,7 +130,7 @@ If gaps_found: list gaps and recommended fix plan names.
 
 </process>
 
-<success_criteria>
+<success-criteria>
 - Must-haves established (from frontmatter or derived)
 - All truths verified with status and evidence
 - All artifacts checked at all three levels
@@ -139,4 +141,4 @@ If gaps_found: list gaps and recommended fix plan names.
 - Fix plans generated (if gaps_found)
 - VERIFICATION.md created with complete report
 - Results returned to orchestrator
-</success_criteria>
+</success-criteria>

@@ -50,7 +50,7 @@ Before finalizing the plan, read ALL `[NEEDS DECISION]` items and LOW-confidence
 
 Before writing the fix plan, apply a single "why" round: Why did this gap occur? Was it a plan deficiency (wrong task), an execution miss (correct task, wrong implementation), or a changed assumption (environment/dependency shift)? The fix plan must target the root cause category, not just the symptom.
 
----
+______________________________________________________________________
 
 ## When NOT to Think
 

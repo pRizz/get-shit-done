@@ -8,7 +8,7 @@
 
 **技術スタック:** Node.js/CommonJS、既存の gsd-tools CLI、テストには `node:test` を使用。
 
----
+______________________________________________________________________
 
 ## 背景: 現在の状態
 
@@ -55,18 +55,18 @@
 }
 ```
 
----
+______________________________________________________________________
 
 ## ファイルマップ
 
-| ファイル | 操作 | 目的 |
-|------|--------|---------|
-| `get-shit-done/bin/lib/config.cjs` | 変更 | `buildNewProjectConfig()` + `cmdConfigNewProject()` を追加 |
-| `get-shit-done/bin/gsd-tools.cjs` | 変更 | `config-new-project` の case を登録 + usage 文字列を更新 |
+| ファイル                                 | 操作 | 目的                                                           |
+| ---------------------------------------- | ---- | -------------------------------------------------------------- |
+| `get-shit-done/bin/lib/config.cjs`       | 変更 | `buildNewProjectConfig()` + `cmdConfigNewProject()` を追加     |
+| `get-shit-done/bin/gsd-tools.cjs`        | 変更 | `config-new-project` の case を登録 + usage 文字列を更新       |
 | `get-shit-done/workflows/new-project.md` | 変更 | ステップ 2a + 5: インライン JSON 書き込みを CLI 呼び出しに置換 |
-| `tests/config.test.cjs` | 変更 | `config-new-project` テストスイートを追加 |
+| `tests/config.test.cjs`                  | 変更 | `config-new-project` テストスイートを追加                      |
 
----
+______________________________________________________________________
 
 ## タスク 1: `buildNewProjectConfig` と `cmdConfigNewProject` を config.cjs に追加
 
@@ -381,7 +381,7 @@ git add get-shit-done/bin/lib/config.cjs tests/config.test.cjs
 git commit -m "feat: add config-new-project command for full config materialization"
 ```
 
----
+______________________________________________________________________
 
 ## タスク 2: gsd-tools.cjs に `config-new-project` を登録する
 
@@ -433,7 +433,7 @@ git add get-shit-done/bin/gsd-tools.cjs
 git commit -m "feat: register config-new-project in gsd-tools CLI router"
 ```
 
----
+______________________________________________________________________
 
 ## タスク 3: new-project.md ワークフローを config-new-project を使うように更新する
 
@@ -444,13 +444,14 @@ git commit -m "feat: register config-new-project in gsd-tools CLI router"
 これが中心となる変更。2箇所を更新する必要がある:
 
 - **ステップ 2a**（自動モードでの設定作成、168〜195行目付近）
+
 - **ステップ 5**（対話モードでの設定作成、470〜498行目付近）
 
 - [ ] **ステップ 3.1: ステップ 2a（自動モード）を更新する**
 
 ステップ 2a で config.json を作成しているブロックを探す:
 
-```markdown
+````markdown
 Create `.planning/config.json` with mode set to "yolo":
 
 ```json
@@ -459,9 +460,9 @@ Create `.planning/config.json` with mode set to "yolo":
   "granularity": "[selected]",
   ...
 }
-```
+````
 
-```
+````
 
 インライン JSON 書き込みの指示を以下に置き換える:
 
@@ -487,11 +488,11 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-new-project "$(cat <
 }
 CHOICES
 )"
-```
+````
 
 このコマンドはユーザーの選択をすべてのランタイムデフォルト（`search_gitignored`、`brave_search`、`git` セクション）とマージし、完全に展開された設定を生成する。
 
-```
+````
 
 - [ ] **ステップ 3.2: ステップ 5（対話モード）を更新する**
 
@@ -505,9 +506,9 @@ Create `.planning/config.json` with all settings:
   "mode": "yolo|interactive",
   ...
 }
-```
+````
 
-```
+````
 
 以下に置き換える:
 
@@ -532,18 +533,18 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-new-project "$(cat <
 }
 CHOICES
 )"
-```
+````
 
 このコマンドはユーザーの選択をすべてのランタイムデフォルト（`search_gitignored`、`brave_search`、`git` セクション）とマージし、完全に展開された設定を生成する。
 
-```
+````
 
 - [ ] **ステップ 3.3: ワークフローファイルが正しく読めることを確認する**
 
 ```bash
 cd /Users/diego/Dev/get-shit-done
 grep -n "config-new-project\|config\.json\|CHOICES" get-shit-done/workflows/new-project.md
-```
+````
 
 期待結果: `config-new-project` が2箇所（各ステップに1つ）で出現し、設定作成用のインライン JSON テンプレートがなくなっている。
 
@@ -555,7 +556,7 @@ git add get-shit-done/workflows/new-project.md
 git commit -m "feat: use config-new-project in new-project workflow for full config materialization"
 ```
 
----
+______________________________________________________________________
 
 ## タスク 4: 検証
 
@@ -653,7 +654,7 @@ node --test tests/ 2>&1 | grep -E "pass|fail|error" | tail -5
 
 期待結果: すべてパス、失敗0件。
 
----
+______________________________________________________________________
 
 ## 付録: アップストリーム向け PR 説明文
 

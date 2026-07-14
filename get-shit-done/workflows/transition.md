@@ -1,4 +1,4 @@
-<internal_workflow>
+<internal-workflow>
 
 **This is an INTERNAL workflow — NOT a user-facing command.**
 
@@ -7,24 +7,25 @@ There is no `/gsd-transition` command. This workflow is invoked automatically by
 verification. Users should never be told to run `/gsd-transition`.
 
 **Valid user commands for phase progression:**
+
 - `/gsd-discuss-phase {N}` — discuss a phase before planning
 - `/gsd-plan-phase {N}` — plan a phase
 - `/gsd-execute-phase {N}` — execute a phase
 - `/gsd-progress` — see roadmap progress
 
-</internal_workflow>
+</internal-workflow>
 
-<required_reading>
+<required-reading>
 
 **Read these files NOW:**
 
 1. `.planning/STATE.md`
-2. `.planning/PROJECT.md`
-3. `.planning/ROADMAP.md`
-4. Current phase's plan files (`*-PLAN.md`)
-5. Current phase's summary files (`*-SUMMARY.md`)
+1. `.planning/PROJECT.md`
+1. `.planning/ROADMAP.md`
+1. Current phase's plan files (`*-PLAN.md`)
+1. Current phase's summary files (`*-SUMMARY.md`)
 
-</required_reading>
+</required-reading>
 
 <purpose>
 
@@ -167,6 +168,7 @@ TRANSITION=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" phase complete
 ```
 
 The CLI handles:
+
 - Marking the phase checkbox as `[x]` complete with today's date
 - Updating plan count to final (e.g., "3/3 plans complete")
 - Updating the Progress table (Status → Complete, adding date)
@@ -197,22 +199,27 @@ cat .planning/phases/XX-current/*-SUMMARY.md
 **Assess requirement changes:**
 
 1. **Requirements validated?**
+
    - Any Active requirements shipped in this phase?
    - Move to Validated with phase reference: `- ✓ [Requirement] — Phase X`
 
-2. **Requirements invalidated?**
+1. **Requirements invalidated?**
+
    - Any Active requirements discovered to be unnecessary or wrong?
    - Move to Out of Scope with reason: `- [Requirement] — [why invalidated]`
 
-3. **Requirements emerged?**
+1. **Requirements emerged?**
+
    - Any new requirements discovered during building?
    - Add to Active: `- [ ] [New requirement]`
 
-4. **Decisions to log?**
+1. **Decisions to log?**
+
    - Extract decisions from SUMMARY.md files
    - Add to Key Decisions table with outcome if known
 
-5. **"What This Is" still accurate?**
+1. **"What This Is" still accurate?**
+
    - If the product has meaningfully changed, update the description
    - Keep it current and accurate
 
@@ -380,19 +387,21 @@ Resume file: None
 **Use the transition result from `gsd-tools phase complete`:**
 
 The `is_last_phase` field from the phase complete result tells you directly:
+
 - `is_last_phase: false` → More phases remain → Go to **Route A**
 - `is_last_phase: true` → Last phase done → **Check for workstream collisions first**
 
 The `next_phase` and `next_phase_name` fields give you the next phase details.
 
 If you need additional context, use:
+
 ```bash
 ROADMAP=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" roadmap analyze)
 ```
 
 This returns all phases with goals, disk status, and completion info.
 
----
+______________________________________________________________________
 
 **Workstream collision check (when `is_last_phase: true`):**
 
@@ -420,7 +429,7 @@ The remaining entries are **other active workstreams**.
 - **If other active workstreams exist** → Go to **Route B1**
 - **If NO other active workstreams** (or flat mode) → Go to **Route B**
 
----
+______________________________________________________________________
 
 **Route A: More phases remain in milestone**
 
@@ -519,7 +528,7 @@ Exit skill and invoke SlashCommand("/gsd-discuss-phase [X+1] --auto ${GSD_WS}")
 
 </if>
 
----
+______________________________________________________________________
 
 **Route B1: Workstream done, other workstreams still active**
 
@@ -574,11 +583,12 @@ Do NOT auto-invoke any further slash commands.
 
 **Stop here.** The user must explicitly decide what to do next.
 
----
+______________________________________________________________________
 
 **Route B: Milestone complete (all phases done)**
 
 **This route is only reached when:**
+
 - `is_last_phase: true` AND no other active workstreams exist (or flat mode)
 
 **Clear auto-advance chain flag** — milestone boundary is the natural stopping point:
@@ -632,11 +642,11 @@ Exit skill and invoke SlashCommand("/gsd-complete-milestone {version} ${GSD_WS}"
 
 </process>
 
-<implicit_tracking>
+<implicit-tracking>
 Progress tracking is IMPLICIT: planning phase N implies phases 1-(N-1) complete. No separate progress step—forward motion IS progress.
-</implicit_tracking>
+</implicit-tracking>
 
-<partial_completion>
+<partial-completion>
 
 If user wants to move on but phase isn't fully complete:
 
@@ -658,9 +668,9 @@ Respect user judgment — they know if work matters.
 - Update ROADMAP: "2/3 plans complete" (not "3/3")
 - Note in transition message which plans were skipped
 
-</partial_completion>
+</partial-completion>
 
-<success_criteria>
+<success-criteria>
 
 Transition is complete when:
 
@@ -672,4 +682,4 @@ Transition is complete when:
 - [ ] Progress table updated
 - [ ] User knows next steps
 
-</success_criteria>
+</success-criteria>

@@ -396,8 +396,8 @@ function validateFieldName(field) {
 // ─── Layer 3: Structural Schema Validation ───────────────────────────────────
 
 const KNOWN_VALID_TAGS = new Set([
-  'objective', 'process', 'step', 'success_criteria', 'critical_rules',
-  'available_agent_types', 'purpose', 'required_reading',
+  'objective', 'process', 'step', 'success-criteria', 'critical-rules',
+  'available-agent-types', 'purpose', 'required-reading',
 ]);
 
 /**
@@ -421,7 +421,7 @@ function validatePromptStructure(text, fileType) {
   const tagRegex = /<([A-Za-z][A-Za-z0-9_-]*)/g;
   let match;
   while ((match = tagRegex.exec(text)) !== null) {
-    const tag = match[1].toLowerCase();
+    const tag = match[1].toLowerCase().replaceAll('_', '-');
     if (!KNOWN_VALID_TAGS.has(tag)) {
       violations.push(`Unknown XML tag in ${fileType} file: <${tag}>`);
     }

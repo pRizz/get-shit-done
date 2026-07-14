@@ -2,9 +2,9 @@
 Create all phases necessary to close gaps identified by `/gsd-audit-milestone`. Reads MILESTONE-AUDIT.md, groups gaps into logical phases, creates phase entries in ROADMAP.md, and offers to plan each phase. One command creates all fix phases — no manual `/gsd-add-phase` per gap.
 </purpose>
 
-<required_reading>
+<required-reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
-</required_reading>
+</required-reading>
 
 <process>
 
@@ -16,11 +16,13 @@ Read all files referenced by the invoking prompt's execution_context before star
 ```
 
 Parse YAML frontmatter to extract structured gaps:
+
 - `gaps.requirements` — unsatisfied requirements
 - `gaps.integration` — missing cross-phase connections
 - `gaps.flows` — broken E2E flows
 
 If no audit file exists or has no gaps, error:
+
 ```
 No audit gaps found. Run `/gsd-audit-milestone` first.
 ```
@@ -29,11 +31,11 @@ No audit gaps found. Run `/gsd-audit-milestone` first.
 
 Group gaps by priority from REQUIREMENTS.md:
 
-| Priority | Action |
-|----------|--------|
-| `must` | Create phase, blocks milestone |
-| `should` | Create phase, recommended |
-| `nice` | Ask user: include or defer? |
+| Priority | Action                         |
+| -------- | ------------------------------ |
+| `must`   | Create phase, blocks milestone |
+| `should` | Create phase, recommended      |
+| `nice`   | Ask user: include or defer?    |
 
 For integration/flow gaps, infer priority from affected requirements.
 
@@ -42,12 +44,14 @@ For integration/flow gaps, infer priority from affected requirements.
 Cluster related gaps into logical phases:
 
 **Grouping rules:**
+
 - Same affected phase → combine into one fix phase
 - Same subsystem (auth, API, UI) → combine
 - Dependency order (fix stubs before wiring)
 - Keep phases focused: 2-4 tasks each
 
 **Example grouping:**
+
 ```
 Gap: DASH-01 unsatisfied (Dashboard doesn't fetch)
 Gap: Integration Phase 1→3 (Auth not passed to API calls)
@@ -63,12 +67,14 @@ Gap: Flow "View dashboard" broken at data fetch
 ## 4. Determine Phase Numbers
 
 Find highest existing phase:
+
 ```bash
 # Get sorted phase list, extract last one
 HIGHEST=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" phases list --pick directories[-1])
 ```
 
 New phases continue from there:
+
 - If Phase 5 is highest, gaps become Phase 6, 7, 8...
 
 ## 5. Present Gap Closure Plan
@@ -125,10 +131,12 @@ Add new phases to current milestone:
 ## 7. Update REQUIREMENTS.md Traceability Table (REQUIRED)
 
 For each REQ-ID assigned to a gap closure phase:
+
 - Update the Phase column to reflect the new gap closure phase
 - Reset Status to `Pending`
 
 Reset checked-off requirements the audit found unsatisfied:
+
 - Change `[x]` → `[ ]` for any requirement marked unsatisfied in the audit
 - Update coverage count at top of REQUIREMENTS.md
 
@@ -183,11 +191,12 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs(roadmap): add 
 
 </process>
 
-<gap_to_phase_mapping>
+<gap-to-phase-mapping>
 
 ## How Gaps Become Tasks
 
 **Requirement gap → Tasks:**
+
 ```yaml
 gap:
   id: DASH-01
@@ -216,6 +225,7 @@ tasks:
 ```
 
 **Integration gap → Tasks:**
+
 ```yaml
 gap:
   from_phase: 1
@@ -240,6 +250,7 @@ tasks:
 ```
 
 **Flow gap → Tasks:**
+
 ```yaml
 gap:
   name: "User views dashboard after login"
@@ -256,9 +267,9 @@ becomes:
 # Flow gaps often overlap with other gap types
 ```
 
-</gap_to_phase_mapping>
+</gap-to-phase-mapping>
 
-<success_criteria>
+<success-criteria>
 - [ ] MILESTONE-AUDIT.md loaded and gaps parsed
 - [ ] Gaps prioritized (must/should/nice)
 - [ ] Gaps grouped into logical phases
@@ -270,4 +281,4 @@ becomes:
 - [ ] Phase directories created
 - [ ] Changes committed (includes REQUIREMENTS.md)
 - [ ] User knows to run `/gsd-plan-phase` next
-</success_criteria>
+</success-criteria>

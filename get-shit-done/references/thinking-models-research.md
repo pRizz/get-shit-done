@@ -38,7 +38,7 @@ After forming your initial recommendation, spend one full research cycle searchi
 
 Before recommending against an alternative technology or approach, construct its STRONGEST possible case. What would a passionate advocate say? What use cases does it serve better than your recommendation? What trade-offs favor it? Present the steel-manned alternative alongside your recommendation with an honest comparison. If the steel-manned alternative is competitive, flag the decision as `[NEEDS DECISION]` rather than making a unilateral recommendation.
 
----
+______________________________________________________________________
 
 ## When NOT to Think
 

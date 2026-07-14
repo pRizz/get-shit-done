@@ -20,9 +20,9 @@ This is a strict no-argument convenience alias for:
 No wrapper-level sub-agent is needed because this command is only a declarative alias over autonomous yolo strict-push mode.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/yolo-discuss-plan-execute-commit-and-push-all.md
-</execution_context>
+</execution-context>
 
 <context>
 This command does not accept arguments.
@@ -32,8 +32,8 @@ This command does not accept arguments.
 Execute the yolo-discuss-plan-execute-commit-and-push-all workflow from @~/.claude/get-shit-done/workflows/yolo-discuss-plan-execute-commit-and-push-all.md end-to-end.
 </process>
 
-<success_criteria>
+<success-criteria>
 - Rejects unexpected arguments with a clear usage message
 - Delegates directly to autonomous yolo strict-push mode
 - Adds no new execution semantics beyond the existing autonomous flow
-</success_criteria>
+</success-criteria>

@@ -74,8 +74,8 @@ describe('agent-skills command', () => {
 
     const result = runGsdTools(['agent-skills', 'gsd-executor'], tmpDir, { HOME: tmpDir, USERPROFILE: tmpDir });
     assert.ok(result.success, `Command failed: ${result.error}`);
-    assert.ok(result.output.includes('<agent_skills>'), 'Should contain <agent_skills> tag');
-    assert.ok(result.output.includes('</agent_skills>'), 'Should contain closing tag');
+    assert.ok(result.output.includes('<agent-skills>'), 'Should contain <agent-skills> tag');
+    assert.ok(result.output.includes('</agent-skills>'), 'Should contain closing tag');
     assert.ok(result.output.includes('skills/test-skill/SKILL.md'), 'Should contain skill path');
   });
 

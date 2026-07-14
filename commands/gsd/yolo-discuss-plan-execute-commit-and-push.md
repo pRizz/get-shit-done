@@ -20,9 +20,9 @@ Range mode delegates to `/gsd-autonomous --yolo --push-after-phase`.
 No wrapper-level sub-agent is needed because delegated workflows already own the heavy orchestration, and the wrapper-owned git gate should remain inline.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/yolo-discuss-plan-execute-commit-and-push.md
-</execution_context>
+</execution-context>
 
 <context>
 $ARGUMENTS
@@ -32,8 +32,8 @@ $ARGUMENTS
 Execute the yolo-discuss-plan-execute-commit-and-push workflow from @~/.claude/get-shit-done/workflows/yolo-discuss-plan-execute-commit-and-push.md end-to-end.
 </process>
 
-<success_criteria>
+<success-criteria>
 - Single-phase runs push only after a clean verification pass
 - Multi-phase runs push after each cleanly completed phase
 - No commit or push happens when verification is not clean
-</success_criteria>
+</success-criteria>

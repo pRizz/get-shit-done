@@ -19,6 +19,7 @@ For ranged or single-phase runs, use:
 - /gsd-yolo-discuss-plan-execute-commit-and-push --from N --to N
 - /gsd-autonomous --yolo --push-after-phase
 ```
+
 </step>
 
 <step name="preview_remaining">
@@ -36,6 +37,7 @@ Parse from `INIT`: `milestone_version`, `milestone_name`, `phase_count`, `comple
 Parse from `ROADMAP`: `phases[]`.
 
 Use the same filtering rules as `gsd-autonomous` for all remaining work:
+
 - keep phases where `disk_status !== "complete"` OR `roadmap_complete === false`
 
 **If no phases remain after filtering:** display:
@@ -64,6 +66,7 @@ Exit without delegating.
  Steps: discuss → plan → execute → commit/push
  Note: commit/push only happens after clean verification and the run stops on non-clean outcomes.
 ```
+
 </step>
 
 <step name="delegate">
@@ -79,10 +82,10 @@ No wrapper-level sub-agent is needed because this command is only a declarative 
 
 </process>
 
-<success_criteria>
+<success-criteria>
 - Unexpected arguments are rejected
 - Wrapper previews the remaining phase range and `discuss → plan → execute → commit/push`
 - Wrapper exits early with a no-op message when no phases remain
 - Workflow delegates exactly to `gsd-autonomous --yolo --push-after-phase`
 - Semantics stay aligned with the current milestone autonomous flow
-</success_criteria>
+</success-criteria>

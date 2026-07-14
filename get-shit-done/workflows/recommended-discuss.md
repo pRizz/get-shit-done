@@ -12,6 +12,7 @@ Phase number required.
 
 Usage: /gsd-recommended-discuss <phase> [--text]
 ```
+
 </step>
 
 <step name="delegate">
@@ -26,8 +27,8 @@ This wrapper adds no custom context logic — all behavior comes from the shared
 
 </process>
 
-<success_criteria>
+<success-criteria>
 - Single-phase usage enforced
 - Wrapper delegates to `/gsd-discuss-phase --recommended`
 - Consolidated review behavior comes from the shared discuss workflow
-</success_criteria>
+</success-criteria>

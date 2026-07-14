@@ -297,6 +297,12 @@ describe('InitRunner assembled output', () => {
       expect(output).toContain('Stack Research');
     });
 
+    it('emits canonical kebab-case research wrappers', () => {
+      expect(output).toContain('<research-stack>');
+      expect(output).toContain('</research-stack>');
+      expect(output).not.toMatch(/<\/?research_[^>]+>/);
+    });
+
     it('contains zero blocked patterns', () => {
       assertNoBlockedPatterns(output, 'buildSynthesisPrompt');
     });
@@ -335,7 +341,7 @@ describe('InitRunner assembled output', () => {
 
     it('contains agent definition content', () => {
       // Roadmap prompt loads gsd-roadmapper.md
-      expect(output).toContain('agent_definition');
+      expect(output).toContain('agent-definition');
     });
 
     it('contains project file content', () => {

@@ -1,4 +1,4 @@
-<questioning_guide>
+<questioning-guide>
 
 Project initialization is dream extraction, not requirements gathering. You're helping the user discover and articulate what they want to build. This isn't a contract negotiation — it's collaborative thinking.
 
@@ -12,7 +12,7 @@ Don't interrogate. Collaborate. Don't follow a script. Follow the thread.
 
 </philosophy>
 
-<the_goal>
+<the-goal>
 
 By the end of questioning, you need enough clarity to write a PROJECT.md that downstream phases can act on:
 
@@ -24,9 +24,9 @@ By the end of questioning, you need enough clarity to write a PROJECT.md that do
 
 A vague PROJECT.md forces every downstream phase to guess. The cost compounds.
 
-</the_goal>
+</the-goal>
 
-<how_to_question>
+<how-to-question>
 
 **Start open.** Let them dump their mental model. Don't interrupt with structure.
 
@@ -40,42 +40,48 @@ A vague PROJECT.md forces every downstream phase to guess. The cost compounds.
 
 **Know when to stop.** When you understand what they want, why they want it, who it's for, and what done looks like — offer to proceed.
 
-</how_to_question>
+</how-to-question>
 
-<question_types>
+<question-types>
 
 Use these as inspiration, not a checklist. Pick what's relevant to the thread.
 
 **Motivation — why this exists:**
+
 - "What prompted this?"
 - "What are you doing today that this replaces?"
 - "What would you do if this existed?"
 
 **Concreteness — what it actually is:**
+
 - "Walk me through using this"
 - "You said X — what does that actually look like?"
 - "Give me an example"
 
 **Clarification — what they mean:**
+
 - "When you say Z, do you mean A or B?"
 - "You mentioned X — tell me more about that"
 
 **Success — how you'll know it's working:**
+
 - "How will you know this is working?"
 - "What does done look like?"
 
-</question_types>
+</question-types>
 
-<using_askuserquestion>
+<using-askuserquestion>
 
 Use AskUserQuestion to help users think by presenting concrete options to react to.
 
 **Good options:**
+
 - Interpretations of what they might mean
 - Specific examples to confirm or deny
 - Concrete choices that reveal priorities
 
 **Bad options:**
+
 - Generic categories ("Technical", "Business", "Other")
 - Leading options that presume an answer
 - Too many options (2-4 is ideal)
@@ -98,26 +104,26 @@ User mentions "frustrated with current tools"
 **Tip for users — modifying an option:**
 Users who want a slightly modified version of an option can select "Other" and reference the option by number: `#1 but for finger joints only` or `#2 with pagination disabled`. This avoids retyping the full option text.
 
-</using_askuserquestion>
+</using-askuserquestion>
 
-<freeform_rule>
+<freeform-rule>
 
 **When the user wants to explain freely, STOP using AskUserQuestion.**
 
 If a user selects "Other" and their response signals they want to describe something in their own words (e.g., "let me describe it", "I'll explain", "something else", or any open-ended reply that isn't choosing/modifying an existing option), you MUST:
 
 1. **Ask your follow-up as plain text** — NOT via AskUserQuestion
-2. **Wait for them to type at the normal prompt**
-3. **Resume AskUserQuestion** only after processing their freeform response
+1. **Wait for them to type at the normal prompt**
+1. **Resume AskUserQuestion** only after processing their freeform response
 
 The same applies if YOU include a freeform-indicating option (like "Let me explain" or "Describe in detail") and the user selects it.
 
 **Wrong:** User says "let me describe it" → AskUserQuestion("What feature?", ["Feature A", "Feature B", "Describe in detail"])
 **Right:** User says "let me describe it" → "Go ahead — what are you thinking?"
 
-</freeform_rule>
+</freeform-rule>
 
-<context_checklist>
+<context-checklist>
 
 Use this as a **background checklist**, not a conversation structure. Check these mentally as you go. If gaps remain, weave questions naturally.
 
@@ -128,9 +134,9 @@ Use this as a **background checklist**, not a conversation structure. Check thes
 
 Four things. If they volunteer more, capture it.
 
-</context_checklist>
+</context-checklist>
 
-<decision_gate>
+<decision-gate>
 
 When you could write a clear PROJECT.md, offer to proceed:
 
@@ -144,9 +150,9 @@ If "Keep exploring" — ask what they want to add or identify gaps and probe nat
 
 Loop until "Create PROJECT.md" selected.
 
-</decision_gate>
+</decision-gate>
 
-<anti_patterns>
+<anti-patterns>
 
 - **Checklist walking** — Going through domains regardless of what they said
 - **Canned questions** — "What's your core value?" "What's out of scope?" regardless of context
@@ -157,6 +163,6 @@ Loop until "Create PROJECT.md" selected.
 - **Premature constraints** — Asking about tech stack before understanding the idea
 - **User skills** — NEVER ask about user's technical experience. Claude builds.
 
-</anti_patterns>
+</anti-patterns>
 
-</questioning_guide>
+</questioning-guide>

@@ -1,0 +1,14 @@
+# GSD Markdown requires these parser extensions.
+wrap = "keep"
+number = false
+end_of_line = "lf"
+validate = true
+extensions = ["gfm", "frontmatter"]
+
+# Path exclusions require Python 3.13 or newer.
+exclude = [
+  "**/node_modules/**",
+  "**/.venv/**",
+  "**/venv/**",
+  "**/vendor/**",
+]

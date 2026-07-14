@@ -2,9 +2,9 @@
 List all GSD workspaces found in ~/gsd-workspaces/ with their status.
 </purpose>
 
-<required_reading>
+<required-reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
-</required_reading>
+</required-reading>
 
 <process>
 
@@ -48,6 +48,7 @@ Manage:
 ```
 
 For each workspace, show:
+
 - **Name** — directory name
 - **Repos** — count from init data
 - **Strategy** — from WORKSPACE.md

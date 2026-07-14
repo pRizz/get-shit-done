@@ -6,7 +6,7 @@ External plan ingestion with conflict detection and agent delegation.
 
 Future: `--prd` mode (PRD extraction into PROJECT.md + REQUIREMENTS.md + ROADMAP.md) is planned for a follow-up PR.
 
----
+______________________________________________________________________
 
 <step name="banner">
 
@@ -62,7 +62,7 @@ File not found: {FILEPATH}
 
 </step>
 
----
+______________________________________________________________________
 
 ## Path A: MODE=plan (--from)
 
@@ -71,14 +71,14 @@ File not found: {FILEPATH}
 Load project context for conflict detection:
 
 1. Read `.planning/ROADMAP.md` — extract phase structure, phase numbers, dependencies
-2. Read `.planning/PROJECT.md` — extract project constraints, tech stack, scope boundaries.
+1. Read `.planning/PROJECT.md` — extract project constraints, tech stack, scope boundaries.
    **If PROJECT.md does not exist:** skip constraint checks that rely on it and display:
    ```
    GSD > Note: No PROJECT.md found. Conflict checks against project constraints will be skipped.
    ```
-3. Read `.planning/REQUIREMENTS.md` — extract existing requirements for overlap and contradiction checks.
+1. Read `.planning/REQUIREMENTS.md` — extract existing requirements for overlap and contradiction checks.
    **If REQUIREMENTS.md does not exist:** skip requirement conflict checks and continue.
-4. Glob for all CONTEXT.md files across phase directories:
+1. Glob for all CONTEXT.md files across phase directories:
    ```bash
    find .planning/phases/ -name "*-CONTEXT.md" -o -name "CONTEXT.md" 2>/dev/null
    ```
@@ -93,10 +93,12 @@ Store loaded context for conflict detection in the next step.
 Read the imported file at FILEPATH.
 
 Determine the format:
+
 - **GSD PLAN.md format**: Has YAML frontmatter with `phase:`, `plan:`, `type:` fields
 - **Freeform document**: Any other format (markdown spec, design doc, task list, etc.)
 
 Extract from the imported content:
+
 - **Phase target**: Which phase this plan belongs to (from frontmatter or inferred from content)
 - **Plan objectives**: What the plan aims to accomplish
 - **Tasks listed**: Individual work items described in the plan
@@ -156,6 +158,7 @@ Display the full Conflict Detection Report:
 **If any [BLOCKER] exists:**
 
 Display:
+
 ```
 GSD > BLOCKED: {N} blockers must be resolved before import can proceed.
 ```
@@ -165,6 +168,7 @@ Exit WITHOUT writing any files. This is the safety gate — no PLAN.md is writte
 **If only WARNINGS and/or INFO (no blockers):**
 
 Ask via AskUserQuestion using the approve-revise-abort pattern:
+
 - question: "Review the warnings above. Proceed with import?"
 - header: "Approve?"
 - options: Approve | Abort
@@ -178,6 +182,7 @@ If user selects "Abort": exit cleanly with message "Import cancelled."
 Convert the imported content to GSD PLAN.md format.
 
 Ensure the PLAN.md has all required frontmatter fields:
+
 ```yaml
 ---
 phase: "{NN}-{slug}"
@@ -197,16 +202,19 @@ must_haves:
 If the imported plan references PBR plan naming (e.g., `PLAN-01.md`, `plan-01.md`), rename all references to GSD `{NN}-{MM}-PLAN.md` convention during conversion.
 
 Apply GSD naming convention for the output filename:
+
 - Format: `{NN}-{MM}-PLAN.md` (e.g., `04-01-PLAN.md`)
 - NEVER use `PLAN-01.md`, `plan-01.md`, or any other format
 - NN = phase number (zero-padded), MM = plan number within the phase (zero-padded)
 
 Determine the target directory:
+
 ```
 .planning/phases/{NN}-{slug}/
 ```
 
 If the directory does not exist, create it:
+
 ```bash
 mkdir -p ".planning/phases/{NN}-{slug}/"
 ```
@@ -227,11 +235,13 @@ Task({
 ```
 
 If the checker returns errors:
+
 - Display the errors to the user
 - Ask the user to resolve issues before the plan is considered imported
 - Do not delete the written file — the user can fix and re-validate manually
 
 If the checker returns clean:
+
 - Display: "Plan validation passed"
 
 </step>
@@ -239,17 +249,20 @@ If the checker returns clean:
 <step name="plan_finalize">
 
 Update `.planning/ROADMAP.md` to reflect the new plan:
+
 - Add the plan to the Plans list under the correct phase section
 - Include the plan name and description
 
 Update `.planning/STATE.md` if appropriate (e.g., increment total plan count).
 
 Commit the imported plan and updated files:
+
 ```bash
 node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs({phase}): import plan from {basename FILEPATH}" --files .planning/phases/{phase}/{plan}-PLAN.md .planning/ROADMAP.md
 ```
 
 Display completion:
+
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  GSD ► IMPORT COMPLETE
@@ -260,11 +273,12 @@ Show: plan filename written, phase directory, validation result, next steps.
 
 </step>
 
----
+______________________________________________________________________
 
 ## Anti-Patterns
 
 Do NOT:
+
 - Use markdown tables (`|---|`) in the conflict detection report — use plain-text [BLOCKER]/[WARNING]/[INFO] labels
 - Write PLAN.md files as `PLAN-01.md` or `plan-01.md` — always use `{NN}-{MM}-PLAN.md`
 - Use `pbr:plan-checker` or `pbr:planner` — use `gsd-plan-checker` and `gsd-planner`

@@ -2,9 +2,9 @@
 Check for GSD updates from the fork repo, preview commit changes, obtain user confirmation, and install from a temporary fork checkout with cache clearing.
 </purpose>
 
-<required_reading>
+<required-reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
-</required_reading>
+</required-reading>
 
 <process>
 
@@ -33,12 +33,14 @@ SOURCE_REPO="https://github.com/pRizz/get-shit-done.git"
 SOURCE_REPO_WEB="https://github.com/pRizz/get-shit-done"
 ORIGINAL_CWD="$(pwd)"
 ```
+
 </step>
 
 <step name="resolve_install_target">
 Detect the active GSD install using the same runtime/config precedence as `version.md`.
 
 First, derive `PREFERRED_CONFIG_DIR` and `PREFERRED_RUNTIME` from the invoking prompt's `execution_context` path:
+
 - If the path contains `/get-shit-done/workflows/update.md`, strip that suffix and store the remainder as `PREFERRED_CONFIG_DIR`
 - Path contains `/.codex/` -> `codex`
 - Path contains `/.gemini/` -> `gemini`
@@ -246,6 +248,7 @@ echo "$TARGET_DIR"
 ```
 
 Parse output:
+
 - Line 1 = installed version
 - Line 2 = install scope (`LOCAL`, `GLOBAL`, or `UNKNOWN`)
 - Line 3 = target runtime
@@ -342,6 +345,7 @@ TARGET_GIT_HEAD="$(git -C "$REPO_DIR" rev-parse HEAD)"
 TARGET_COMMIT_DATE="$(git -C "$REPO_DIR" show -s --format=%cI HEAD)"
 TARGET_COMMIT_URL="$SOURCE_REPO_WEB/commit/$TARGET_GIT_HEAD"
 ```
+
 </step>
 
 <step name="compare_current_vs_target">
@@ -361,6 +365,7 @@ You're already on the requested fork commit.
 Clean up `TMP_ROOT` and exit.
 
 **If `INSTALLED_GIT_HEAD` is available and differs from `TARGET_GIT_HEAD`:**
+
 - Attempt to fetch the installed commit into the temp checkout:
 
 ```bash
@@ -376,6 +381,7 @@ fi
 If `CHANGE_SUMMARY` is empty, still show `COMPARE_URL` and explain that a detailed local summary was unavailable.
 
 **If `INSTALLED_GIT_HEAD` is `unavailable`:**
+
 - Treat this as an update opportunity even if `DISPLAY_VERSION` looks current.
 - Explain that this install predates commit metadata, so `/gsd-update` will reinstall from the fork to stamp `RELEASE.json.gitHead`.
 - Skip the commit range summary and only show:
@@ -383,7 +389,7 @@ If `CHANGE_SUMMARY` is empty, still show `COMPARE_URL` and explain that a detail
   - target git SHA
   - target commit datetime
   - target commit URL
-</step>
+    </step>
 
 <step name="choose_install_scope">
 Prefer global installs for fork updates.
@@ -399,6 +405,7 @@ fi
 
 **If `INSTALL_SCOPE` is `LOCAL`:**
 Use AskUserQuestion:
+
 - Question: `A local GSD install was detected in the current project. Global install is preferred for fork updates. Which target should I use?`
 - Options:
   - `Install globally (recommended)`
@@ -406,6 +413,7 @@ Use AskUserQuestion:
   - `Cancel`
 
 Apply the response:
+
 - `Install globally (recommended)` -> `FINAL_INSTALL_SCOPE="GLOBAL"`
 - `Keep the local install` -> `FINAL_INSTALL_SCOPE="LOCAL"`
 - `Cancel` -> clean up `TMP_ROOT` and exit
@@ -463,6 +471,7 @@ Locally modified GSD files are backed up to `gsd-local-patches/`.
 ```
 
 Use AskUserQuestion:
+
 - Question: `Proceed with the fork update now?`
 - Options:
   - `Yes, update now`
@@ -556,6 +565,7 @@ Always clean up the temp checkout at the end:
 ```bash
 cleanup_temp
 ```
+
 </step>
 
 <step name="display_result">
@@ -577,6 +587,7 @@ Commit URL: {TARGET_COMMIT_URL}
 
 Restart your runtime to pick up the new commands.
 ```
+
 </step>
 
 <step name="check_local_patches">
@@ -586,10 +597,11 @@ If the installer output included `Local patches detected`, add:
 Local patches were backed up during the update.
 Run `/gsd-reapply-patches` (or `$gsd-reapply-patches` in Codex) to merge them into the new version.
 ```
+
 </step>
 </process>
 
-<success_criteria>
+<success-criteria>
 - [ ] Optional `--ref` is parsed and defaults to `main`
 - [ ] Installed runtime and scope are resolved with existing precedence rules
 - [ ] Installed `RELEASE.json` metadata is read when available
@@ -600,4 +612,4 @@ Run `/gsd-reapply-patches` (or `$gsd-reapply-patches` in Codex) to merge them in
 - [ ] Installer runs from the temp checkout source
 - [ ] Update cache is cleared after install
 - [ ] Restart reminder is shown
-</success_criteria>
+</success-criteria>

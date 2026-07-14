@@ -12,6 +12,7 @@ allowed-tools:
   - Task
   - AskUserQuestion
 ---
+
 <objective>
 Verify threat mitigations for a completed phase. Three states:
 - (A) SECURITY.md exists — audit and verify mitigations
@@ -21,9 +22,9 @@ Verify threat mitigations for a completed phase. Three states:
 Output: updated SECURITY.md.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/secure-phase.md
-</execution_context>
+</execution-context>
 
 <context>
 Phase: $ARGUMENTS — optional, defaults to last completed phase.

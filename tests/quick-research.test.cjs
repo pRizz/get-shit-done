@@ -146,8 +146,8 @@ describe('quick workflow: research step', () => {
 
   test('success criteria includes research items', () => {
     content = fs.readFileSync(workflowPath, 'utf-8');
-    const criteriaMatch = content.match(/<success_criteria>([\s\S]*?)<\/success_criteria>/);
-    assert.ok(criteriaMatch, 'should have <success_criteria> section');
+    const criteriaMatch = content.match(/<success-criteria>([\s\S]*?)<\/success-criteria>/);
+    assert.ok(criteriaMatch, 'should have <success-criteria> section');
     assert.ok(
       criteriaMatch[1].includes('--research'),
       'success criteria should mention --research flag'

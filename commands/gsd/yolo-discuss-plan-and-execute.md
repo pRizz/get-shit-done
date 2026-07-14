@@ -20,9 +20,9 @@ Range mode delegates to `/gsd-autonomous --yolo`.
 No wrapper-level sub-agent is needed because the delegated workflows already own planning and execution orchestration.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/yolo-discuss-plan-and-execute.md
-</execution_context>
+</execution-context>
 
 <context>
 $ARGUMENTS
@@ -32,8 +32,8 @@ $ARGUMENTS
 Execute the yolo-discuss-plan-and-execute workflow from @~/.claude/get-shit-done/workflows/yolo-discuss-plan-and-execute.md end-to-end.
 </process>
 
-<success_criteria>
+<success-criteria>
 - Single-phase runs use phase-level yolo discuss plus the existing auto-chain
 - Multi-phase runs delegate to autonomous yolo mode
 - Wrapper preserves the existing plan and execute gates
-</success_criteria>
+</success-criteria>

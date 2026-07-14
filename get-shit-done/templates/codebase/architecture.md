@@ -4,7 +4,7 @@ Template for `.planning/codebase/ARCHITECTURE.md` - captures conceptual code org
 
 **Purpose:** Document how the code is organized at a conceptual level. Complements STRUCTURE.md (which shows physical file locations).
 
----
+______________________________________________________________________
 
 ## File Template
 
@@ -103,7 +103,7 @@ Template for `.planning/codebase/ARCHITECTURE.md` - captures conceptual code org
 *Update when major patterns change*
 ```
 
-<good_examples>
+<good-examples>
 ```markdown
 # Architecture
 
@@ -114,6 +114,7 @@ Template for `.planning/codebase/ARCHITECTURE.md` - captures conceptual code org
 **Overall:** CLI Application with Plugin System
 
 **Key Characteristics:**
+
 - Single executable with subcommands
 - Plugin-based extensibility
 - File-based state (no database)
@@ -122,6 +123,7 @@ Template for `.planning/codebase/ARCHITECTURE.md` - captures conceptual code org
 ## Layers
 
 **Command Layer:**
+
 - Purpose: Parse user input and route to appropriate handler
 - Contains: Command definitions, argument parsing, help text
 - Location: `src/commands/*.ts`
@@ -129,6 +131,7 @@ Template for `.planning/codebase/ARCHITECTURE.md` - captures conceptual code org
 - Used by: CLI entry point (`src/index.ts`)
 
 **Service Layer:**
+
 - Purpose: Core business logic
 - Contains: FileService, TemplateService, InstallService
 - Location: `src/services/*.ts`
@@ -136,6 +139,7 @@ Template for `.planning/codebase/ARCHITECTURE.md` - captures conceptual code org
 - Used by: Command handlers
 
 **Utility Layer:**
+
 - Purpose: Shared helpers and abstractions
 - Contains: File I/O wrappers, path resolution, string formatting
 - Location: `src/utils/*.ts`
@@ -147,14 +151,15 @@ Template for `.planning/codebase/ARCHITECTURE.md` - captures conceptual code org
 **CLI Command Execution:**
 
 1. User runs: `gsd new-project`
-2. Commander parses args and flags
-3. Command handler invoked (`src/commands/new-project.ts`)
-4. Handler calls service methods (`src/services/project.ts` → `create()`)
-5. Service reads templates, processes files, writes output
-6. Results logged to console
-7. Process exits with status code
+1. Commander parses args and flags
+1. Command handler invoked (`src/commands/new-project.ts`)
+1. Handler calls service methods (`src/services/project.ts` → `create()`)
+1. Service reads templates, processes files, writes output
+1. Results logged to console
+1. Process exits with status code
 
 **State Management:**
+
 - File-based: All state lives in `.planning/` directory
 - No persistent in-memory state
 - Each command execution is independent
@@ -162,16 +167,19 @@ Template for `.planning/codebase/ARCHITECTURE.md` - captures conceptual code org
 ## Key Abstractions
 
 **Service:**
+
 - Purpose: Encapsulate business logic for a domain
 - Examples: `src/services/file.ts`, `src/services/template.ts`, `src/services/project.ts`
 - Pattern: Singleton-like (imported as modules, not instantiated)
 
 **Command:**
+
 - Purpose: CLI command definition
 - Examples: `src/commands/new-project.ts`, `src/commands/plan-phase.ts`
 - Pattern: Commander.js command registration
 
 **Template:**
+
 - Purpose: Reusable document structures
 - Examples: PROJECT.md, PLAN.md templates
 - Pattern: Markdown files with substitution variables
@@ -179,11 +187,13 @@ Template for `.planning/codebase/ARCHITECTURE.md` - captures conceptual code org
 ## Entry Points
 
 **CLI Entry:**
+
 - Location: `src/index.ts`
 - Triggers: User runs `gsd <command>`
 - Responsibilities: Register commands, parse args, display help
 
 **Commands:**
+
 - Location: `src/commands/*.ts`
 - Triggers: Matched command from CLI
 - Responsibilities: Validate input, call services, format output
@@ -193,6 +203,7 @@ Template for `.planning/codebase/ARCHITECTURE.md` - captures conceptual code org
 **Strategy:** Throw exceptions, catch at command level, log and exit
 
 **Patterns:**
+
 - Services throw Error with descriptive messages
 - Command handlers catch, log error to stderr, exit(1)
 - Validation errors shown before execution (fail fast)
@@ -200,26 +211,30 @@ Template for `.planning/codebase/ARCHITECTURE.md` - captures conceptual code org
 ## Cross-Cutting Concerns
 
 **Logging:**
+
 - Console.log for normal output
 - Console.error for errors
 - Chalk for colored output
 
 **Validation:**
+
 - Zod schemas for config file parsing
 - Manual validation in command handlers
 - Fail fast on invalid input
 
 **File Operations:**
+
 - FileService abstraction over fs-extra
 - All paths validated before operations
 - Atomic writes (temp file + rename)
 
----
+______________________________________________________________________
 
 *Architecture analysis: 2025-01-20*
 *Update when major patterns change*
+
 ```
-</good_examples>
+</good-examples>
 
 <guidelines>
 **What belongs in ARCHITECTURE.md:**
@@ -253,3 +268,4 @@ Include file paths as concrete examples of abstractions. Use backtick formatting
 - Identifying where to add code (which layer handles X?)
 - Understanding dependencies between components
 </guidelines>
+```

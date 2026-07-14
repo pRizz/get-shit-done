@@ -26,9 +26,10 @@ If no CONTEXT.md exists: proceed without — plan using research and requirement
 If RESEARCH.md exists: use existing research.
 
 If RESEARCH.md is missing and research is enabled:
+
 1. Execute research phase (spawn researcher agent)
-2. Researcher writes RESEARCH.md
-3. Continue to planning
+1. Researcher writes RESEARCH.md
+1. Continue to planning
 
 If research is disabled: skip to planning step.
 </step>
@@ -75,10 +76,10 @@ After plans pass the checker (or checker is skipped), verify all phase requireme
 
 </process>
 
-<success_criteria>
+<success-criteria>
 - Phase validated against roadmap
 - Research completed (unless skipped or existing)
 - PLAN.md file(s) created with valid structure
 - Plan checker passed (or issues logged)
 - Requirements coverage verified
-</success_criteria>
+</success-criteria>

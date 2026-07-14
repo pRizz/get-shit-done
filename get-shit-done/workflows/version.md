@@ -2,9 +2,9 @@
 Display the installed GSD version, release commit, commit date, runtime, and install scope for the invoking runtime.
 </purpose>
 
-<required_reading>
+<required-reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
-</required_reading>
+</required-reading>
 
 <process>
 
@@ -12,6 +12,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 Detect the active GSD install using the same runtime/config precedence as `update.md`.
 
 First, derive `PREFERRED_CONFIG_DIR` and `PREFERRED_RUNTIME` from the invoking prompt's `execution_context` path:
+
 - If the path contains `/get-shit-done/workflows/version.md`, strip that suffix and store the remainder as `PREFERRED_CONFIG_DIR`
 - Path contains `/.codex/` -> `codex`
 - Path contains `/.gemini/` -> `gemini`
@@ -219,11 +220,12 @@ echo "$TARGET_DIR"
 ```
 
 Parse output:
+
 - Line 1 = installed version
 - Line 2 = install scope (`LOCAL`, `GLOBAL`, or `UNKNOWN`)
 - Line 3 = target runtime
 - Line 4 = resolved config directory
-</step>
+  </step>
 
 <step name="read_release_metadata">
 Read the local release metadata from the resolved install.
@@ -270,10 +272,11 @@ commit_date="$(printf '%s\n' "$release_output" | sed -n '3p')"
 This step must stay compatible with macOS default Bash 3.2. Do not use `mapfile` or `readarray` here.
 
 Parse output from `release_output` with portable shell logic:
+
 - `display_version` = line 1
 - `git_head` = line 2 or `unavailable`
 - `commit_date` = line 3 or `unavailable`
-</step>
+  </step>
 
 <step name="display_output">
 Output exactly these lines:
@@ -291,6 +294,7 @@ If commit metadata is unavailable, add one final line:
 ```text
 Note: Commit metadata unavailable. Rerun install or use gsd-update to refresh install metadata.
 ```
+
 </step>
 
 </process>

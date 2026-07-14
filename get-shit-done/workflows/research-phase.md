@@ -4,10 +4,10 @@ Research how to implement a phase. Spawns gsd-phase-researcher with phase contex
 Standalone research command. For most workflows, use `/gsd-plan-phase` which integrates research automatically.
 </purpose>
 
-<available_agent_types>
+<available-agent-types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
 - gsd-phase-researcher — Researches technical approaches for a phase
-</available_agent_types>
+</available-agent-types>
 
 <process>
 
@@ -16,6 +16,7 @@ Valid GSD subagent types (use exact names — do not fall back to 'general-purpo
 @~/.claude/get-shit-done/references/model-profile-resolution.md
 
 Resolve model for:
+
 - `gsd-phase-researcher`
 
 ## Step 1: Normalize and Validate Phase
@@ -53,17 +54,17 @@ Task(
 Research implementation approach for Phase {phase}: {name}
 </objective>
 
-<files_to_read>
+<files-to-read>
 - {context_path} (USER DECISIONS from /gsd-discuss-phase)
 - {requirements_path} (Project requirements)
 - {state_path} (Project decisions and history)
-</files_to_read>
+</files-to-read>
 
 ${AGENT_SKILLS_RESEARCHER}
 
-<additional_context>
+<additional-context>
 Phase description: {description}
-</additional_context>
+</additional-context>
 
 <output>
 Write to: .planning/phases/${PHASE}-{slug}/${PHASE}-RESEARCH.md

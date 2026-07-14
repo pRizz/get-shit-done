@@ -4,11 +4,11 @@ Interactive command center for managing a milestone from a single terminal. Show
 
 </purpose>
 
-<required_reading>
+<required-reading>
 
 Read all files referenced by the invoking prompt's execution_context before starting.
 
-</required_reading>
+</required-reading>
 
 <process>
 
@@ -26,6 +26,7 @@ if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 Parse JSON for: `milestone_version`, `milestone_name`, `phase_count`, `completed_count`, `in_progress_count`, `phases`, `recommended_actions`, `all_complete`, `waiting_signal`, `manager_flags`.
 
 `manager_flags` contains per-step passthrough flags from config:
+
 - `manager_flags.discuss` — appended to `/gsd-discuss-phase` args (e.g. `"--auto --analyze"`)
 - `manager_flags.plan` — appended to plan agent init command
 - `manager_flags.execute` — appended to execute agent init command
@@ -118,11 +119,13 @@ All {phase_count} phases done. Ready for final steps:
 ```
 
 Ask user via AskUserQuestion:
+
 - **question:** "All phases complete. What next?"
 - **options:** "Verify work" / "Complete milestone" / "Exit manager"
 
 Handle responses:
-- "Verify work": `Skill(skill="gsd-verify-work")`  then loop to dashboard.
+
+- "Verify work": `Skill(skill="gsd-verify-work")` then loop to dashboard.
 - "Complete milestone": `Skill(skill="gsd-complete-milestone")` then exit.
 - "Exit manager": Go to exit step.
 
@@ -133,11 +136,14 @@ Handle responses:
 **Building options:**
 
 1. Collect all background actions (execute and plan recommendations) — there can be multiple of each.
-2. Collect the inline action (discuss recommendation, if any — there will be at most one since discuss is sequential).
-3. Build compound options:
+
+1. Collect the inline action (discuss recommendation, if any — there will be at most one since discuss is sequential).
+
+1. Build compound options:
 
    **If there are ANY recommended actions (background, inline, or both):**
    Create ONE primary "Continue" option that dispatches ALL of them together:
+
    - Label: `"Continue"` — always this exact word
    - Below the label, list every action that will happen. Enumerate ALL recommended actions — do not cap or truncate:
      ```
@@ -151,7 +157,8 @@ Handle responses:
 
    **Important:** The Continue option must include EVERY action from `recommended_actions` — not just 2. If there are 3 actions, list 3. If there are 5, list 5.
 
-4. Always add:
+1. Always add:
+
    - `"Refresh dashboard"`
    - `"Exit manager"`
 
@@ -171,6 +178,7 @@ Continue:
 **Auto-refresh:** If background agents are running (`is_active` is true for any phase), set a 60-second auto-refresh cycle. After presenting the action menu, if no user input is received within 60 seconds, automatically refresh the dashboard. This interval is configurable via `manager_refresh_interval` in GSD config (default: 60 seconds, set to 0 to disable).
 
 Present via AskUserQuestion:
+
 - **question:** "What would you like to do?"
 - **options:** (compound options as built above + refresh + exit, AskUserQuestion auto-adds "Other")
 
@@ -197,7 +205,7 @@ Go to exit step.
 When the user selects a compound option:
 
 1. **Spawn all background agents first** (plan/execute) — dispatch them in parallel using the Plan Phase N / Execute Phase N handlers below.
-2. **Then run the inline discuss:**
+1. **Then run the inline discuss:**
 
 ```
 Skill(skill="gsd-discuss-phase", args="{PHASE_NUM} {manager_flags.discuss}")
@@ -288,7 +296,7 @@ Loop back to dashboard step.
 When notified that a background agent completed:
 
 1. Read the result message from the agent.
-2. Display a brief notification:
+1. Display a brief notification:
 
 ```
 ✓ {description}
@@ -302,6 +310,7 @@ When notified that a background agent completed:
 Classify the error:
 
 **Permission / tool access error** (e.g. tool not allowed, permission denied, sandbox restriction):
+
 - Parse the error to identify which tool or command was blocked.
 - Display the error clearly, then offer to fix it:
   - **question:** "Phase {N} failed — permission denied for `{tool_or_command}`. Want me to add it to settings.local.json so it's allowed?"
@@ -311,6 +320,7 @@ Classify the error:
   - "Skip and continue": Loop to dashboard (phase stays in current state).
 
 **Other errors** (git lock, file conflict, logic error, etc.):
+
 - Display the error, then offer options via AskUserQuestion:
   - **question:** "Background agent for Phase {N} encountered an issue: {error}. What next?"
   - **options:** "Retry" / "Run inline instead" / "Skip and continue" / "View details"
@@ -345,7 +355,7 @@ Display final status with progress bar:
 
 </process>
 
-<success_criteria>
+<success-criteria>
 - [ ] Dashboard displays all phases with correct status indicators (D/P/E/V columns)
 - [ ] Progress bar shows accurate completion percentage
 - [ ] Dependency resolution: blocked phases show which deps are missing
@@ -360,4 +370,4 @@ Display final status with progress bar:
 - [ ] Exit shows final status with resume instructions
 - [ ] "Other" free-text input parsed for phase number and action
 - [ ] Manager loop continues until user exits or milestone completes
-</success_criteria>
+</success-criteria>

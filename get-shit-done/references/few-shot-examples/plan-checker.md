@@ -51,6 +51,7 @@ last_calibrated: 2026-03-24
 **Output:**
 
 > ## CHECK PASSED
+>
 > Plans: 1 | Tasks: 3 | Dimensions: 10 | Issues: 0
 
 **Why this is bad:** The checker missed two violations. verification_derivation requires verify commands to be runnable and test actual output -- an empty verify block is a BLOCKER. Verify commands must distinguish pass from fail -- `echo "done"` always returns 0 regardless of implementation state. Both should have been flagged.

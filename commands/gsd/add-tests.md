@@ -11,11 +11,12 @@ allowed-tools:
   - Grep
   - Task
   - AskUserQuestion
-argument-instructions: |
+argument-instructions: |-
   Parse the argument as a phase number (integer, decimal, or letter-suffix), plus optional free-text instructions.
   Example: /gsd-add-tests 12
   Example: /gsd-add-tests 12 focus on edge cases in the pricing module
 ---
+
 <objective>
 Generate unit and E2E tests for a completed phase, using its SUMMARY.md, CONTEXT.md, and VERIFICATION.md as specifications.
 
@@ -24,9 +25,9 @@ Analyzes implementation files, classifies them into TDD (unit), E2E (browser), o
 Output: Test files committed with message `test(phase-{N}): add unit and E2E tests from add-tests command`
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/add-tests.md
-</execution_context>
+</execution-context>
 
 <context>
 Phase: $ARGUMENTS

@@ -66,17 +66,17 @@ const AGENT_WIRING = {
   },
   'gsd-phase-researcher': {
     refFile: 'thinking-models-research.md',
-    wiredInsideBlock: 'execution_flow',
+    wiredInsideBlock: 'execution-flow',
     wiredInsideText: 'At research decision points, apply structured reasoning',
   },
   'gsd-plan-checker': {
     refFile: 'thinking-models-planning.md',
-    wiredInsideBlock: 'verification_dimensions',
+    wiredInsideBlock: 'verification-dimensions',
     wiredInsideText: 'At decision points during plan verification, apply structured reasoning',
   },
   'gsd-verifier': {
     refFile: 'thinking-models-verification.md',
-    wiredInsideBlock: 'verification_process',
+    wiredInsideBlock: 'verification-process',
     wiredInsideText: 'At verification decision points, apply structured reasoning',
   },
 };
@@ -219,14 +219,14 @@ describe('agent files use inline @-reference wiring at decision points', () => {
         );
       });
 
-      test('does NOT put thinking-models reference inside <required_reading> (inline wiring only)', () => {
-        // Extract content from all <required_reading> blocks
-        const reqReadingMatches = content.match(/<required_reading>([\s\S]*?)<\/required_reading>/g) || [];
+      test('does NOT put thinking-models reference inside <required-reading> (inline wiring only)', () => {
+        // Extract content from all <required-reading> blocks
+        const reqReadingMatches = content.match(/<required-reading>([\s\S]*?)<\/required-reading>/g) || [];
         const reqReadingContent = reqReadingMatches.join('');
         assert.equal(
           reqReadingContent.includes(wiring.refFile),
           false,
-          `${agent}.md puts ${wiring.refFile} inside a <required_reading> block — thinking-model references must use inline @-reference wiring at decision points, not <required_reading> blocks`
+          `${agent}.md puts ${wiring.refFile} inside a <required-reading> block — thinking-model references must use inline @-reference wiring at decision points, not <required-reading> blocks`
         );
       });
     });

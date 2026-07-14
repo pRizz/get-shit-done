@@ -17,6 +17,7 @@ TARGET=${1:-main}
 ```
 
 Check preconditions:
+
 - Must be on a feature branch (not main/master)
 - Must have commits ahead of target
 
@@ -29,6 +30,7 @@ fi
 ```
 
 Display:
+
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  GSD ► PR BRANCH
@@ -38,6 +40,7 @@ Branch: {CURRENT_BRANCH}
 Target: {TARGET}
 Commits: {AHEAD} ahead
 ```
+
 </step>
 
 <step name="analyze_commits">
@@ -57,16 +60,19 @@ ALL_PLANNING=$(echo "$FILES" | grep -v "^\.planning/" | wc -l)
 ```
 
 Classify:
+
 - **Code commits**: Touch at least one non-.planning/ file → INCLUDE
 - **Planning-only commits**: Touch only .planning/ files → EXCLUDE
 - **Mixed commits**: Touch both → INCLUDE (planning changes come along)
 
 Display analysis:
+
 ```
 Commits to include: {N} (code changes)
 Commits to exclude: {N} (planning-only)
 Mixed commits: {N} (code + planning — included)
 ```
+
 </step>
 
 <step name="create_pr_branch">
@@ -74,8 +80,10 @@ Mixed commits: {N} (code + planning — included)
 PR_BRANCH="${CURRENT_BRANCH}-pr"
 
 # Create PR branch from target
+
 git checkout -b "$PR_BRANCH" "$TARGET"
-```
+
+````
 
 Cherry-pick only code commits (in order):
 
@@ -86,12 +94,14 @@ for HASH in $CODE_COMMITS; do
   git rm -r --cached .planning/ 2>/dev/null || true
   git commit -C "$HASH"
 done
-```
+````
 
 Return to original branch:
+
 ```bash
 git checkout "$CURRENT_BRANCH"
 ```
+
 </step>
 
 <step name="verify">
@@ -103,6 +113,7 @@ PR_COMMITS=$(git rev-list --count "$TARGET".."$PR_BRANCH")
 ```
 
 Display results:
+
 ```
 ✅ PR branch created: {PR_BRANCH}
 
@@ -116,14 +127,15 @@ Next steps:
 
 Or use /gsd-ship to create the PR automatically.
 ```
+
 </step>
 
 </process>
 
-<success_criteria>
+<success-criteria>
 - [ ] PR branch created from target
 - [ ] Planning-only commits excluded
 - [ ] No .planning/ files in PR branch diff
 - [ ] Commit messages preserved from original
 - [ ] User shown next steps
-</success_criteria>
+</success-criteria>

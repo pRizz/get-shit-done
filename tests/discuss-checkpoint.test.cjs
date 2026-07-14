@@ -53,7 +53,7 @@ describe('discuss-phase incremental checkpoint saves (#1485)', () => {
 
   test('success criteria include checkpoint requirements', () => {
     const content = fs.readFileSync(workflowPath, 'utf8');
-    const criteriaMatch = content.match(/<success_criteria>([\s\S]*?)<\/success_criteria>/);
+    const criteriaMatch = content.match(/<success-criteria>([\s\S]*?)<\/success-criteria>/);
     const criteria = criteriaMatch ? criteriaMatch[1] : '';
     assert.ok(criteria.includes('checkpoint') || criteria.includes('Checkpoint'),
       'success criteria should mention checkpoints');

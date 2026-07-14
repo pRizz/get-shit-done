@@ -13,16 +13,17 @@ allowed-tools:
   - AskUserQuestion
   - mcp__context7__*
 ---
+
 <objective>
 Create a UI design contract (UI-SPEC.md) for a frontend phase.
 Orchestrates gsd-ui-researcher and gsd-ui-checker.
 Flow: Validate → Research UI → Verify UI-SPEC → Done
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/ui-phase.md
 @~/.claude/get-shit-done/references/ui-brand.md
-</execution_context>
+</execution-context>
 
 <context>
 Phase number: $ARGUMENTS — optional, auto-detects next unplanned phase if omitted.

@@ -104,7 +104,7 @@ describe('CR-AGENT: code review agent frontmatter', () => {
 
   test('gsd-code-fixer.md success_criteria consistent with rollback strategy (git checkout)', () => {
     const content = fs.readFileSync(path.join(AGENTS_DIR, 'gsd-code-fixer.md'), 'utf-8');
-    const successCriteria = content.match(/<success_criteria>([\s\S]*?)<\/success_criteria>/)?.[1] || '';
+    const successCriteria = content.match(/<success-criteria>([\s\S]*?)<\/success-criteria>/)?.[1] || '';
     assert.ok(successCriteria.includes('git checkout'),
       'gsd-code-fixer success_criteria must reference git checkout rollback');
     assert.ok(!successCriteria.includes('Write tool with captured'),

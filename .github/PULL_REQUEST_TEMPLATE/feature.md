@@ -4,7 +4,7 @@
 > — Bug fix: use [fix.md](?template=fix.md)
 > — Enhancement to existing behavior: use [enhancement.md](?template=enhancement.md)
 
----
+______________________________________________________________________
 
 ## Linked Issue
 
@@ -17,7 +17,7 @@ Closes #
 > Do not open this PR if a maintainer has not yet approved the feature spec.
 > Do not open this PR if you wrote code before the issue was approved.
 
----
+______________________________________________________________________
 
 ## Feature summary
 
@@ -30,16 +30,16 @@ Closes #
 <!-- List every new file added and its purpose. -->
 
 | File | Purpose |
-|------|---------|
-| | |
+| ---- | ------- |
+|      |         |
 
 ### Modified files
 
 <!-- List every existing file modified and what changed in it. -->
 
 | File | What changed |
-|------|-------------|
-| | |
+| ---- | ------------ |
+|      |              |
 
 ## Implementation notes
 
@@ -73,10 +73,10 @@ Closes #
 - [ ] OpenCode
 - [ ] Codex
 - [ ] Copilot
-- [ ] Other: ___
+- [ ] Other: \_\_\_
 - [ ] N/A — specify which runtimes are supported and why others are excluded
 
----
+______________________________________________________________________
 
 ## Scope confirmation
 
@@ -84,7 +84,7 @@ Closes #
 - [ ] No additional features, commands, or behaviors were added beyond what was approved
 - [ ] If scope changed during implementation, I updated the issue spec and received re-approval
 
----
+______________________________________________________________________
 
 ## Checklist
 

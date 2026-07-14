@@ -2,7 +2,7 @@
 
 > `gsd-tools.cjs` のプログラマティック API リファレンスです。ワークフローやエージェントが内部的に使用します。ユーザー向けコマンドについては、[コマンドリファレンス](COMMANDS.md) を参照してください。
 
----
+______________________________________________________________________
 
 ## 概要
 
@@ -12,17 +12,19 @@
 **モジュール:** `get-shit-done/bin/lib/` 内の15個のドメインモジュール
 
 **使い方:**
+
 ```bash
 node gsd-tools.cjs <command> [args] [--raw] [--cwd <path>]
 ```
 
 **グローバルフラグ:**
-| フラグ | 説明 |
-|--------|------|
-| `--raw` | 機械可読な出力（JSON またはプレーンテキスト、フォーマットなし） |
+
+| フラグ         | 説明                                                                   |
+| -------------- | ---------------------------------------------------------------------- |
+| `--raw`        | 機械可読な出力（JSON またはプレーンテキスト、フォーマットなし）        |
 | `--cwd <path>` | 作業ディレクトリの上書き（サンドボックス化されたサブエージェント向け） |
 
----
+______________________________________________________________________
 
 ## State コマンド
 
@@ -76,7 +78,7 @@ node gsd-tools.cjs state-snapshot
 
 現在位置、フェーズ、プラン、ステータス、決定事項、ブロッカー、メトリクス、最終アクティビティを含む JSON を返します。
 
----
+______________________________________________________________________
 
 ## Phase コマンド
 
@@ -108,7 +110,7 @@ node gsd-tools.cjs phase-plan-index <phase>
 node gsd-tools.cjs phases list [--type planned|executed|all] [--phase N] [--include-archived]
 ```
 
----
+______________________________________________________________________
 
 ## Roadmap コマンド
 
@@ -125,7 +127,7 @@ node gsd-tools.cjs roadmap analyze
 node gsd-tools.cjs roadmap update-plan-progress <N>
 ```
 
----
+______________________________________________________________________
 
 ## Config コマンド
 
@@ -145,7 +147,7 @@ node gsd-tools.cjs config-get <key>
 node gsd-tools.cjs config-set-model-profile <profile>
 ```
 
----
+______________________________________________________________________
 
 ## モデル解決
 
@@ -157,7 +159,7 @@ node gsd-tools.cjs resolve-model <agent-name>
 
 エージェント名: `gsd-planner`, `gsd-executor`, `gsd-phase-researcher`, `gsd-project-researcher`, `gsd-research-synthesizer`, `gsd-verifier`, `gsd-plan-checker`, `gsd-integration-checker`, `gsd-roadmapper`, `gsd-debugger`, `gsd-codebase-mapper`, `gsd-nyquist-auditor`
 
----
+______________________________________________________________________
 
 ## Verification コマンド
 
@@ -186,7 +188,7 @@ node gsd-tools.cjs verify artifacts <plan-file>
 node gsd-tools.cjs verify key-links <plan-file>
 ```
 
----
+______________________________________________________________________
 
 ## Validation コマンド
 
@@ -200,7 +202,7 @@ node gsd-tools.cjs validate consistency
 node gsd-tools.cjs validate health [--repair]
 ```
 
----
+______________________________________________________________________
 
 ## Template コマンド
 
@@ -216,7 +218,7 @@ node gsd-tools.cjs template fill <type> --phase N [--plan M] [--name "..."] [--t
 
 `fill` のテンプレートタイプ: `summary`, `plan`, `verification`
 
----
+______________________________________________________________________
 
 ## Frontmatter コマンド
 
@@ -236,7 +238,7 @@ node gsd-tools.cjs frontmatter merge <file> --data '{json}'
 node gsd-tools.cjs frontmatter validate <file> --schema plan|summary|verification
 ```
 
----
+______________________________________________________________________
 
 ## Scaffold コマンド
 
@@ -256,7 +258,7 @@ node gsd-tools.cjs scaffold verification --phase N
 node gsd-tools.cjs scaffold phase-dir --phase N --name "phase name"
 ```
 
----
+______________________________________________________________________
 
 ## Init コマンド（複合コンテキスト読み込み）
 
@@ -284,7 +286,7 @@ INIT=$(node gsd-tools.cjs init execute-phase "1")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
----
+______________________________________________________________________
 
 ## Milestone コマンド
 
@@ -297,7 +299,7 @@ node gsd-tools.cjs requirements mark-complete <ids>
 # 受け付ける形式: REQ-01,REQ-02 または REQ-01 REQ-02 または [REQ-01, REQ-02]
 ```
 
----
+______________________________________________________________________
 
 ## ユーティリティコマンド
 
@@ -344,24 +346,24 @@ node gsd-tools.cjs commit <message> [--files f1 f2] [--amend] [--no-verify]
 node gsd-tools.cjs websearch <query> [--limit N] [--freshness day|week|month]
 ```
 
----
+______________________________________________________________________
 
 ## モジュールアーキテクチャ
 
-| モジュール | ファイル | エクスポート |
-|------------|----------|--------------|
-| Core | `lib/core.cjs` | `error()`, `output()`, `parseArgs()`, 共通ユーティリティ |
-| State | `lib/state.cjs` | すべての `state` サブコマンド、`state-snapshot` |
-| Phase | `lib/phase.cjs` | フェーズ CRUD、`find-phase`、`phase-plan-index`、`phases list` |
-| Roadmap | `lib/roadmap.cjs` | ロードマップ解析、フェーズ抽出、進捗更新 |
-| Config | `lib/config.cjs` | 設定の読み書き、セクション初期化 |
-| Verify | `lib/verify.cjs` | すべての検証・バリデーションコマンド |
-| Template | `lib/template.cjs` | テンプレート選択と変数の穴埋め |
-| Frontmatter | `lib/frontmatter.cjs` | YAML フロントマター CRUD |
-| Init | `lib/init.cjs` | 全ワークフロー向け複合コンテキスト読み込み |
-| Milestone | `lib/milestone.cjs` | マイルストーンアーカイブ、要件マーキング |
-| Commands | `lib/commands.cjs` | その他: slug、タイムスタンプ、TODO、scaffold、統計、Web 検索 |
-| Model Profiles | `lib/model-profiles.cjs` | プロファイル解決テーブル |
-| UAT | `lib/uat.cjs` | 全フェーズ横断 UAT/検証監査 |
-| Profile Output | `lib/profile-output.cjs` | 開発者プロファイルのフォーマット |
-| Profile Pipeline | `lib/profile-pipeline.cjs` | セッション分析パイプライン |
+| モジュール       | ファイル                   | エクスポート                                                   |
+| ---------------- | -------------------------- | -------------------------------------------------------------- |
+| Core             | `lib/core.cjs`             | `error()`, `output()`, `parseArgs()`, 共通ユーティリティ       |
+| State            | `lib/state.cjs`            | すべての `state` サブコマンド、`state-snapshot`                |
+| Phase            | `lib/phase.cjs`            | フェーズ CRUD、`find-phase`、`phase-plan-index`、`phases list` |
+| Roadmap          | `lib/roadmap.cjs`          | ロードマップ解析、フェーズ抽出、進捗更新                       |
+| Config           | `lib/config.cjs`           | 設定の読み書き、セクション初期化                               |
+| Verify           | `lib/verify.cjs`           | すべての検証・バリデーションコマンド                           |
+| Template         | `lib/template.cjs`         | テンプレート選択と変数の穴埋め                                 |
+| Frontmatter      | `lib/frontmatter.cjs`      | YAML フロントマター CRUD                                       |
+| Init             | `lib/init.cjs`             | 全ワークフロー向け複合コンテキスト読み込み                     |
+| Milestone        | `lib/milestone.cjs`        | マイルストーンアーカイブ、要件マーキング                       |
+| Commands         | `lib/commands.cjs`         | その他: slug、タイムスタンプ、TODO、scaffold、統計、Web 検索   |
+| Model Profiles   | `lib/model-profiles.cjs`   | プロファイル解決テーブル                                       |
+| UAT              | `lib/uat.cjs`              | 全フェーズ横断 UAT/検証監査                                    |
+| Profile Output   | `lib/profile-output.cjs`   | 開発者プロファイルのフォーマット                               |
+| Profile Pipeline | `lib/profile-pipeline.cjs` | セッション分析パイプライン                                     |

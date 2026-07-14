@@ -11,6 +11,7 @@ allowed-tools:
   - Write
   - Task
 ---
+
 <objective>
 Validate built features through conversational testing with persistent state.
 
@@ -19,17 +20,17 @@ Purpose: Confirm what Claude built actually works from user's perspective. One t
 Output: {phase_num}-UAT.md tracking all test results. If issues found: diagnosed gaps, verified fix plans ready for /gsd-execute-phase
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/verify-work.md
 @~/.claude/get-shit-done/templates/UAT.md
-</execution_context>
+</execution-context>
 
 <context>
 Phase: $ARGUMENTS (optional)
 - If provided: Test specific phase (e.g., "4")
 - If not provided: Check for active sessions or prompt for phase
 
-Context files are resolved inside the workflow (`init verify-work`) and delegated via `<files_to_read>` blocks.
+Context files are resolved inside the workflow (`init verify-work`) and delegated via `<files-to-read>` blocks.
 </context>
 
 <process>

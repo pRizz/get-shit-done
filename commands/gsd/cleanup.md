@@ -7,15 +7,16 @@ allowed-tools:
   - Bash
   - AskUserQuestion
 ---
+
 <objective>
 Archive phase directories from completed milestones into `.planning/milestones/v{X.Y}-phases/`.
 
 Use when `.planning/phases/` has accumulated directories from past milestones.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/cleanup.md
-</execution_context>
+</execution-context>
 
 <process>
 Follow the cleanup workflow at @~/.claude/get-shit-done/workflows/cleanup.md.

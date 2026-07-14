@@ -118,7 +118,7 @@ Read CLAUDE.md before acting.
     const convertedAgent = convertClaudeAgentToTraeAgent(agent);
 
     assert.ok(convertedCommand.includes('name: gsd-new-project'), convertedCommand);
-    assert.ok(!convertedCommand.includes('<trae_skill_adapter>'), convertedCommand);
+    assert.ok(!convertedCommand.includes('<trae-skill-adapter>'), convertedCommand);
     assert.ok(convertedCommand.includes('.trae/skills/'), convertedCommand);
     assert.ok(convertedCommand.includes('/gsd-help'), convertedCommand);
 
@@ -149,7 +149,7 @@ describe('copyCommandsAsTraeSkills', () => {
     assert.ok(fs.existsSync(generated), generated);
 
     const content = fs.readFileSync(generated, 'utf8');
-    assert.ok(!content.includes('<trae_skill_adapter>'), content);
+    assert.ok(!content.includes('<trae-skill-adapter>'), content);
     assert.ok(content.includes('name: gsd-help'), content);
   });
 });

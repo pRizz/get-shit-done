@@ -10,6 +10,7 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" phase next-decimal 6
 ```
 
 输出：
+
 ```json
 {
   "found": true,
@@ -20,6 +21,7 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" phase next-decimal 6
 ```
 
 已有小数时：
+
 ```json
 {
   "found": true,
@@ -38,6 +40,7 @@ BASE_PHASE=$(printf '%s\n' "$DECIMAL_INFO" | jq -r '.base_phase')
 ```
 
 或使用 --raw 标志：
+
 ```bash
 DECIMAL_PHASE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" phase next-decimal "${AFTER_PHASE}" --raw)
 # 返回: 06.1
@@ -45,12 +48,12 @@ DECIMAL_PHASE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" phase next-
 
 ## 示例
 
-| 已有阶段 | 下一个阶段 |
-|----------|------------|
-| 仅 06 | 06.1 |
-| 06, 06.1 | 06.2 |
-| 06, 06.1, 06.2 | 06.3 |
-| 06, 06.1, 06.3（有空缺）| 06.4 |
+| 已有阶段                 | 下一个阶段 |
+| ------------------------ | ---------- |
+| 仅 06                    | 06.1       |
+| 06, 06.1                 | 06.2       |
+| 06, 06.1, 06.2           | 06.3       |
+| 06, 06.1, 06.3（有空缺） | 06.4       |
 
 ## 目录命名
 

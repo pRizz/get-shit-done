@@ -4,7 +4,7 @@
 > — Bug fix: use [fix.md](?template=fix.md)
 > — New feature: use [feature.md](?template=feature.md)
 
----
+______________________________________________________________________
 
 ## Linked Issue
 
@@ -16,7 +16,7 @@ Closes #
 > ⛔ **No `approved-enhancement` label on the issue = immediate close.**
 > Do not open this PR if a maintainer has not yet approved the enhancement proposal.
 
----
+______________________________________________________________________
 
 ## What this enhancement improves
 
@@ -25,9 +25,11 @@ Closes #
 ## Before / After
 
 **Before:**
+
 <!-- Describe or show the current behavior. Include example output if applicable. -->
 
 **After:**
+
 <!-- Describe or show the behavior after this enhancement. Include example output if applicable. -->
 
 ## How it was implemented
@@ -52,10 +54,10 @@ Closes #
 - [ ] Claude Code
 - [ ] Gemini CLI
 - [ ] OpenCode
-- [ ] Other: ___
+- [ ] Other: \_\_\_
 - [ ] N/A (not runtime-specific)
 
----
+______________________________________________________________________
 
 ## Scope confirmation
 
@@ -64,7 +66,7 @@ Closes #
 - [ ] The implementation matches the scope approved in the linked issue — no additions or removals
 - [ ] If scope changed during implementation, I updated the issue and got re-approval before continuing
 
----
+______________________________________________________________________
 
 ## Checklist
 

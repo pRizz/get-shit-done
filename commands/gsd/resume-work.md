@@ -21,9 +21,9 @@ Routes to the resume-project workflow which handles:
 - Context-aware next action routing
   </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/resume-project.md
-</execution_context>
+</execution-context>
 
 <process>
 **Follow the resume-project workflow** from `@~/.claude/get-shit-done/workflows/resume-project.md`.
@@ -31,10 +31,10 @@ Routes to the resume-project workflow which handles:
 The workflow handles all resumption logic including:
 
 1. Project existence verification
-2. STATE.md loading or reconstruction
-3. Checkpoint and incomplete work detection
-4. Visual status presentation
-5. Context-aware option offering (checks CONTEXT.md before suggesting plan vs discuss)
-6. Routing to appropriate next command
-7. Session continuity updates
+1. STATE.md loading or reconstruction
+1. Checkpoint and incomplete work detection
+1. Visual status presentation
+1. Context-aware option offering (checks CONTEXT.md before suggesting plan vs discuss)
+1. Routing to appropriate next command
+1. Session continuity updates
    </process>

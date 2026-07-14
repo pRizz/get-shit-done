@@ -2,9 +2,9 @@
 Remove an unstarted future phase from the project roadmap, delete its directory, renumber all subsequent phases to maintain a clean linear sequence, and commit the change. The git commit serves as the historical record of removal.
 </purpose>
 
-<required_reading>
+<required-reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
-</required_reading>
+</required-reading>
 
 <process>
 
@@ -42,9 +42,9 @@ Also read STATE.md and ROADMAP.md content for parsing current position.
 Verify the phase is a future phase (not started):
 
 1. Compare target phase to current phase from STATE.md
-2. Target must be > current phase number
+1. Target must be > current phase number
 
-If target <= current phase:
+If target \<= current phase:
 
 ```
 ERROR: Cannot remove Phase {target}
@@ -90,6 +90,7 @@ RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" phase remove "${ta
 ```
 
 The CLI handles:
+
 - Deleting the phase directory
 - Renumbering all subsequent directories (in reverse order to avoid conflicts)
 - Renaming all files inside renumbered directories (PLAN.md, SUMMARY.md, etc.)
@@ -132,24 +133,25 @@ Would you like to:
 
 ---
 ```
+
 </step>
 
 </process>
 
-<anti_patterns>
+<anti-patterns>
 
 - Don't remove completed phases (have SUMMARY.md files) without --force
 - Don't remove current or past phases
 - Don't manually renumber — use `gsd-tools phase remove` which handles all renumbering
 - Don't add "removed phase" notes to STATE.md — git commit is the record
 - Don't modify completed phase directories
-</anti_patterns>
+  </anti-patterns>
 
-<success_criteria>
+<success-criteria>
 Phase removal is complete when:
 
 - [ ] Target phase validated as future/unstarted
 - [ ] `gsd-tools phase remove` executed successfully
 - [ ] Changes committed with descriptive message
 - [ ] User informed of changes
-</success_criteria>
+  </success-criteria>

@@ -48,7 +48,7 @@ describe('reapply-patches post-merge verification (#1758)', () => {
 
   test('success criteria includes verification', () => {
 
-    const criteria = content.split('<success_criteria>')[1] || '';
+    const criteria = content.split('<success-criteria>')[1] || '';
     assert.ok(
       criteria.includes('Post-merge verification') ||
       criteria.includes('dropped hunks'),

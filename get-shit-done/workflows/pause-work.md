@@ -2,9 +2,9 @@
 Create structured `.planning/HANDOFF.json` and `.continue-here.md` handoff files to preserve complete work state across sessions. The JSON provides machine-readable state for `/gsd-resume-work`; the markdown provides human-readable context.
 </purpose>
 
-<required_reading>
+<required-reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
-</required_reading>
+</required-reading>
 
 <process>
 
@@ -28,7 +28,7 @@ deliberation=$(ls .planning/deliberations/*.md 2>/dev/null | head -1 || true)
 - **Spike work**: active spike directory or spike-related files (no active phase) → handoff to `.planning/spikes/SPIKE-NNN/.continue-here.md` (create directory if needed)
 - **Deliberation work**: active deliberation file (no phase/spike) → handoff to `.planning/deliberations/.continue-here.md`
 - **Research work**: research notes exist but no phase/spike/deliberation → handoff to `.planning/.continue-here.md`
-- **Default**: no detectable context → handoff to `.planning/.continue-here.md`, note the ambiguity in `<current_state>`
+- **Default**: no detectable context → handoff to `.planning/.continue-here.md`, note the ambiguity in `<current-state>`
 
 If phase is detected, proceed with phase handoff path. Otherwise use the first matching non-phase path above.
 </step>
@@ -37,24 +37,26 @@ If phase is detected, proceed with phase handoff path. Otherwise use the first m
 **Collect complete state for handoff:**
 
 1. **Current position**: Which phase, which plan, which task
-2. **Work completed**: What got done this session
-3. **Work remaining**: What's left in current plan/phase
-4. **Decisions made**: Key decisions and rationale
-5. **Blockers/issues**: Anything stuck
-6. **Human actions pending**: Things that need manual intervention (MCP setup, API keys, approvals, manual testing)
-7. **Background processes**: Any running servers/watchers that were part of the workflow
-8. **Files modified**: What's changed but not committed
-9. **Blocking constraints**: Anti-patterns or methodological failures encountered during this session that a resuming agent MUST be aware of before proceeding. Only include items discovered through actual failure — not warnings or predictions. Assign each constraint a `severity`:
+1. **Work completed**: What got done this session
+1. **Work remaining**: What's left in current plan/phase
+1. **Decisions made**: Key decisions and rationale
+1. **Blockers/issues**: Anything stuck
+1. **Human actions pending**: Things that need manual intervention (MCP setup, API keys, approvals, manual testing)
+1. **Background processes**: Any running servers/watchers that were part of the workflow
+1. **Files modified**: What's changed but not committed
+1. **Blocking constraints**: Anti-patterns or methodological failures encountered during this session that a resuming agent MUST be aware of before proceeding. Only include items discovered through actual failure — not warnings or predictions. Assign each constraint a `severity`:
    - `blocking` — The resuming agent MUST demonstrate understanding before proceeding. The discuss-phase and execute-phase workflows will enforce a mandatory understanding check.
    - `advisory` — Important context but does not gate resumption.
 
 Ask user for clarifications if needed via conversational questions.
 
 **Also inspect SUMMARY.md files for false completions:**
+
 ```bash
 # Check for placeholder content in existing summaries
 grep -l "To be filled\|placeholder\|TBD" .planning/phases/*/*.md 2>/dev/null || true
 ```
+
 Report any summaries with placeholder content as incomplete items.
 </step>
 
@@ -99,6 +101,7 @@ timestamp=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" current-timesta
   "context_notes": "{mental state, approach, what you were thinking}"
 }
 ```
+
 </step>
 
 <step name="write">
@@ -136,30 +139,30 @@ _If no constraints have been identified yet, remove this section._
 
 _Remove rows that do not apply. The discuss-phase and execute-phase workflows parse this table and enforce a mandatory understanding check for any `blocking` rows._
 
-<current_state>
+<current-state>
 [Where exactly are we? Immediate context]
-</current_state>
+</current-state>
 
-<completed_work>
+<completed-work>
 
 Completed Tasks:
 - Task 1: [name] - Done
 - Task 2: [name] - Done
 - Task 3: [name] - In progress, [what's done]
-</completed_work>
+</completed-work>
 
-<remaining_work>
+<remaining-work>
 
 - Task 3: [what's left]
 - Task 4: Not started
 - Task 5: Not started
-</remaining_work>
+</remaining-work>
 
-<decisions_made>
+<decisions-made>
 
 - Decided to use [X] because [reason]
 - Chose [approach] over [alternative] because [reason]
-</decisions_made>
+</decisions-made>
 
 <blockers>
 - [Blocker 1]: [status/workaround]
@@ -188,17 +191,19 @@ Completed Tasks:
 [Mental state, what were you thinking, the plan]
 </context>
 
-<next_action>
+<next-action>
 Start with: [specific first action when resuming]
-</next_action>
+</next-action>
 ```
 
 Be specific enough for a fresh Claude to understand immediately.
 
 Use `current-timestamp` for last_updated field. You can use init todos (which provides timestamps) or call directly:
+
 ```bash
 timestamp=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" current-timestamp full --raw)
 ```
+
 </step>
 
 <step name="commit">
@@ -229,11 +234,12 @@ To resume: /gsd-resume-work
 
 </process>
 
-<success_criteria>
+<success-criteria>
 - [ ] Context detected (phase/spike/deliberation/research/default)
 - [ ] .continue-here.md created at correct path for detected context
 - [ ] Required Reading, Anti-Patterns, and Infrastructure State sections filled
 - [ ] Pre-Execution Critique section filled if pausing between design and execution
 - [ ] Committed as WIP
 - [ ] User knows location and how to resume
-</success_criteria>
+</success-criteria>
+```

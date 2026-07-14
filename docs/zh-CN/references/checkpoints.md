@@ -5,11 +5,12 @@
 **核心原则：** Claude 用 CLI/API 自动化一切。检查点用于验证和决策，而非手动工作。
 
 **黄金法则：**
+
 1. **如果 Claude 能运行，Claude 就运行** - 绝不让用户执行 CLI 命令、启动服务器或运行构建
-2. **Claude 设置验证环境** - 启动开发服务器、填充数据库、配置环境变量
-3. **用户只做需要人工判断的事** - 视觉检查、UX 评估、"这个感觉对吗？"
-4. **密钥来自用户，自动化来自 Claude** - 询问 API 密钥，然后 Claude 通过 CLI 使用它们
-5. **自动模式绕过验证/决策检查点** — 当 config 中 `workflow._auto_chain_active` 或 `workflow.auto_advance` 为 true 时：human-verify 自动批准，decision 自动选择第一个选项，human-action 仍会停止（认证门控无法自动化）
+1. **Claude 设置验证环境** - 启动开发服务器、填充数据库、配置环境变量
+1. **用户只做需要人工判断的事** - 视觉检查、UX 评估、"这个感觉对吗？"
+1. **密钥来自用户，自动化来自 Claude** - 询问 API 密钥，然后 Claude 通过 CLI 使用它们
+1. **自动模式绕过验证/决策检查点** — 当 config 中 `workflow._auto_chain_active` 或 `workflow.auto_advance` 为 true 时：human-verify 自动批准，decision 自动选择第一个选项，human-action 仍会停止（认证门控无法自动化）
 
 ## 检查点类型
 
@@ -18,6 +19,7 @@
 **何时使用：** Claude 完成自动化工作，人工确认其正常工作。
 
 **用于：**
+
 - 视觉 UI 检查（布局、样式、响应式）
 - 交互流程（点击向导、测试用户流程）
 - 功能验证（功能按预期工作）
@@ -26,6 +28,7 @@
 - 无障碍测试
 
 **结构：**
+
 ```xml
 <task type="checkpoint:human-verify" gate="blocking">
   <what-built>[Claude 自动化并部署/构建的内容]</what-built>
@@ -37,6 +40,7 @@
 ```
 
 **示例：UI 组件（展示关键模式：Claude 在检查点之前启动服务器）**
+
 ```xml
 <task type="auto">
   <name>构建响应式仪表板布局</name>
@@ -71,6 +75,7 @@
 **何时使用：** 人工必须做出影响实现方向的选择。
 
 **用于：**
+
 - 技术选型（哪个认证提供商、哪个数据库）
 - 架构决策（monorepo 还是独立仓库）
 - 设计选择（配色方案、布局方式）
@@ -78,6 +83,7 @@
 - 数据模型决策（模式结构）
 
 **结构：**
+
 ```xml
 <task type="checkpoint:decision" gate="blocking">
   <decision>[正在决策的内容]</decision>
@@ -99,6 +105,7 @@
 ```
 
 **示例：认证提供商选择**
+
 ```xml
 <task type="checkpoint:decision" gate="blocking">
   <decision>选择认证提供商</decision>
@@ -131,6 +138,7 @@
 **何时使用：** 操作没有 CLI/API 且需要仅人工交互，或者 Claude 在自动化过程中遇到认证门控。
 
 **仅用于：**
+
 - **认证门控** - Claude 尝试了 CLI/API 但需要凭证（这不是失败）
 - 邮箱验证链接（点击邮件）
 - 短信两步验证码（手机验证）
@@ -139,12 +147,14 @@
 - OAuth 应用审批（基于 Web 的审批）
 
 **不要用于预定的手动工作：**
+
 - 部署（使用 CLI - 如需要则认证门控）
 - 创建 webhooks/数据库（使用 API/CLI - 如需要则认证门控）
 - 运行构建/测试（使用 Bash 工具）
 - 创建文件（使用 Write 工具）
 
 **结构：**
+
 ```xml
 <task type="checkpoint:human-action" gate="blocking">
   <action>[人工必须做什么 - Claude 已完成所有可自动化的]</action>
@@ -158,6 +168,7 @@
 ```
 
 **示例：认证门控（动态检查点）**
+
 ```xml
 <task type="auto">
   <name>部署到 Vercel</name>
@@ -195,12 +206,13 @@
 当 Claude 遇到 `type="checkpoint:*"` 时：
 
 1. **立即停止** - 不继续下一个任务
-2. **清晰显示检查点** 使用下面的格式
-3. **等待用户响应** - 不幻想完成
-4. **如可能则验证** - 检查文件、运行测试、任何指定的内容
-5. **恢复执行** - 仅在确认后继续下一个任务
+1. **清晰显示检查点** 使用下面的格式
+1. **等待用户响应** - 不幻想完成
+1. **如可能则验证** - 检查文件、运行测试、任何指定的内容
+1. **恢复执行** - 仅在确认后继续下一个任务
 
 **对于 checkpoint:human-verify:**
+
 ```
 ╔═══════════════════════════════════════════════════════╗
 ║  CHECKPOINT: 需要验证                                  ║
@@ -223,6 +235,7 @@
 ```
 
 **对于 checkpoint:decision:**
+
 ```
 ╔═══════════════════════════════════════════════════════╗
 ║  CHECKPOINT: 需要决策                                  ║
@@ -260,15 +273,17 @@
 **模式：** Claude 尝试自动化 → 认证错误 → 创建 checkpoint:human-action → 用户认证 → Claude 重试 → 继续
 
 **门控协议：**
+
 1. 认识到这不是失败 - 缺少认证是正常的
-2. 停止当前任务 - 不要反复重试
-3. 动态创建 checkpoint:human-action
-4. 提供确切的认证步骤
-5. 验证认证有效
-6. 重试原始任务
-7. 正常继续
+1. 停止当前任务 - 不要反复重试
+1. 动态创建 checkpoint:human-action
+1. 提供确切的认证步骤
+1. 验证认证有效
+1. 重试原始任务
+1. 正常继续
 
 **关键区别：**
+
 - 预定的检查点："我需要你做 X"（错误 - Claude 应该自动化）
 - 认证门控："我尝试自动化 X 但需要凭证"（正确 - 解除自动化阻止）
 
@@ -278,19 +293,19 @@
 
 ### 服务 CLI 参考
 
-| 服务 | CLI/API | 关键命令 | 认证门控 |
-|------|---------|----------|----------|
-| Vercel | `vercel` | `--yes`, `env add`, `--prod`, `ls` | `vercel login` |
-| Railway | `railway` | `init`, `up`, `variables set` | `railway login` |
-| Fly | `fly` | `launch`, `deploy`, `secrets set` | `fly auth login` |
-| Stripe | `stripe` + API | `listen`, `trigger`, API 调用 | .env 中的 API key |
-| Supabase | `supabase` | `init`, `link`, `db push`, `gen types` | `supabase login` |
-| Upstash | `upstash` | `redis create`, `redis get` | `upstash auth login` |
-| PlanetScale | `pscale` | `database create`, `branch create` | `pscale auth login` |
-| GitHub | `gh` | `repo create`, `pr create`, `secret set` | `gh auth login` |
-| Node | `npm`/`pnpm` | `install`, `run build`, `test`, `run dev` | N/A |
-| Xcode | `xcodebuild` | `-project`, `-scheme`, `build`, `test` | N/A |
-| Convex | `npx convex` | `dev`, `deploy`, `env set`, `env get` | `npx convex login` |
+| 服务        | CLI/API        | 关键命令                                  | 认证门控             |
+| ----------- | -------------- | ----------------------------------------- | -------------------- |
+| Vercel      | `vercel`       | `--yes`, `env add`, `--prod`, `ls`        | `vercel login`       |
+| Railway     | `railway`      | `init`, `up`, `variables set`             | `railway login`      |
+| Fly         | `fly`          | `launch`, `deploy`, `secrets set`         | `fly auth login`     |
+| Stripe      | `stripe` + API | `listen`, `trigger`, API 调用             | .env 中的 API key    |
+| Supabase    | `supabase`     | `init`, `link`, `db push`, `gen types`    | `supabase login`     |
+| Upstash     | `upstash`      | `redis create`, `redis get`               | `upstash auth login` |
+| PlanetScale | `pscale`       | `database create`, `branch create`        | `pscale auth login`  |
+| GitHub      | `gh`           | `repo create`, `pr create`, `secret set`  | `gh auth login`      |
+| Node        | `npm`/`pnpm`   | `install`, `run build`, `test`, `run dev` | N/A                  |
+| Xcode       | `xcodebuild`   | `-project`, `-scheme`, `build`, `test`    | N/A                  |
+| Convex      | `npx convex`   | `dev`, `deploy`, `env set`, `env get`     | `npx convex login`   |
 
 ### 环境变量自动化
 
@@ -298,25 +313,26 @@
 
 **通过 CLI 的仪表板环境变量：**
 
-| 平台 | CLI 命令 | 示例 |
-|------|----------|------|
-| Convex | `npx convex env set` | `npx convex env set OPENAI_API_KEY sk-...` |
-| Vercel | `vercel env add` | `vercel env add STRIPE_KEY production` |
-| Railway | `railway variables set` | `railway variables set API_KEY=value` |
-| Fly | `fly secrets set` | `fly secrets set DATABASE_URL=...` |
-| Supabase | `supabase secrets set` | `supabase secrets set MY_SECRET=value` |
+| 平台     | CLI 命令                | 示例                                       |
+| -------- | ----------------------- | ------------------------------------------ |
+| Convex   | `npx convex env set`    | `npx convex env set OPENAI_API_KEY sk-...` |
+| Vercel   | `vercel env add`        | `vercel env add STRIPE_KEY production`     |
+| Railway  | `railway variables set` | `railway variables set API_KEY=value`      |
+| Fly      | `fly secrets set`       | `fly secrets set DATABASE_URL=...`         |
+| Supabase | `supabase secrets set`  | `supabase secrets set MY_SECRET=value`     |
 
 ### 开发服务器自动化
 
-| 框架 | 启动命令 | 就绪信号 | 默认 URL |
-|------|----------|----------|----------|
-| Next.js | `npm run dev` | "Ready in" 或 "started server" | http://localhost:3000 |
-| Vite | `npm run dev` | "ready in" | http://localhost:5173 |
-| Convex | `npx convex dev` | "Convex functions ready" | N/A（仅后端）|
-| Express | `npm start` | "listening on port" | http://localhost:3000 |
-| Django | `python manage.py runserver` | "Starting development server" | http://localhost:8000 |
+| 框架    | 启动命令                     | 就绪信号                       | 默认 URL              |
+| ------- | ---------------------------- | ------------------------------ | --------------------- |
+| Next.js | `npm run dev`                | "Ready in" 或 "started server" | http://localhost:3000 |
+| Vite    | `npm run dev`                | "ready in"                     | http://localhost:5173 |
+| Convex  | `npx convex dev`             | "Convex functions ready"       | N/A（仅后端）         |
+| Express | `npm start`                  | "listening on port"            | http://localhost:3000 |
+| Django  | `python manage.py runserver` | "Starting development server"  | http://localhost:8000 |
 
 **服务器生命周期：**
+
 ```bash
 # 后台运行，捕获 PID
 npm run dev &
@@ -332,54 +348,55 @@ timeout 30 bash -c 'until curl -s localhost:3000 > /dev/null 2>&1; do sleep 1; d
 
 ### CLI 安装处理
 
-| CLI | 自动安装？ | 命令 |
-|-----|------------|------|
-| npm/pnpm/yarn | 否 - 询问用户 | 用户选择包管理器 |
-| vercel | 是 | `npm i -g vercel` |
-| gh (GitHub) | 是 | `brew install gh` (macOS) 或 `apt install gh` (Linux) |
-| stripe | 是 | `npm i -g stripe` |
-| supabase | 是 | `npm i -g supabase` |
-| convex | 否 - 使用 npx | `npx convex`（无需安装）|
-| fly | 是 | `brew install flyctl` 或 curl 安装器 |
-| railway | 是 | `npm i -g @railway/cli` |
+| CLI           | 自动安装？    | 命令                                                  |
+| ------------- | ------------- | ----------------------------------------------------- |
+| npm/pnpm/yarn | 否 - 询问用户 | 用户选择包管理器                                      |
+| vercel        | 是            | `npm i -g vercel`                                     |
+| gh (GitHub)   | 是            | `brew install gh` (macOS) 或 `apt install gh` (Linux) |
+| stripe        | 是            | `npm i -g stripe`                                     |
+| supabase      | 是            | `npm i -g supabase`                                   |
+| convex        | 否 - 使用 npx | `npx convex`（无需安装）                              |
+| fly           | 是            | `brew install flyctl` 或 curl 安装器                  |
+| railway       | 是            | `npm i -g @railway/cli`                               |
 
 **协议：** 尝试命令 → "command not found" → 可自动安装？→ 是：静默安装，重试 → 否：检查点请求用户安装。
 
 ## 检查点前自动化失败处理
 
-| 失败 | 响应 |
-|------|------|
-| 服务器无法启动 | 检查错误，修复问题，重试（不进入检查点）|
-| 端口被占用 | 终止陈旧进程或使用备用端口 |
-| 缺少依赖 | 运行 `npm install`，重试 |
-| 构建错误 | 先修复错误（是 bug，不是检查点问题）|
-| 认证错误 | 创建认证门控检查点 |
-| 网络超时 | 带退避重试，如果持续则检查点 |
+| 失败           | 响应                                     |
+| -------------- | ---------------------------------------- |
+| 服务器无法启动 | 检查错误，修复问题，重试（不进入检查点） |
+| 端口被占用     | 终止陈旧进程或使用备用端口               |
+| 缺少依赖       | 运行 `npm install`，重试                 |
+| 构建错误       | 先修复错误（是 bug，不是检查点问题）     |
+| 认证错误       | 创建认证门控检查点                       |
+| 网络超时       | 带退避重试，如果持续则检查点             |
 
 **绝不呈现验证环境损坏的检查点。** 如果 `curl localhost:3000` 失败，不要让用户"访问 localhost:3000"。
 
 ## 可自动化快速参考
 
-| 操作 | 可自动化？| Claude 做？|
-|------|------------|------------|
-| 部署到 Vercel | 是 (`vercel`) | 是 |
-| 创建 Stripe webhook | 是 (API) | 是 |
-| 写入 .env 文件 | 是 (Write 工具) | 是 |
-| 创建 Upstash DB | 是 (`upstash`) | 是 |
-| 运行测试 | 是 (`npm test`) | 是 |
-| 启动开发服务器 | 是 (`npm run dev`) | 是 |
-| 添加环境变量到 Convex | 是 (`npx convex env set`) | 是 |
-| 添加环境变量到 Vercel | 是 (`vercel env add`) | 是 |
-| 填充数据库 | 是 (CLI/API) | 是 |
-| 点击邮件验证链接 | 否 | 否 |
-| 输入带 3DS 的信用卡 | 否 | 否 |
-| 在浏览器中完成 OAuth | 否 | 否 |
-| 视觉验证 UI 是否正确 | 否 | 否 |
-| 测试交互式用户流程 | 否 | 否 |
+| 操作                  | 可自动化？                | Claude 做？ |
+| --------------------- | ------------------------- | ----------- |
+| 部署到 Vercel         | 是 (`vercel`)             | 是          |
+| 创建 Stripe webhook   | 是 (API)                  | 是          |
+| 写入 .env 文件        | 是 (Write 工具)           | 是          |
+| 创建 Upstash DB       | 是 (`upstash`)            | 是          |
+| 运行测试              | 是 (`npm test`)           | 是          |
+| 启动开发服务器        | 是 (`npm run dev`)        | 是          |
+| 添加环境变量到 Convex | 是 (`npx convex env set`) | 是          |
+| 添加环境变量到 Vercel | 是 (`vercel env add`)     | 是          |
+| 填充数据库            | 是 (CLI/API)              | 是          |
+| 点击邮件验证链接      | 否                        | 否          |
+| 输入带 3DS 的信用卡   | 否                        | 否          |
+| 在浏览器中完成 OAuth  | 否                        | 否          |
+| 视觉验证 UI 是否正确  | 否                        | 否          |
+| 测试交互式用户流程    | 否                        | 否          |
 
 ## 反模式
 
 ### ❌ 错误：让用户启动开发服务器
+
 ```xml
 <task type="checkpoint:human-verify" gate="blocking">
   <what-built>仪表板组件</what-built>
@@ -390,9 +407,11 @@ timeout 30 bash -c 'until curl -s localhost:3000 > /dev/null 2>&1; do sleep 1; d
   </how-to-verify>
 </task>
 ```
+
 **为什么错误：** Claude 可以运行 `npm run dev`。用户应该只访问 URL，不执行命令。
 
 ### ✅ 正确：Claude 启动服务器，用户访问
+
 ```xml
 <task type="auto">
   <name>启动开发服务器</name>
@@ -411,6 +430,7 @@ timeout 30 bash -c 'until curl -s localhost:3000 > /dev/null 2>&1; do sleep 1; d
 ```
 
 ### ❌ 错误：让用户部署 / ✅ 正确：Claude 自动化
+
 ```xml
 <!-- 错误：让用户通过仪表板部署 -->
 <task type="checkpoint:human-action" gate="blocking">
@@ -439,11 +459,13 @@ timeout 30 bash -c 'until curl -s localhost:3000 > /dev/null 2>&1; do sleep 1; d
 **黄金法则：** 如果 Claude 能自动化它，Claude 就必须自动化它。
 
 **检查点优先级：**
+
 1. **checkpoint:human-verify**（90%）- Claude 自动化一切，人工确认视觉/功能正确性
-2. **checkpoint:decision**（9%）- 人工做出架构/技术选择
-3. **checkpoint:human-action**（1%）- 真正无法避免的、没有 API/CLI 的手动步骤
+1. **checkpoint:decision**（9%）- 人工做出架构/技术选择
+1. **checkpoint:human-action**（1%）- 真正无法避免的、没有 API/CLI 的手动步骤
 
 **何时不用检查点：**
+
 - Claude 可以编程验证的事情（测试、构建）
 - 文件操作（Claude 可以读取文件）
 - 代码正确性（测试和静态分析）

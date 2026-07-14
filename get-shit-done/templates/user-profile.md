@@ -10,13 +10,13 @@
 **Projects Analyzed:** {{projects_list}}
 **Messages Analyzed:** {{message_count}}
 
----
+______________________________________________________________________
 
 ## Quick Reference
 
 {{summary_instructions}}
 
----
+______________________________________________________________________
 
 ## Communication Style
 
@@ -30,7 +30,7 @@
 
 {{communication_style.evidence}}
 
----
+______________________________________________________________________
 
 ## Decision Speed
 
@@ -44,7 +44,7 @@
 
 {{decision_speed.evidence}}
 
----
+______________________________________________________________________
 
 ## Explanation Depth
 
@@ -58,7 +58,7 @@
 
 {{explanation_depth.evidence}}
 
----
+______________________________________________________________________
 
 ## Debugging Approach
 
@@ -72,7 +72,7 @@
 
 {{debugging_approach.evidence}}
 
----
+______________________________________________________________________
 
 ## UX Philosophy
 
@@ -86,7 +86,7 @@
 
 {{ux_philosophy.evidence}}
 
----
+______________________________________________________________________
 
 ## Vendor Philosophy
 
@@ -100,7 +100,7 @@
 
 {{vendor_philosophy.evidence}}
 
----
+______________________________________________________________________
 
 ## Frustration Triggers
 
@@ -114,7 +114,7 @@
 
 {{frustration_triggers.evidence}}
 
----
+______________________________________________________________________
 
 ## Learning Style
 
@@ -128,19 +128,19 @@
 
 {{learning_style.evidence}}
 
----
+______________________________________________________________________
 
 ## Profile Metadata
 
-| Field | Value |
-|-------|-------|
-| Profile Version | {{profile_version}} |
-| Generated | {{generated_at}} |
-| Source | {{data_source}} |
-| Projects | {{projects_count}} |
-| Messages | {{message_count}} |
-| Dimensions Scored | {{dimensions_scored}}/8 |
-| High Confidence | {{high_confidence_count}} |
-| Medium Confidence | {{medium_confidence_count}} |
-| Low Confidence | {{low_confidence_count}} |
+| Field                      | Value                          |
+| -------------------------- | ------------------------------ |
+| Profile Version            | {{profile_version}}            |
+| Generated                  | {{generated_at}}               |
+| Source                     | {{data_source}}                |
+| Projects                   | {{projects_count}}             |
+| Messages                   | {{message_count}}              |
+| Dimensions Scored          | {{dimensions_scored}}/8        |
+| High Confidence            | {{high_confidence_count}}      |
+| Medium Confidence          | {{medium_confidence_count}}    |
+| Low Confidence             | {{low_confidence_count}}       |
 | Sensitive Content Excluded | {{sensitive_excluded_summary}} |

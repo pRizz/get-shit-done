@@ -2,9 +2,9 @@
 Check project progress, summarize recent work and what's ahead, then intelligently route to the next action — either executing an existing plan or creating the next one. Provides situational awareness before continuing work.
 </purpose>
 
-<required_reading>
+<required-reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
-</required_reading>
+</required-reading>
 
 <process>
 
@@ -45,6 +45,7 @@ If missing both ROADMAP.md and PROJECT.md: suggest `/gsd-new-project`.
 **Use structured extraction from gsd-tools:**
 
 Instead of reading full files, use targeted tools to get only the data needed for the report:
+
 - `ROADMAP=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" roadmap analyze)`
 - `STATE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" state-snapshot)`
 
@@ -59,6 +60,7 @@ ROADMAP=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" roadmap analyze)
 ```
 
 This returns structured JSON with:
+
 - All phases with disk status (complete/partial/planned/empty/no_directory)
 - Goal and dependencies per phase
 - Plan and summary counts per phase
@@ -160,6 +162,7 @@ grep -l "status: diagnosed\|status: partial" .planning/phases/[current-phase-dir
 ```
 
 Track:
+
 - `uat_with_gaps`: UAT.md files with status "diagnosed" (gaps need fixing)
 - `uat_partial`: UAT.md files with status "partial" (incomplete testing)
 
@@ -193,15 +196,15 @@ This is a WARNING, not a blocker — routing proceeds normally. The debt is visi
 
 **Step 2: Route based on counts**
 
-| Condition | Meaning | Action |
-|-----------|---------|--------|
-| uat_partial > 0 | UAT testing incomplete | Go to **Route E.2** |
-| uat_with_gaps > 0 | UAT gaps need fix plans | Go to **Route E** |
-| summaries < plans | Unexecuted plans exist | Go to **Route A** |
-| summaries = plans AND plans > 0 | Phase complete | Go to Step 3 |
-| plans = 0 | Phase not yet planned | Go to **Route B** |
+| Condition                       | Meaning                 | Action              |
+| ------------------------------- | ----------------------- | ------------------- |
+| uat_partial > 0                 | UAT testing incomplete  | Go to **Route E.2** |
+| uat_with_gaps > 0               | UAT gaps need fix plans | Go to **Route E**   |
+| summaries < plans               | Unexecuted plans exist  | Go to **Route A**   |
+| summaries = plans AND plans > 0 | Phase complete          | Go to Step 3        |
+| plans = 0                       | Phase not yet planned   | Go to **Route B**   |
 
----
+______________________________________________________________________
 
 **Route A: Unexecuted plan exists**
 
@@ -222,7 +225,7 @@ Read its `<objective>` section.
 ---
 ```
 
----
+______________________________________________________________________
 
 **Route B: Phase needs planning**
 
@@ -305,7 +308,7 @@ PHASE_HAS_UI=$(echo "$PHASE_SECTION" | grep -qi "UI hint.*yes" && echo "true" ||
 ---
 ```
 
----
+______________________________________________________________________
 
 **Route E: UAT gaps need fix plans**
 
@@ -331,7 +334,7 @@ UAT.md exists with gaps (diagnosed issues). User needs to plan fixes.
 ---
 ```
 
----
+______________________________________________________________________
 
 **Route E.2: UAT testing incomplete (partial)**
 
@@ -357,13 +360,14 @@ UAT.md exists with `status: partial` — testing session ended before all items 
 ---
 ```
 
----
+______________________________________________________________________
 
 **Step 3: Check milestone status (only when phase complete)**
 
 Read ROADMAP.md and identify:
+
 1. Current phase number
-2. All phase numbers in the current milestone section
+1. All phase numbers in the current milestone section
 
 Count total phases and identify the highest phase number.
 
@@ -371,12 +375,12 @@ State: "Current phase is {X}. Milestone has {N} phases (highest: {Y})."
 
 **Route based on milestone status:**
 
-| Condition | Meaning | Action |
-|-----------|---------|--------|
+| Condition                     | Meaning            | Action            |
+| ----------------------------- | ------------------ | ----------------- |
 | current phase < highest phase | More phases remain | Go to **Route C** |
 | current phase = highest phase | Milestone complete | Go to **Route D** |
 
----
+______________________________________________________________________
 
 **Route C: Phase complete, more phases remain**
 
@@ -444,7 +448,7 @@ NEXT_HAS_UI=$(echo "$NEXT_PHASE_SECTION" | grep -qi "UI hint.*yes" && echo "true
 ---
 ```
 
----
+______________________________________________________________________
 
 **Route D: Milestone complete**
 
@@ -471,7 +475,7 @@ All {N} phases finished!
 ---
 ```
 
----
+______________________________________________________________________
 
 **Route F: Between milestones (ROADMAP.md missing, PROJECT.md exists)**
 
@@ -510,7 +514,7 @@ Ready to plan the next milestone.
 
 </process>
 
-<success_criteria>
+<success-criteria>
 
 - [ ] Rich context provided (recent work, decisions, issues)
 - [ ] Current position clear with visual progress
@@ -518,4 +522,4 @@ Ready to plan the next milestone.
 - [ ] Smart routing: /gsd-execute-phase if plans exist, /gsd-plan-phase if not
 - [ ] User confirms before any action
 - [ ] Seamless handoff to appropriate gsd command
-      </success_criteria>
+  </success-criteria>

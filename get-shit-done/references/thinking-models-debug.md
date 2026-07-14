@@ -32,7 +32,7 @@ Before investigating complex multi-component interaction bugs, race conditions, 
 
 When you have a hypothesis about the root cause, construct a counterfactual: "If I change ONLY this one variable/config/line, the bug should disappear (or appear)." Execute the counterfactual test. If the bug persists after your targeted change, your hypothesis is wrong -- the cause is elsewhere. If the bug disappears, you have strong causal evidence. This is more powerful than correlation ("the bug appeared after deploy X") because it tests the mechanism, not just the timeline.
 
----
+______________________________________________________________________
 
 ## When NOT to Think
 

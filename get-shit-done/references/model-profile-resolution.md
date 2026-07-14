@@ -33,6 +33,6 @@ If `model_profile` is `"inherit"`, all agents resolve to `"inherit"` (useful for
 ## Usage
 
 1. Resolve once at orchestration start
-2. Store the profile value
-3. Look up each agent's model from the table when spawning
-4. Pass model parameter to each Task call (values: `"inherit"`, `"sonnet"`, `"haiku"`)
+1. Store the profile value
+1. Look up each agent's model from the table when spawning
+1. Pass model parameter to each Task call (values: `"inherit"`, `"sonnet"`, `"haiku"`)

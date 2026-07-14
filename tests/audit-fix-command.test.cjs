@@ -134,17 +134,17 @@ describe('AUDIT-FIX: workflow file', () => {
     assert.ok(content.includes('</process>'), 'must close <process> section');
   });
 
-  test('has <success_criteria> section', () => {
+  test('has <success-criteria> section', () => {
     const content = fs.readFileSync(wfPath, 'utf-8');
-    assert.ok(content.includes('<success_criteria>'), 'must have <success_criteria> section');
-    assert.ok(content.includes('</success_criteria>'), 'must close <success_criteria> section');
+    assert.ok(content.includes('<success-criteria>'), 'must have <success-criteria> section');
+    assert.ok(content.includes('</success-criteria>'), 'must close <success-criteria> section');
   });
 
-  test('has <available_agent_types> listing gsd-executor', () => {
+  test('has <available-agent-types> listing gsd-executor', () => {
     const content = fs.readFileSync(wfPath, 'utf-8');
     assert.ok(
-      content.includes('<available_agent_types>'),
-      'must have <available_agent_types> section'
+      content.includes('<available-agent-types>'),
+      'must have <available-agent-types> section'
     );
     assert.ok(
       content.includes('gsd-executor'),

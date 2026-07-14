@@ -5,6 +5,7 @@
 ## 提取
 
 从 `$ARGUMENTS` 中：
+
 - 提取阶段编号（第一个数字参数）
 - 提取标志（以 `--` 为前缀）
 - 剩余文本为描述（用于 insert/add 命令）
@@ -18,6 +19,7 @@ PHASE_INFO=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" find-phase "${
 ```
 
 返回 JSON 包含：
+
 - `found`: true/false
 - `directory`: 阶段目录的完整路径
 - `phase_number`: 规范化的编号（如 "06"、"06.1"）

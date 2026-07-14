@@ -2,37 +2,37 @@
 GSD 框架的 Git 集成。
 </overview>
 
-<core_principle>
+<core-principle>
 
 **提交结果，而非过程。**
 
 git 日志应该读起来像是发布内容的变更日志，而不是规划活动的日记。
-</core_principle>
+</core-principle>
 
-<commit_points>
+<commit-points>
 
-| 事件 | 提交? | 原因 |
-| ----------------------- | ------- | ------------------------------------------------ |
-| BRIEF + ROADMAP 创建 | 是 | 项目初始化 |
-| PLAN.md 创建 | 否 | 中间产物 - 与计划完成一起提交 |
-| RESEARCH.md 创建 | 否 | 中间产物 |
-| DISCOVERY.md 创建 | 否 | 中间产物 |
-| **任务完成** | 是 | 原子工作单元（每个任务 1 个提交） |
-| **计划完成** | 是 | 元数据提交（SUMMARY + STATE + ROADMAP） |
-| 交接创建 | 是 | WIP 状态保留 |
+| 事件                 | 提交? | 原因                                    |
+| -------------------- | ----- | --------------------------------------- |
+| BRIEF + ROADMAP 创建 | 是    | 项目初始化                              |
+| PLAN.md 创建         | 否    | 中间产物 - 与计划完成一起提交           |
+| RESEARCH.md 创建     | 否    | 中间产物                                |
+| DISCOVERY.md 创建    | 否    | 中间产物                                |
+| **任务完成**         | 是    | 原子工作单元（每个任务 1 个提交）       |
+| **计划完成**         | 是    | 元数据提交（SUMMARY + STATE + ROADMAP） |
+| 交接创建             | 是    | WIP 状态保留                            |
 
-</commit_points>
+</commit-points>
 
-<git_check>
+<git-check>
 
 ```bash
 [ -d .git ] && echo "GIT_EXISTS" || echo "NO_GIT"
 ```
 
 如果 NO_GIT：静默运行 `git init`。GSD 项目总是有自己的仓库。
-</git_check>
+</git-check>
 
-<commit_formats>
+<commit-formats>
 
 <format name="initialization">
 ## 项目初始化（brief + roadmap 一起）
@@ -70,6 +70,7 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: initialize [p
 ```
 
 **提交类型：**
+
 - `feat` - 新功能/功能
 - `fix` - Bug 修复
 - `test` - 仅测试（TDD RED 阶段）
@@ -153,11 +154,12 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "wip: [phase-name] p
 ```
 
 </format>
-</commit_formats>
+</commit-formats>
 
-<example_log>
+<example-log>
 
 **旧方法（每个计划提交）：**
+
 ```
 a7f2d1 feat(checkout): Stripe payments with webhook verification
 3e9c4b feat(products): catalog with search, filters, and pagination
@@ -167,6 +169,7 @@ a7f2d1 feat(checkout): Stripe payments with webhook verification
 ```
 
 **新方法（每个任务提交）：**
+
 ```
 # Phase 04 - Checkout
 1a2b3c docs(04-01): complete checkout flow plan
@@ -200,11 +203,12 @@ a7f2d1 feat(checkout): Stripe payments with webhook verification
 
 每个计划产生 2-4 个提交（任务 + 元数据）。清晰、细粒度、可 bisect。
 
-</example_log>
+</example-log>
 
-<anti_patterns>
+<anti-patterns>
 
 **仍不要提交（中间产物）：**
+
 - PLAN.md 创建（与计划完成一起提交）
 - RESEARCH.md（中间产物）
 - DISCOVERY.md（中间产物）
@@ -212,37 +216,42 @@ a7f2d1 feat(checkout): Stripe payments with webhook verification
 - "Fixed typo in roadmap"
 
 **要提交（结果）：**
+
 - 每个任务完成（feat/fix/test/refactor）
 - 计划完成元数据（docs）
 - 项目初始化（docs）
 
 **关键原则：** 提交可工作的代码和已发布的结果，而非规划过程。
 
-</anti_patterns>
+</anti-patterns>
 
-<commit_strategy_rationale>
+<commit-strategy-rationale>
 
 ## 为什么使用每任务提交？
 
 **AI 上下文工程：**
+
 - Git 历史成为未来 Claude 会话的主要上下文源
 - `git log --grep="{phase}-{plan}"` 显示计划的所有工作
 - `git diff <hash>^..<hash>` 显示每个任务的确切变更
 - 减少对解析 SUMMARY.md 的依赖 = 更多上下文用于实际工作
 
 **失败恢复：**
+
 - 任务 1 已提交 ✅，任务 2 失败 ❌
 - 下次会话中的 Claude：看到任务 1 完成，可以重试任务 2
 - 可以 `git reset --hard` 到最后一个成功的任务
 
 **调试：**
+
 - `git bisect` 找到确切的失败任务，而不仅仅是失败计划
 - `git blame` 将行追溯到特定任务上下文
 - 每个提交独立可回滚
 
 **可观察性：**
+
 - 独立开发者 + Claude 工作流受益于细粒度归因
 - 原子提交是 git 最佳实践
 - 当消费者是 Claude 而非人类时，"提交噪音"无关紧要
 
-</commit_strategy_rationale>
+</commit-strategy-rationale>

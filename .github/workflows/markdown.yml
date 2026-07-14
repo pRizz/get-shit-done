@@ -1,0 +1,40 @@
+name: Markdown
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  mdformat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: '3.13'
+
+      - name: Install pinned Markdown formatter
+        run: >-
+          python -m pip install
+          mdformat==1.0.0
+          mdformat-frontmatter==2.1.2
+          mdformat-gfm==1.0.0
+
+      - name: Check Markdown formatting
+        run: mdformat --check .
+
+      - name: Verify semantic round trips and idempotence
+        run: node scripts/check-mdformat-roundtrip.cjs

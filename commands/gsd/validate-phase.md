@@ -12,6 +12,7 @@ allowed-tools:
   - Task
   - AskUserQuestion
 ---
+
 <objective>
 Audit Nyquist validation coverage for a completed phase. Three states:
 - (A) VALIDATION.md exists — audit and fill gaps
@@ -21,9 +22,9 @@ Audit Nyquist validation coverage for a completed phase. Three states:
 Output: updated VALIDATION.md + generated test files.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/validate-phase.md
-</execution_context>
+</execution-context>
 
 <context>
 Phase: $ARGUMENTS — optional, defaults to last completed phase.

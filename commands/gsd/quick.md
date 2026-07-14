@@ -12,10 +12,12 @@ allowed-tools:
   - Task
   - AskUserQuestion
 ---
+
 <objective>
 Execute small, ad-hoc tasks with GSD guarantees (atomic commits, STATE.md tracking).
 
 Quick mode is the same system with a shorter path:
+
 - Spawns gsd-planner (quick mode) + gsd-executor(s)
 - Quick tasks live in `.planning/quick/` separate from planned phases
 - Updates STATE.md "Quick Tasks Completed" table (NOT ROADMAP.md)
@@ -33,14 +35,14 @@ Quick mode is the same system with a shorter path:
 Granular flags are composable: `--discuss --research --validate` gives the same result as `--full`.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/quick.md
-</execution_context>
+</execution-context>
 
 <context>
 $ARGUMENTS
 
-Context files are resolved inside the workflow (`init quick`) and delegated via `<files_to_read>` blocks.
+Context files are resolved inside the workflow (`init quick`) and delegated via `<files-to-read>` blocks.
 </context>
 
 <process>

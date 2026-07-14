@@ -7,13 +7,14 @@ allowed-tools:
   - Grep
   - Bash
 ---
+
 <objective>
 Scan all phases for pending, skipped, blocked, and human_needed UAT items. Cross-reference against codebase to detect stale documentation. Produce prioritized human test plan.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/audit-uat.md
-</execution_context>
+</execution-context>
 
 <context>
 Core planning files are loaded in-workflow via CLI.

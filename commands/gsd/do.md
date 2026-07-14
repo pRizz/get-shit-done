@@ -7,6 +7,7 @@ allowed-tools:
   - Bash
   - AskUserQuestion
 ---
+
 <objective>
 Analyze freeform natural language input and dispatch to the most appropriate GSD command.
 
@@ -15,10 +16,10 @@ Acts as a smart dispatcher — never does the work itself. Matches intent to the
 Use when you know what you want but don't know which `/gsd-*` command to run.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/do.md
 @~/.claude/get-shit-done/references/ui-brand.md
-</execution_context>
+</execution-context>
 
 <context>
 $ARGUMENTS

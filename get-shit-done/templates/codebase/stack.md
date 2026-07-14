@@ -4,7 +4,7 @@ Template for `.planning/codebase/STACK.md` - captures the technology foundation.
 
 **Purpose:** Document what technologies run this codebase. Focused on "what executes when you run the code."
 
----
+______________________________________________________________________
 
 ## File Template
 
@@ -81,7 +81,7 @@ Template for `.planning/codebase/STACK.md` - captures the technology foundation.
 *Update after major dependency changes*
 ```
 
-<good_examples>
+<good-examples>
 ```markdown
 # Technology Stack
 
@@ -90,71 +90,85 @@ Template for `.planning/codebase/STACK.md` - captures the technology foundation.
 ## Languages
 
 **Primary:**
+
 - TypeScript 5.3 - All application code
 
 **Secondary:**
+
 - JavaScript - Build scripts, config files
 
 ## Runtime
 
 **Environment:**
+
 - Node.js 20.x (LTS)
 - No browser runtime (CLI tool only)
 
 **Package Manager:**
+
 - npm 10.x
 - Lockfile: `package-lock.json` present
 
 ## Frameworks
 
 **Core:**
+
 - None (vanilla Node.js CLI)
 
 **Testing:**
+
 - Vitest 1.0 - Unit tests
 - tsx - TypeScript execution without build step
 
 **Build/Dev:**
+
 - TypeScript 5.3 - Compilation to JavaScript
 - esbuild - Used by Vitest for fast transforms
 
 ## Key Dependencies
 
 **Critical:**
+
 - commander 11.x - CLI argument parsing and command structure
 - chalk 5.x - Terminal output styling
 - fs-extra 11.x - Extended file system operations
 
 **Infrastructure:**
+
 - Node.js built-ins - fs, path, child_process for file operations
 
 ## Configuration
 
 **Environment:**
+
 - No environment variables required
 - Configuration via CLI flags only
 
 **Build:**
+
 - `tsconfig.json` - TypeScript compiler options
 - `vitest.config.ts` - Test runner configuration
 
 ## Platform Requirements
 
 **Development:**
+
 - macOS/Linux/Windows (any platform with Node.js)
 - No external dependencies
 
 **Production:**
+
 - Distributed as npm package
 - Installed globally via npm install -g
 - Runs on user's Node.js installation
 
----
+______________________________________________________________________
 
 *Stack analysis: 2025-01-20*
 *Update after major dependency changes*
+
 ```
-</good_examples>
+</good-examples>
 
 <guidelines>
 **What belongs in STACK.md:**
@@ -184,3 +198,4 @@ Template for `.planning/codebase/STACK.md` - captures the technology foundation.
 - Choosing implementation approach (must work with existing stack)
 - Understanding build requirements
 </guidelines>
+```

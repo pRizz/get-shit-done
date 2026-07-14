@@ -2,9 +2,9 @@
 Insert a decimal phase for urgent work discovered mid-milestone between existing integer phases. Uses decimal numbering (72.1, 72.2, etc.) to preserve the logical sequence of planned phases while accommodating urgent insertions without renumbering the entire roadmap.
 </purpose>
 
-<required_reading>
+<required-reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
-</required_reading>
+</required-reading>
 
 <process>
 
@@ -39,9 +39,11 @@ if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
 Check `roadmap_exists` from init JSON. If false:
+
 ```
 ERROR: No roadmap found (.planning/ROADMAP.md)
 ```
+
 Exit.
 </step>
 
@@ -53,6 +55,7 @@ RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" phase insert "${af
 ```
 
 The CLI handles:
+
 - Verifying target phase exists in ROADMAP.md
 - Calculating next decimal phase number (checking existing decimals on disk)
 - Generating slug from description
@@ -66,7 +69,7 @@ Extract from result: `phase_number`, `after_phase`, `name`, `slug`, `directory`.
 Update STATE.md to reflect the inserted phase:
 
 1. Read `.planning/STATE.md`
-2. Under "## Accumulated Context" → "### Roadmap Evolution" add entry:
+1. Under "## Accumulated Context" → "### Roadmap Evolution" add entry:
    ```
    - Phase {decimal_phase} inserted after Phase {after_phase}: {description} (URGENT)
    ```
@@ -105,11 +108,12 @@ Project state updated: .planning/STATE.md
 
 ---
 ```
+
 </step>
 
 </process>
 
-<anti_patterns>
+<anti-patterns>
 
 - Don't use this for planned work at end of milestone (use /gsd-add-phase)
 - Don't insert before Phase 1 (decimal 0.1 makes no sense)
@@ -117,9 +121,9 @@ Project state updated: .planning/STATE.md
 - Don't modify the target phase content
 - Don't create plans yet (that's /gsd-plan-phase)
 - Don't commit changes (user decides when to commit)
-</anti_patterns>
+  </anti-patterns>
 
-<success_criteria>
+<success-criteria>
 Phase insertion is complete when:
 
 - [ ] `gsd-tools phase insert` executed successfully
@@ -127,4 +131,4 @@ Phase insertion is complete when:
 - [ ] Roadmap updated with new phase entry (includes "(INSERTED)" marker)
 - [ ] STATE.md updated with roadmap evolution note
 - [ ] User informed of next steps and dependency implications
-</success_criteria>
+  </success-criteria>

@@ -9,6 +9,7 @@ allowed-tools:
   - Grep
   - AskUserQuestion
 ---
+
 <objective>
 Create all phases necessary to close gaps identified by `/gsd-audit-milestone`.
 
@@ -17,9 +18,9 @@ Reads MILESTONE-AUDIT.md, groups gaps into logical phases, creates phase entries
 One command creates all fix phases — no manual `/gsd-add-phase` per gap.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/plan-milestone-gaps.md
-</execution_context>
+</execution-context>
 
 <context>
 **Audit results:**

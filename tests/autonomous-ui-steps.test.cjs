@@ -133,7 +133,7 @@ describe('autonomous workflow ui-phase and ui-review integration (#1375)', () =>
     });
 
     test('success criteria notes UI review is advisory', () => {
-      const criteriaSection = content.slice(content.indexOf('<success_criteria>'));
+      const criteriaSection = content.slice(content.indexOf('<success-criteria>'));
       assert.ok(
         criteriaSection.includes('advisory') || criteriaSection.includes('non-blocking'),
         'success criteria should note UI review is advisory/non-blocking'

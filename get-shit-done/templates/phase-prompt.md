@@ -7,7 +7,7 @@ Template for `.planning/phases/XX-name/{phase}-{plan}-PLAN.md` - executable phas
 
 **Naming:** Use `{phase}-{plan}-PLAN.md` format (e.g., `01-02-PLAN.md` for Phase 1, Plan 2)
 
----
+______________________________________________________________________
 
 ## File Template
 
@@ -41,12 +41,12 @@ Purpose: [Why this matters for the project]
 Output: [What artifacts will be created]
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/execute-plan.md
 @~/.claude/get-shit-done/templates/summary.md
 [If plan contains checkpoint tasks (type="checkpoint:*"), add:]
 @~/.claude/get-shit-done/references/checkpoints.md
-</execution_context>
+</execution-context>
 
 <context>
 @.planning/PROJECT.md
@@ -67,25 +67,25 @@ Output: [What artifacts will be created]
 <task type="auto">
   <name>Task 1: [Action-oriented name]</name>
   <files>path/to/file.ext, another/file.ext</files>
-  <read_first>path/to/reference.ext, path/to/source-of-truth.ext</read_first>
+  <read-first>path/to/reference.ext, path/to/source-of-truth.ext</read-first>
   <action>[Specific implementation - what to do, how to do it, what to avoid and WHY. Include CONCRETE values: exact identifiers, parameters, expected outputs, file paths, command arguments. Never say "align X with Y" without specifying the exact target state.]</action>
   <verify>[Command or check to prove it worked]</verify>
-  <acceptance_criteria>
+  <acceptance-criteria>
     - [Grep-verifiable condition: "file.ext contains 'exact string'"]
     - [Measurable condition: "output.ext uses 'expected-value', NOT 'wrong-value'"]
-  </acceptance_criteria>
+  </acceptance-criteria>
   <done>[Measurable acceptance criteria]</done>
 </task>
 
 <task type="auto">
   <name>Task 2: [Action-oriented name]</name>
   <files>path/to/file.ext</files>
-  <read_first>path/to/reference.ext</read_first>
+  <read-first>path/to/reference.ext</read-first>
   <action>[Specific implementation with concrete values]</action>
   <verify>[Command or check]</verify>
-  <acceptance_criteria>
+  <acceptance-criteria>
     - [Grep-verifiable condition]
-  </acceptance_criteria>
+  </acceptance-criteria>
   <done>[Acceptance criteria]</done>
 </task>
 
@@ -116,49 +116,49 @@ Before declaring plan complete:
 - [ ] [Behavior verification]
 </verification>
 
-<success_criteria>
+<success-criteria>
 
 - All tasks completed
 - All verification checks pass
 - No errors or warnings introduced
 - [Plan-specific criteria]
-  </success_criteria>
+  </success-criteria>
 
 <output>
 After completion, create `.planning/phases/XX-name/{phase}-{plan}-SUMMARY.md`
 </output>
 ```
 
----
+______________________________________________________________________
 
 ## Frontmatter Fields
 
-| Field | Required | Purpose |
-|-------|----------|---------|
-| `phase` | Yes | Phase identifier (e.g., `01-foundation`) |
-| `plan` | Yes | Plan number within phase (e.g., `01`, `02`) |
-| `type` | Yes | Always `execute` for standard plans, `tdd` for TDD plans |
-| `wave` | Yes | Execution wave number (1, 2, 3...). Pre-computed at plan time. |
-| `depends_on` | Yes | Array of plan IDs this plan requires. |
-| `files_modified` | Yes | Files this plan touches. |
-| `autonomous` | Yes | `true` if no checkpoints, `false` if has checkpoints |
-| `requirements` | Yes | **MUST** list requirement IDs from ROADMAP. Every roadmap requirement MUST appear in at least one plan. |
-| `user_setup` | No | Array of human-required setup items (external services) |
-| `generated_by` | Yes | Always `gsd-plan-phase` for formal plans |
-| `lifecycle_mode` | Yes | Shared lifecycle provenance mode copied across phase artifacts |
-| `phase_lifecycle_id` | Yes | Shared lifecycle ID for this phase attempt |
-| `generated_at` | Yes | ISO timestamp when the plan was generated |
-| `must_haves` | Yes | Goal-backward verification criteria (see below) |
+| Field                | Required | Purpose                                                                                                 |
+| -------------------- | -------- | ------------------------------------------------------------------------------------------------------- |
+| `phase`              | Yes      | Phase identifier (e.g., `01-foundation`)                                                                |
+| `plan`               | Yes      | Plan number within phase (e.g., `01`, `02`)                                                             |
+| `type`               | Yes      | Always `execute` for standard plans, `tdd` for TDD plans                                                |
+| `wave`               | Yes      | Execution wave number (1, 2, 3...). Pre-computed at plan time.                                          |
+| `depends_on`         | Yes      | Array of plan IDs this plan requires.                                                                   |
+| `files_modified`     | Yes      | Files this plan touches.                                                                                |
+| `autonomous`         | Yes      | `true` if no checkpoints, `false` if has checkpoints                                                    |
+| `requirements`       | Yes      | **MUST** list requirement IDs from ROADMAP. Every roadmap requirement MUST appear in at least one plan. |
+| `user_setup`         | No       | Array of human-required setup items (external services)                                                 |
+| `generated_by`       | Yes      | Always `gsd-plan-phase` for formal plans                                                                |
+| `lifecycle_mode`     | Yes      | Shared lifecycle provenance mode copied across phase artifacts                                          |
+| `phase_lifecycle_id` | Yes      | Shared lifecycle ID for this phase attempt                                                              |
+| `generated_at`       | Yes      | ISO timestamp when the plan was generated                                                               |
+| `must_haves`         | Yes      | Goal-backward verification criteria (see below)                                                         |
 
 **Wave is pre-computed:** Wave numbers are assigned during `/gsd-plan-phase`. Execute-phase reads `wave` directly from frontmatter and groups plans by wave number. No runtime dependency analysis needed.
 
 **Must-haves enable verification:** The `must_haves` field carries goal-backward requirements from planning to execution. After all plans complete, execute-phase spawns a verification subagent that checks these criteria against the actual codebase.
 
----
+______________________________________________________________________
 
 ## Parallel vs Sequential
 
-<parallel_examples>
+<parallel-examples>
 
 **Wave 1 candidates (parallel):**
 
@@ -214,9 +214,9 @@ autonomous: false  # Has checkpoint:human-verify
 
 Wave 3 runs after Waves 1 and 2. Pauses at checkpoint, orchestrator presents to user, resumes on approval.
 
-</parallel_examples>
+</parallel-examples>
 
----
+______________________________________________________________________
 
 ## Context Section
 
@@ -241,6 +241,7 @@ Wave 3 runs after Waves 1 and 2. Pauses at checkpoint, orchestrator presents to 
 ```
 
 **Bad pattern (creates false dependencies):**
+
 ```markdown
 <context>
 @.planning/phases/03-features/03-01-SUMMARY.md  # Just because it's earlier
@@ -248,7 +249,7 @@ Wave 3 runs after Waves 1 and 2. Pauses at checkpoint, orchestrator presents to 
 </context>
 ```
 
----
+______________________________________________________________________
 
 ## Scope Guidance
 
@@ -261,7 +262,7 @@ Wave 3 runs after Waves 1 and 2. Pauses at checkpoint, orchestrator presents to 
 **When to split:**
 
 - Different subsystems (auth vs API vs UI)
-- >3 tasks
+- > 3 tasks
 - Risk of context overflow
 - TDD candidates - separate plans
 
@@ -276,7 +277,7 @@ AVOID:  Plan 01 = All models
         Plan 03 = All UIs
 ```
 
----
+______________________________________________________________________
 
 ## TDD Plans
 
@@ -288,25 +289,26 @@ TDD features get dedicated plans with `type: tdd`.
 
 See `~/.claude/get-shit-done/references/tdd.md` for TDD plan structure.
 
----
+______________________________________________________________________
 
 ## Task Types
 
-| Type | Use For | Autonomy |
-|------|---------|----------|
-| `auto` | Everything Claude can do independently | Fully autonomous |
-| `checkpoint:human-verify` | Visual/functional verification | Pauses, returns to orchestrator |
-| `checkpoint:decision` | Implementation choices | Pauses, returns to orchestrator |
-| `checkpoint:human-action` | Truly unavoidable manual steps (rare) | Pauses, returns to orchestrator |
+| Type                      | Use For                                | Autonomy                        |
+| ------------------------- | -------------------------------------- | ------------------------------- |
+| `auto`                    | Everything Claude can do independently | Fully autonomous                |
+| `checkpoint:human-verify` | Visual/functional verification         | Pauses, returns to orchestrator |
+| `checkpoint:decision`     | Implementation choices                 | Pauses, returns to orchestrator |
+| `checkpoint:human-action` | Truly unavoidable manual steps (rare)  | Pauses, returns to orchestrator |
 
 **Checkpoint behavior in parallel execution:**
+
 - Plan runs until checkpoint
 - Agent returns with checkpoint details + agent_id
 - Orchestrator presents to user
 - User responds
 - Orchestrator resumes agent with `resume: agent_id`
 
----
+______________________________________________________________________
 
 ## Examples
 
@@ -359,10 +361,10 @@ Output: User model, API endpoints, and UI components.
 - [ ] API endpoints respond correctly
 </verification>
 
-<success_criteria>
+<success-criteria>
 - All tasks completed
 - User feature works end-to-end
-</success_criteria>
+</success-criteria>
 
 <output>
 After completion, create `.planning/phases/03-features/03-01-SUMMARY.md`
@@ -389,11 +391,11 @@ Purpose: Integrate user and product features into unified view.
 Output: Working dashboard component.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/execute-plan.md
 @~/.claude/get-shit-done/templates/summary.md
 @~/.claude/get-shit-done/references/checkpoints.md
-</execution_context>
+</execution-context>
 
 <context>
 @.planning/PROJECT.md
@@ -430,26 +432,28 @@ Output: Working dashboard component.
 - [ ] Visual verification passed
 </verification>
 
-<success_criteria>
+<success-criteria>
 - All tasks completed
 - User approved visual layout
-</success_criteria>
+</success-criteria>
 
 <output>
 After completion, create `.planning/phases/03-features/03-03-SUMMARY.md`
 </output>
 ```
 
----
+______________________________________________________________________
 
 ## Anti-Patterns
 
 **Bad: Reflexive dependency chaining**
+
 ```yaml
 depends_on: ["03-01"]  # Just because 01 comes before 02
 ```
 
 **Bad: Horizontal layer grouping**
+
 ```
 Plan 01: All models
 Plan 02: All APIs (depends on 01)
@@ -457,6 +461,7 @@ Plan 03: All UIs (depends on 02)
 ```
 
 **Bad: Missing autonomy flag**
+
 ```yaml
 # Has checkpoint but no autonomous: false
 depends_on: []
@@ -465,6 +470,7 @@ files_modified: [...]
 ```
 
 **Bad: Vague tasks**
+
 ```xml
 <task type="auto">
   <name>Set up authentication</name>
@@ -473,6 +479,7 @@ files_modified: [...]
 ```
 
 **Bad: Missing read_first (executor modifies files it hasn't read)**
+
 ```xml
 <task type="auto">
   <name>Update database config</name>
@@ -483,29 +490,31 @@ files_modified: [...]
 ```
 
 **Bad: Vague acceptance criteria (not verifiable)**
+
 ```xml
-<acceptance_criteria>
+<acceptance-criteria>
   - Config is properly set up
   - Database connection works correctly
-</acceptance_criteria>
+</acceptance-criteria>
 ```
 
 **Good: Concrete with read_first + verifiable criteria**
+
 ```xml
 <task type="auto">
   <name>Update database config for connection pooling</name>
   <files>src/config/database.ts</files>
-  <read_first>src/config/database.ts, .env.example, docker-compose.yml</read_first>
+  <read-first>src/config/database.ts, .env.example, docker-compose.yml</read-first>
   <action>Add pool configuration: min=2, max=20, idleTimeoutMs=30000. Add SSL config: rejectUnauthorized=true when NODE_ENV=production. Add .env.example entry: DATABASE_POOL_MAX=20.</action>
-  <acceptance_criteria>
+  <acceptance-criteria>
     - database.ts contains "max: 20" and "idleTimeoutMillis: 30000"
     - database.ts contains SSL conditional on NODE_ENV
     - .env.example contains DATABASE_POOL_MAX
-  </acceptance_criteria>
+  </acceptance-criteria>
 </task>
 ```
 
----
+______________________________________________________________________
 
 ## Guidelines
 
@@ -516,7 +525,7 @@ files_modified: [...]
 - Group checkpoints with related auto tasks in same plan
 - 2-3 tasks per plan, ~50% context max
 
----
+______________________________________________________________________
 
 ## User Setup (External Services)
 
@@ -540,6 +549,7 @@ user_setup:
 ```
 
 **The automation-first rule:** `user_setup` contains ONLY what Claude literally cannot do:
+
 - Account creation (requires human signup)
 - Secret retrieval (requires dashboard access)
 - Dashboard configuration (requires human in browser)
@@ -550,7 +560,7 @@ user_setup:
 
 See `~/.claude/get-shit-done/templates/user-setup.md` for full schema and examples
 
----
+______________________________________________________________________
 
 ## Must-Haves (Goal-Backward Verification)
 
@@ -587,20 +597,20 @@ must_haves:
 
 **Field descriptions:**
 
-| Field | Purpose |
-|-------|---------|
-| `truths` | Observable behaviors from user perspective. Each must be testable. |
-| `artifacts` | Files that must exist with real implementation. |
-| `artifacts[].path` | File path relative to project root. |
-| `artifacts[].provides` | What this artifact delivers. |
-| `artifacts[].min_lines` | Optional. Minimum lines to be considered substantive. |
-| `artifacts[].exports` | Optional. Expected exports to verify. |
-| `artifacts[].contains` | Optional. Pattern that must exist in file. |
-| `key_links` | Critical connections between artifacts. |
-| `key_links[].from` | Source artifact. |
-| `key_links[].to` | Target artifact or endpoint. |
-| `key_links[].via` | How they connect (description). |
-| `key_links[].pattern` | Optional. Regex to verify connection exists. |
+| Field                   | Purpose                                                            |
+| ----------------------- | ------------------------------------------------------------------ |
+| `truths`                | Observable behaviors from user perspective. Each must be testable. |
+| `artifacts`             | Files that must exist with real implementation.                    |
+| `artifacts[].path`      | File path relative to project root.                                |
+| `artifacts[].provides`  | What this artifact delivers.                                       |
+| `artifacts[].min_lines` | Optional. Minimum lines to be considered substantive.              |
+| `artifacts[].exports`   | Optional. Expected exports to verify.                              |
+| `artifacts[].contains`  | Optional. Pattern that must exist in file.                         |
+| `key_links`             | Critical connections between artifacts.                            |
+| `key_links[].from`      | Source artifact.                                                   |
+| `key_links[].to`        | Target artifact or endpoint.                                       |
+| `key_links[].via`       | How they connect (description).                                    |
+| `key_links[].pattern`   | Optional. Regex to verify connection exists.                       |
 
 **Why this matters:**
 
@@ -609,10 +619,10 @@ Task completion ≠ Goal achievement. A task "create chat component" can complet
 **Verification flow:**
 
 1. Plan-phase derives must_haves from phase goal (goal-backward)
-2. Must_haves written to PLAN.md frontmatter
-3. Execute-phase runs all plans
-4. Verification subagent checks must_haves against codebase
-5. Gaps found → fix plans created → execute → re-verify
-6. All must_haves pass → phase complete
+1. Must_haves written to PLAN.md frontmatter
+1. Execute-phase runs all plans
+1. Verification subagent checks must_haves against codebase
+1. Gaps found → fix plans created → execute → re-verify
+1. All must_haves pass → phase complete
 
 See `~/.claude/get-shit-done/workflows/verify-phase.md` for verification logic.

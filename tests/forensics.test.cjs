@@ -37,12 +37,12 @@ describe('forensics command', () => {
 
   test('command has success_criteria section', () => {
     const content = fs.readFileSync(commandPath, 'utf-8');
-    assert.ok(content.includes('<success_criteria>'), 'should have success_criteria');
+    assert.ok(content.includes('<success-criteria>'), 'should have success_criteria');
   });
 
   test('command has critical_rules section', () => {
     const content = fs.readFileSync(commandPath, 'utf-8');
-    assert.ok(content.includes('<critical_rules>'), 'should have critical_rules');
+    assert.ok(content.includes('<critical-rules>'), 'should have critical_rules');
   });
 
   test('command enforces read-only investigation', () => {

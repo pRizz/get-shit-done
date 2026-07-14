@@ -1,9 +1,9 @@
 # Referência de Recursos do GSD
 
-Visão em Português dos recursos centrais do GSD.  
+Visão em Português dos recursos centrais do GSD.\
 Para catálogo completo e detalhamento exaustivo, consulte [FEATURES.md em inglês](../FEATURES.md).
 
----
+______________________________________________________________________
 
 ## Recursos principais
 
@@ -60,18 +60,18 @@ Para catálogo completo e detalhamento exaustivo, consulte [FEATURES.md em ingl�
 - **Novos runtimes** — Trae IDE, Cline, Augment Code (v1.32)
 - **Manual update** — procedimento de atualização sem npm (v1.32)
 
----
+______________________________________________________________________
 
 ## Atalhos recomendados por cenário
 
-| Cenário | Comandos |
-|--------|----------|
-| Projeto novo | `/gsd-new-project` -> `/gsd-discuss-phase` -> `/gsd-plan-phase` -> `/gsd-execute-phase` |
-| Correção rápida | `/gsd-quick` |
-| Código existente | `/gsd-map-codebase` -> `/gsd-new-project` |
-| Fechamento de release | `/gsd-audit-milestone` -> `/gsd-complete-milestone` |
+| Cenário               | Comandos                                                                                |
+| --------------------- | --------------------------------------------------------------------------------------- |
+| Projeto novo          | `/gsd-new-project` -> `/gsd-discuss-phase` -> `/gsd-plan-phase` -> `/gsd-execute-phase` |
+| Correção rápida       | `/gsd-quick`                                                                            |
+| Código existente      | `/gsd-map-codebase` -> `/gsd-new-project`                                               |
+| Fechamento de release | `/gsd-audit-milestone` -> `/gsd-complete-milestone`                                     |
 
----
+______________________________________________________________________
 
 > [!NOTE]
 > Este arquivo é uma versão de referência rápida em Português para facilitar uso diário. Para detalhes de baixo nível, requisitos formais e comportamento completo de cada recurso, use o documento original em inglês.

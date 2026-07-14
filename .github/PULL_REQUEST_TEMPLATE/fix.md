@@ -4,7 +4,7 @@
 > — Enhancement: use [enhancement.md](?template=enhancement.md)
 > — Feature: use [feature.md](?template=feature.md)
 
----
+______________________________________________________________________
 
 ## Linked Issue
 
@@ -14,7 +14,7 @@ Fixes #
 
 > The linked issue must have the `confirmed-bug` label. If it doesn't, ask a maintainer to confirm the bug before continuing.
 
----
+______________________________________________________________________
 
 ## What was broken
 
@@ -51,10 +51,10 @@ Fixes #
 - [ ] Claude Code
 - [ ] Gemini CLI
 - [ ] OpenCode
-- [ ] Other: ___
+- [ ] Other: \_\_\_
 - [ ] N/A (not runtime-specific)
 
----
+______________________________________________________________________
 
 ## Checklist
 

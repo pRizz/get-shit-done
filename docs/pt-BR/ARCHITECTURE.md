@@ -1,9 +1,9 @@
 # Arquitetura do GSD
 
-Visão arquitetural do Get Shit Done (GSD) em Português.  
+Visão arquitetural do Get Shit Done (GSD) em Português.\
 Para detalhes de implementação linha a linha, consulte [ARCHITECTURE.md em inglês](../ARCHITECTURE.md).
 
----
+______________________________________________________________________
 
 ## Princípios
 
@@ -15,19 +15,19 @@ Para detalhes de implementação linha a linha, consulte [ARCHITECTURE.md em ing
 
 ## Componentes centrais
 
-1. **Camada de comando**  
+1. **Camada de comando**\
    Recebe entrada do usuário (`/gsd-*`) e roteia fluxo.
 
-2. **Camada de orquestração**  
+1. **Camada de orquestração**\
    Coordena pesquisadores, planejadores, executores e verificadores.
 
-3. **Camada de artefatos**  
+1. **Camada de artefatos**\
    Mantém `PROJECT.md`, `REQUIREMENTS.md`, `ROADMAP.md`, `STATE.md`, planos e sumários.
 
-4. **Camada de execução**  
+1. **Camada de execução**\
    Roda tarefas em ondas, respeitando dependências.
 
-5. **Camada de validação**  
+1. **Camada de validação**\
    Compara entrega contra objetivos, testes e critérios de fase.
 
 ## Fluxo arquitetural (alto nível)
@@ -75,7 +75,7 @@ GSD suporta evolução por:
 - novos artefatos por fase
 - novos gates de qualidade/segurança
 
----
+______________________________________________________________________
 
 > [!NOTE]
 > Esta versão foi criada para consulta de arquitetura em Português. A especificação canônica e completa continua no documento em inglês.

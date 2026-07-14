@@ -67,19 +67,19 @@ rm -rf "$TMP_ROOT"
 
 Replace `--claude` with the flag for your runtime:
 
-| Runtime | Flag |
-|---|---|
-| Claude Code | `--claude` |
-| Gemini CLI | `--gemini` |
-| OpenCode | `--opencode` |
-| Kilo | `--kilo` |
-| Codex | `--codex` |
-| Copilot | `--copilot` |
-| Cursor | `--cursor` |
-| Windsurf | `--windsurf` |
-| Augment | `--augment` |
-| Trae | `--trae` |
-| All runtimes | `--all` |
+| Runtime      | Flag         |
+| ------------ | ------------ |
+| Claude Code  | `--claude`   |
+| Gemini CLI   | `--gemini`   |
+| OpenCode     | `--opencode` |
+| Kilo         | `--kilo`     |
+| Codex        | `--codex`    |
+| Copilot      | `--copilot`  |
+| Cursor       | `--cursor`   |
+| Windsurf     | `--windsurf` |
+| Augment      | `--augment`  |
+| Trae         | `--trae`     |
+| All runtimes | `--all`      |
 
 ## What the installer replaces
 
@@ -91,6 +91,7 @@ The installer performs a clean wipe-and-replace of GSD-managed directories only:
 - `hooks/` — installed GSD hooks for runtimes that use them
 
 **What is preserved:**
+
 - Custom agents not prefixed with `gsd-`
 - Custom commands outside `commands/gsd/`
 - Your instruction files such as `CLAUDE.md`

@@ -10,9 +10,9 @@ Use this workflow when:
 Instantly restore full project context so "Where were we?" has an immediate, complete answer.
 </purpose>
 
-<required_reading>
+<required-reading>
 @~/.claude/get-shit-done/references/continuation-format.md
-</required_reading>
+</required-reading>
 
 <process>
 
@@ -265,7 +265,7 @@ Based on user selection, route to appropriate workflow:
 - **Check todos** → Read .planning/todos/pending/, present summary
 - **Review alignment** → Read PROJECT.md, compare to current state
 - **Something else** → Ask what they need
-</step>
+  </step>
 
 <step name="update_session">
 Before proceeding to routed workflow, update session continuity:
@@ -291,10 +291,10 @@ If STATE.md is missing but other artifacts exist:
 "STATE.md missing. Reconstructing from artifacts..."
 
 1. Read PROJECT.md → Extract "What This Is" and Core Value
-2. Read ROADMAP.md → Determine phases, find current position
-3. Scan \*-SUMMARY.md files → Extract decisions, concerns
-4. Count pending todos in .planning/todos/pending/
-5. Check for .continue-here files → Session continuity
+1. Read ROADMAP.md → Determine phases, find current position
+1. Scan \*-SUMMARY.md files → Extract decisions, concerns
+1. Count pending todos in .planning/todos/pending/
+1. Check for .continue-here files → Session continuity
 
 Reconstruct and write STATE.md, then proceed normally.
 
@@ -305,16 +305,16 @@ This handles cases where:
 - Cloning repo without full .planning/ state
   </reconstruction>
 
-<quick_resume>
+<quick-resume>
 If user says "continue" or "go":
 - Load state silently
 - Determine primary action
 - Execute immediately without presenting options
 
 "Continuing from [state]... [action]"
-</quick_resume>
+</quick-resume>
 
-<success_criteria>
+<success-criteria>
 Resume is complete when:
 
 - [ ] STATE.md loaded (or reconstructed)
@@ -323,4 +323,4 @@ Resume is complete when:
 - [ ] Contextual next actions offered
 - [ ] User knows exactly where project stands
 - [ ] Session continuity updated
-      </success_criteria>
+  </success-criteria>

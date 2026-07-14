@@ -18,10 +18,10 @@ Generate a developer behavioral profile from session analysis (or questionnaire)
 Routes to the profile-user workflow which orchestrates the full flow: consent gate, session analysis or questionnaire fallback, profile generation, result display, and artifact selection.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/profile-user.md
 @~/.claude/get-shit-done/references/ui-brand.md
-</execution_context>
+</execution-context>
 
 <context>
 Flags from $ARGUMENTS:
@@ -33,14 +33,15 @@ Flags from $ARGUMENTS:
 Execute the profile-user workflow end-to-end.
 
 The workflow handles all logic including:
+
 1. Initialization and existing profile detection
-2. Consent gate before session analysis
-3. Session scanning and data sufficiency checks
-4. Session analysis (profiler agent) or questionnaire fallback
-5. Cross-project split resolution
-6. Profile writing to USER-PROFILE.md
-7. Result display with report card and highlights
-8. Artifact selection (dev-preferences, CLAUDE.md sections)
-9. Sequential artifact generation
-10. Summary with refresh diff (if applicable)
-</process>
+1. Consent gate before session analysis
+1. Session scanning and data sufficiency checks
+1. Session analysis (profiler agent) or questionnaire fallback
+1. Cross-project split resolution
+1. Profile writing to USER-PROFILE.md
+1. Result display with report card and highlights
+1. Artifact selection (dev-preferences, CLAUDE.md sections)
+1. Sequential artifact generation
+1. Summary with refresh diff (if applicable)
+   </process>

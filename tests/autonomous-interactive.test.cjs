@@ -72,7 +72,7 @@ describe('autonomous --interactive flag (#1413)', () => {
 
   test('success criteria include --interactive requirements', () => {
     const content = fs.readFileSync(workflowPath, 'utf8');
-    const criteriaMatch = content.match(/<success_criteria>([\s\S]*?)<\/success_criteria>/);
+    const criteriaMatch = content.match(/<success-criteria>([\s\S]*?)<\/success-criteria>/);
     const criteria = criteriaMatch ? criteriaMatch[1] : '';
     assert.ok(criteria.includes('--interactive'),
       'success criteria should include --interactive requirements');

@@ -4,28 +4,28 @@ Mark a shipped version (v1.0, v1.1, v2.0) as complete. Creates historical record
 
 </purpose>
 
-<required_reading>
+<required-reading>
 
 1. templates/milestone.md
-2. templates/milestone-archive.md
-3. `.planning/ROADMAP.md`
-4. `.planning/REQUIREMENTS.md`
-5. `.planning/PROJECT.md`
+1. templates/milestone-archive.md
+1. `.planning/ROADMAP.md`
+1. `.planning/REQUIREMENTS.md`
+1. `.planning/PROJECT.md`
 
-</required_reading>
+</required-reading>
 
-<archival_behavior>
+<archival-behavior>
 
 When a milestone completes:
 
 1. Extract full milestone details to `.planning/milestones/v[X.Y]-ROADMAP.md`
-2. Archive requirements to `.planning/milestones/v[X.Y]-REQUIREMENTS.md`
-3. Update ROADMAP.md — overwrite in place with milestone grouping (preserve Backlog section)
-4. Safety commit archive files + updated ROADMAP.md, then `git rm REQUIREMENTS.md` (fresh for next milestone)
-5. Perform full PROJECT.md evolution review
-6. Offer to create next milestone inline
-7. Archive UI artifacts (`*-UI-SPEC.md`, `*-UI-REVIEW.md`) alongside other phase documents
-8. Clean up `.planning/ui-reviews/` screenshot files (binary assets, never archived)
+1. Archive requirements to `.planning/milestones/v[X.Y]-REQUIREMENTS.md`
+1. Update ROADMAP.md — overwrite in place with milestone grouping (preserve Backlog section)
+1. Safety commit archive files + updated ROADMAP.md, then `git rm REQUIREMENTS.md` (fresh for next milestone)
+1. Perform full PROJECT.md evolution review
+1. Offer to create next milestone inline
+1. Archive UI artifacts (`*-UI-SPEC.md`, `*-UI-REVIEW.md`) alongside other phase documents
+1. Clean up `.planning/ui-reviews/` screenshot files (binary assets, never archived)
 
 **Context Efficiency:** Archives keep ROADMAP.md constant-size and REQUIREMENTS.md milestone-scoped.
 
@@ -33,7 +33,7 @@ When a milestone completes:
 
 **REQUIREMENTS archive** contains all requirements marked complete with outcomes, traceability table with final status, notes on changed requirements.
 
-</archival_behavior>
+</archival-behavior>
 
 <process>
 
@@ -46,6 +46,7 @@ ROADMAP=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" roadmap analyze)
 ```
 
 This returns all phases with plan/summary counts and disk status. Use this to verify:
+
 - Which phases belong to this milestone?
 - All phases complete (all plans have summaries)? Check `disk_status === 'complete'` for each.
 - `progress_percent` should be 100%.
@@ -53,6 +54,7 @@ This returns all phases with plan/summary counts and disk status. Use this to ve
 **Requirements completion check (REQUIRED before presenting):**
 
 Parse REQUIREMENTS.md traceability table:
+
 - Count total v1 requirements vs checked-off (`[x]`) requirements
 - Identify any non-Complete rows in the traceability table
 
@@ -81,9 +83,10 @@ Requirements: {N}/{M} v1 requirements checked off
 ```
 
 MUST present 3 options:
+
 1. **Proceed anyway** — mark milestone complete with known gaps
-2. **Run audit first** — `/gsd-audit-milestone` to assess gap severity
-3. **Abort** — return to development
+1. **Run audit first** — `/gsd-audit-milestone` to assess gap severity
+1. **Abort** — return to development
 
 If user selects "Proceed anyway": note incomplete requirements in MILESTONES.md under `### Known Gaps` with REQ-IDs and descriptions.
 
@@ -115,6 +118,7 @@ Ready to mark this milestone as shipped?
 ```
 
 Wait for confirmation.
+
 - "adjust scope": Ask which phases to include.
 - "wait": Stop, user returns when ready.
 
@@ -195,40 +199,48 @@ cat .planning/phases/*-*/*-SUMMARY.md
 **Full review checklist:**
 
 1. **"What This Is" accuracy:**
+
    - Compare current description to what was built
    - Update if product has meaningfully changed
 
-2. **Core Value check:**
+1. **Core Value check:**
+
    - Still the right priority? Did shipping reveal a different core value?
    - Update if the ONE thing has shifted
 
-3. **Requirements audit:**
+1. **Requirements audit:**
 
    **Validated section:**
+
    - All Active requirements shipped this milestone → Move to Validated
    - Format: `- ✓ [Requirement] — v[X.Y]`
 
    **Active section:**
+
    - Remove requirements moved to Validated
    - Add new requirements for next milestone
    - Keep unaddressed requirements
 
    **Out of Scope audit:**
+
    - Review each item — reasoning still valid?
    - Remove irrelevant items
    - Add requirements invalidated during milestone
 
-4. **Context update:**
+1. **Context update:**
+
    - Current codebase state (LOC, tech stack)
    - User feedback themes (if any)
    - Known issues or technical debt
 
-5. **Key Decisions audit:**
+1. **Key Decisions audit:**
+
    - Extract all decisions from milestone phase summaries
    - Add to Key Decisions table with outcomes
    - Mark ✓ Good, ⚠️ Revisit, or — Pending
 
-6. **Constraints check:**
+1. **Constraints check:**
+
    - Any constraints changed during development? Update as needed
 
 Update PROJECT.md inline. Update "Last updated" footer:
@@ -374,6 +386,7 @@ ARCHIVE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" milestone complet
 ```
 
 The CLI handles:
+
 - Creating `.planning/milestones/` directory
 - Archiving ROADMAP.md to `milestones/v[X.Y]-ROADMAP.md`
 - Archiving REQUIREMENTS.md to `milestones/v[X.Y]-REQUIREMENTS.md` with archive header
@@ -390,16 +403,19 @@ Verify: `✅ Milestone archived to .planning/milestones/`
 AskUserQuestion(header="Archive Phases", question="Archive phase directories to milestones/?", options: "Yes — move to milestones/v[X.Y]-phases/" | "Skip — keep phases in place")
 
 If "Yes": move phase directories to the milestone archive:
+
 ```bash
 mkdir -p .planning/milestones/v[X.Y]-phases
 # For each phase directory in .planning/phases/:
 mv .planning/phases/{phase-dir} .planning/milestones/v[X.Y]-phases/
 ```
+
 Verify: `✅ Phase directories archived to .planning/milestones/v[X.Y]-phases/`
 
 If "Skip": Phase directories remain in `.planning/phases/` as raw execution history. Use `/gsd-cleanup` later to archive retroactively.
 
 After archival, the AI still handles:
+
 - Reorganizing ROADMAP.md with milestone grouping (requires judgment) — overwrite in place after extracting Backlog section
 - Full PROJECT.md evolution review (requires understanding)
 - Safety commit of archive files + updated ROADMAP.md, then `git rm .planning/REQUIREMENTS.md`
@@ -468,6 +484,7 @@ git rm .planning/REQUIREMENTS.md
 **Append to living retrospective:**
 
 Check for existing retrospective:
+
 ```bash
 ls .planning/RETROSPECTIVE.md 2>/dev/null || true
 ```
@@ -479,10 +496,10 @@ ls .planning/RETROSPECTIVE.md 2>/dev/null || true
 **Gather retrospective data:**
 
 1. From SUMMARY.md files: Extract key deliverables, one-liners, tech decisions
-2. From VERIFICATION.md files: Extract verification scores, gaps found
-3. From UAT.md files: Extract test results, issues found
-4. From git log: Count commits, calculate timeline
-5. From the milestone work: Reflect on what worked and what didn't
+1. From VERIFICATION.md files: Extract verification scores, gaps found
+1. From UAT.md files: Extract test results, issues found
+1. From git log: Count commits, calculate timeline
+1. From the milestone work: Reflect on what worked and what didn't
 
 **Write the milestone section:**
 
@@ -518,6 +535,7 @@ ls .planning/RETROSPECTIVE.md 2>/dev/null || true
 If the "## Cross-Milestone Trends" section exists, update the tables with new data from this milestone.
 
 **Commit:**
+
 ```bash
 node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: update retrospective for v${VERSION}" --files .planning/RETROSPECTIVE.md
 ```
@@ -540,6 +558,7 @@ See: .planning/PROJECT.md (updated [today])
 ```
 
 **Accumulated Context:**
+
 - Clear decisions summary (full log in PROJECT.md)
 - Clear resolved blockers
 - Keep open blockers for next milestone
@@ -560,6 +579,7 @@ if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 Extract `branching_strategy`, `phase_branch_template`, `milestone_branch_template`, and `commit_docs` from init JSON.
 
 Detect base branch:
+
 ```bash
 BASE_BRANCH=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get git.base_branch 2>/dev/null || echo "")
 if [ -z "$BASE_BRANCH" ] || [ "$BASE_BRANCH" = "null" ]; then
@@ -700,6 +720,7 @@ Confirm: "Tagged: v[X.Y]"
 Ask: "Push tag to remote? (y/n)"
 
 If yes:
+
 ```bash
 git push origin v[X.Y]
 ```
@@ -751,18 +772,19 @@ Tag: v[X.Y]
 
 </process>
 
-<milestone_naming>
+<milestone-naming>
 
 **Version conventions:**
+
 - **v1.0** — Initial MVP
 - **v1.1, v1.2** — Minor updates, new features, fixes
 - **v2.0, v3.0** — Major rewrites, breaking changes, new direction
 
 **Names:** Short 1-2 words (v1.0 MVP, v1.1 Security, v1.2 Performance, v2.0 Redesign).
 
-</milestone_naming>
+</milestone-naming>
 
-<what_qualifies>
+<what-qualifies>
 
 **Create milestones for:** Initial release, public releases, major feature sets shipped, before archiving planning.
 
@@ -770,9 +792,9 @@ Tag: v[X.Y]
 
 Heuristic: "Is this deployed/usable/shipped?" If yes → milestone. If no → keep working.
 
-</what_qualifies>
+</what-qualifies>
 
-<success_criteria>
+<success-criteria>
 
 Milestone completion is successful when:
 
@@ -796,4 +818,4 @@ Milestone completion is successful when:
 - [ ] Cross-milestone trends updated
 - [ ] User knows next step (/gsd-new-milestone)
 
-</success_criteria>
+</success-criteria>

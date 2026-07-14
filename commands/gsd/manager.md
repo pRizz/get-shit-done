@@ -11,22 +11,24 @@ allowed-tools:
   - Skill
   - Task
 ---
+
 <objective>
 Single-terminal command center for managing a milestone. Shows a dashboard of all phases with visual status indicators, recommends optimal next actions, and dispatches work — discuss runs inline, plan/execute run as background agents.
 
 Designed for power users who want to parallelize work across phases from one terminal: discuss a phase while another plans or executes in the background.
 
 **Creates/Updates:**
+
 - No files created directly — dispatches to existing GSD commands via Skill() and background Task agents.
 - Reads `.planning/STATE.md`, `.planning/ROADMAP.md`, phase directories for status.
 
 **After:** User exits when done managing, or all phases complete and milestone lifecycle is suggested.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/manager.md
 @~/.claude/get-shit-done/references/ui-brand.md
-</execution_context>
+</execution-context>
 
 <context>
 No arguments required. Requires an active milestone with ROADMAP.md and STATE.md.

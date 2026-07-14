@@ -1,4 +1,4 @@
-<ui_patterns>
+<ui-patterns>
 
 Visual patterns for user-facing GSD output. Orchestrators @-reference this file.
 
@@ -13,6 +13,7 @@ Use for major workflow transitions.
 ```
 
 **Stage names (uppercase):**
+
 - `QUESTIONING`
 - `RESEARCHING`
 - `DEFINING REQUIREMENTS`
@@ -23,7 +24,7 @@ Use for major workflow transitions.
 - `PHASE {N} COMPLETE ✓`
 - `MILESTONE COMPLETE 🎉`
 
----
+______________________________________________________________________
 
 ## Checkpoint Boxes
 
@@ -42,11 +43,12 @@ User action required. 62-character width.
 ```
 
 **Types:**
+
 - `CHECKPOINT: Verification Required` → `→ Type "approved" or describe issues`
 - `CHECKPOINT: Decision Required` → `→ Select: option-a / option-b`
 - `CHECKPOINT: Action Required` → `→ Type "done" when complete`
 
----
+______________________________________________________________________
 
 ## Status Symbols
 
@@ -60,26 +62,29 @@ User action required. 62-character width.
 🎉 Milestone complete (only in banner)
 ```
 
----
+______________________________________________________________________
 
 ## Progress Display
 
 **Phase/milestone level:**
+
 ```
 Progress: ████████░░ 80%
 ```
 
 **Task level:**
+
 ```
 Tasks: 2/4 complete
 ```
 
 **Plan level:**
+
 ```
 Plans: 3/5 complete
 ```
 
----
+______________________________________________________________________
 
 ## Spawning Indicators
 
@@ -95,7 +100,7 @@ Plans: 3/5 complete
 ✓ Researcher complete: STACK.md written
 ```
 
----
+______________________________________________________________________
 
 ## Next Up Block
 
@@ -121,7 +126,7 @@ Always at end of major completions.
 ───────────────────────────────────────────────────────────────
 ```
 
----
+______________________________________________________________________
 
 ## Error Box
 
@@ -135,7 +140,7 @@ Always at end of major completions.
 **To fix:** {Resolution steps}
 ```
 
----
+______________________________________________________________________
 
 ## Tables
 
@@ -147,7 +152,7 @@ Always at end of major completions.
 | 3     | ○      | 0/2   | 0%       |
 ```
 
----
+______________________________________________________________________
 
 ## Anti-Patterns
 
@@ -157,4 +162,4 @@ Always at end of major completions.
 - Random emoji (`🚀`, `✨`, `💫`)
 - Missing Next Up block after completions
 
-</ui_patterns>
+</ui-patterns>

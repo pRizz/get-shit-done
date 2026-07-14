@@ -9,21 +9,22 @@ The statusline shows context usage to the **user**, but the **agent** has no awa
 ## How It Works
 
 1. The statusline hook writes context metrics to `/tmp/claude-ctx-{session_id}.json`
-2. After each tool use, the context monitor reads these metrics
-3. When remaining context drops below thresholds, it injects a warning as `additionalContext`
-4. The agent receives the warning in its conversation and can act accordingly
+1. After each tool use, the context monitor reads these metrics
+1. When remaining context drops below thresholds, it injects a warning as `additionalContext`
+1. The agent receives the warning in its conversation and can act accordingly
 
 ## Thresholds
 
-| Level | Remaining | Agent Behavior |
-|-------|-----------|----------------|
-| Normal | > 35% | No warning |
-| WARNING | <= 35% | Wrap up current task, avoid starting new complex work |
-| CRITICAL | <= 25% | Stop immediately, save state (`/gsd-pause-work`) |
+| Level    | Remaining | Agent Behavior                                        |
+| -------- | --------- | ----------------------------------------------------- |
+| Normal   | > 35%     | No warning                                            |
+| WARNING  | \<= 35%   | Wrap up current task, avoid starting new complex work |
+| CRITICAL | \<= 25%   | Stop immediately, save state (`/gsd-pause-work`)      |
 
 ## Debounce
 
 To avoid spamming the agent with repeated warnings:
+
 - First warning always fires immediately
 - Subsequent warnings require 5 tool uses between them
 - Severity escalation (WARNING -> CRITICAL) bypasses debounce

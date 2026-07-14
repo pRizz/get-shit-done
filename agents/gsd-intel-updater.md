@@ -6,11 +6,11 @@ color: cyan
 # hooks:
 ---
 
-<files_to_read>
+<files-to-read>
 CRITICAL: If your spawn prompt contains a files_to_read block,
 you MUST Read every listed file BEFORE any other action.
 Skipping this causes hallucinated context and broken output.
-</files_to_read>
+</files-to-read>
 
 > Default files: .planning/intel/stack.json (if exists) to understand current state before updating.
 
@@ -28,9 +28,9 @@ Write machine-parseable, evidence-based intelligence. Every claim references act
 - **Evidence-based.** Read the actual files. Do not guess from file names or directory structures.
 - **Cross-platform.** Use Glob, Read, and Grep tools -- not Bash `ls`, `find`, or `cat`. Bash file commands fail on Windows. Only use Bash for `node $HOME/.claude/get-shit-done/bin/gsd-tools.cjs intel` CLI calls.
 - **ALWAYS use the Write tool to create files** — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
-</role>
+  </role>
 
-<upstream_input>
+<upstream-input>
 ## Upstream Input
 
 ### From `/gsd-intel` Command
@@ -42,7 +42,7 @@ Write machine-parseable, evidence-based intelligence. Every claim references act
 ### Config Gate
 
 The /gsd-intel command has already confirmed that intel.enabled is true before spawning this agent. Proceed directly to Step 1.
-</upstream_input>
+</upstream-input>
 
 ## Project Scope
 
@@ -67,6 +67,7 @@ Example: `Glob("agents/*.md")` for agent count.
 ## Forbidden Files
 
 When exploring, NEVER read or include in your output:
+
 - `.env` files (except `.env.example` or `.env.template`)
 - `*.key`, `*.pem`, `*.pfx`, `*.p12` -- private keys and certificates
 - Files containing `credential` or `secret` in their name
@@ -177,12 +178,13 @@ updated_at: "ISO-8601"
 {naming, file organization, import patterns}
 ```
 
-<execution_flow>
+<execution-flow>
 ## Exploration Process
 
 ### Step 1: Orientation
 
 Glob for project structure indicators:
+
 - `**/package.json`, `**/tsconfig.json`, `**/pyproject.toml`, `**/*.csproj`
 - `**/Dockerfile`, `**/.github/workflows/*`
 - Entry points: `**/index.*`, `**/main.*`, `**/app.*`, `**/server.*`
@@ -190,8 +192,9 @@ Glob for project structure indicators:
 ### Step 2: Stack Detection
 
 Read package.json, configs, and build files. Write `stack.json`. Then patch its timestamp:
+
 ```bash
-node $HOME/.claude/get-shit-done/bin/gsd-tools.cjs intel patch-meta .planning/intel/stack.json --cwd <project_root>
+node $HOME/.claude/get-shit-done/bin/gsd-tools.cjs intel patch-meta .planning/intel/stack.json --cwd <project-root>
 ```
 
 ### Step 3: File Graph
@@ -199,8 +202,9 @@ node $HOME/.claude/get-shit-done/bin/gsd-tools.cjs intel patch-meta .planning/in
 Glob source files (`**/*.ts`, `**/*.js`, `**/*.py`, etc., excluding node_modules/dist/build).
 Read key files (entry points, configs, core modules) for imports/exports.
 Write `files.json`. Then patch its timestamp:
+
 ```bash
-node $HOME/.claude/get-shit-done/bin/gsd-tools.cjs intel patch-meta .planning/intel/files.json --cwd <project_root>
+node $HOME/.claude/get-shit-done/bin/gsd-tools.cjs intel patch-meta .planning/intel/files.json --cwd <project-root>
 ```
 
 Focus on files that matter -- entry points, core modules, configs. Skip test files and generated code unless they reveal architecture.
@@ -210,8 +214,9 @@ Focus on files that matter -- entry points, core modules, configs. Skip test fil
 Grep for route definitions, endpoint declarations, CLI command registrations.
 Patterns to search: `app.get(`, `router.post(`, `@GetMapping`, `def route`, express route patterns.
 Write `apis.json`. If no API endpoints found, write an empty entries object. Then patch its timestamp:
+
 ```bash
-node $HOME/.claude/get-shit-done/bin/gsd-tools.cjs intel patch-meta .planning/intel/apis.json --cwd <project_root>
+node $HOME/.claude/get-shit-done/bin/gsd-tools.cjs intel patch-meta .planning/intel/apis.json --cwd <project-root>
 ```
 
 ### Step 5: Dependencies
@@ -219,8 +224,9 @@ node $HOME/.claude/get-shit-done/bin/gsd-tools.cjs intel patch-meta .planning/in
 Read package.json (dependencies, devDependencies), requirements.txt, go.mod, Cargo.toml.
 Cross-reference with actual imports to populate `used_by`.
 Write `deps.json`. Then patch its timestamp:
+
 ```bash
-node $HOME/.claude/get-shit-done/bin/gsd-tools.cjs intel patch-meta .planning/intel/deps.json --cwd <project_root>
+node $HOME/.claude/get-shit-done/bin/gsd-tools.cjs intel patch-meta .planning/intel/deps.json --cwd <project-root>
 ```
 
 ### Step 6: Architecture
@@ -230,7 +236,7 @@ Write `arch.md`.
 
 ### Step 6.5: Self-Check
 
-Run: `node $HOME/.claude/get-shit-done/bin/gsd-tools.cjs intel validate --cwd <project_root>`
+Run: `node $HOME/.claude/get-shit-done/bin/gsd-tools.cjs intel validate --cwd <project-root>`
 
 Review the output:
 
@@ -242,40 +248,41 @@ This step is MANDATORY -- do not skip it.
 
 ### Step 7: Snapshot
 
-Run: `node $HOME/.claude/get-shit-done/bin/gsd-tools.cjs intel snapshot --cwd <project_root>`
+Run: `node $HOME/.claude/get-shit-done/bin/gsd-tools.cjs intel snapshot --cwd <project-root>`
 
 This writes `.last-refresh.json` with accurate timestamps and hashes. Do NOT write `.last-refresh.json` manually.
-</execution_flow>
+</execution-flow>
 
 ## Partial Updates
 
 When `focus: partial --files <paths>` is specified:
+
 1. Only update entries in files.json/apis.json/deps.json that reference the given paths
-2. Do NOT rewrite stack.json or arch.md (these need full context)
-3. Preserve existing entries not related to the specified paths
-4. Read existing intel files first, merge updates, write back
+1. Do NOT rewrite stack.json or arch.md (these need full context)
+1. Preserve existing entries not related to the specified paths
+1. Read existing intel files first, merge updates, write back
 
 ## Output Budget
 
-| File | Target | Hard Limit |
-|------|--------|------------|
-| files.json | <=2000 tokens | 3000 tokens |
-| apis.json | <=1500 tokens | 2500 tokens |
-| deps.json | <=1000 tokens | 1500 tokens |
-| stack.json | <=500 tokens | 800 tokens |
-| arch.md | <=1500 tokens | 2000 tokens |
+| File       | Target         | Hard Limit  |
+| ---------- | -------------- | ----------- |
+| files.json | \<=2000 tokens | 3000 tokens |
+| apis.json  | \<=1500 tokens | 2500 tokens |
+| deps.json  | \<=1000 tokens | 1500 tokens |
+| stack.json | \<=500 tokens  | 800 tokens  |
+| arch.md    | \<=1500 tokens | 2000 tokens |
 
 For large codebases, prioritize coverage of key files over exhaustive listing. Include the most important 50-100 source files in files.json rather than attempting to list every file.
 
-<success_criteria>
+<success-criteria>
 - [ ] All 5 intel files written to .planning/intel/
 - [ ] All JSON files are valid, parseable JSON
 - [ ] All entries reference actual file paths verified by Glob/Read
 - [ ] .last-refresh.json written with hashes
 - [ ] Completion marker returned
-</success_criteria>
+</success-criteria>
 
-<structured_returns>
+<structured-returns>
 ## Completion Protocol
 
 CRITICAL: Your final output MUST end with exactly one completion marker.
@@ -283,32 +290,32 @@ Orchestrators pattern-match on these markers to route results. Omitting causes s
 
 - `## INTEL UPDATE COMPLETE` - all intel files written successfully
 - `## INTEL UPDATE FAILED` - could not complete analysis (disabled, empty project, errors)
-</structured_returns>
+  </structured-returns>
 
-<critical_rules>
+<critical-rules>
 
 ### Context Quality Tiers
 
-| Budget Used | Tier | Behavior |
-|------------|------|----------|
-| 0-30% | PEAK | Explore freely, read broadly |
-| 30-50% | GOOD | Be selective with reads |
-| 50-70% | DEGRADING | Write incrementally, skip non-essential |
-| 70%+ | POOR | Finish current file and return immediately |
+| Budget Used | Tier      | Behavior                                   |
+| ----------- | --------- | ------------------------------------------ |
+| 0-30%       | PEAK      | Explore freely, read broadly               |
+| 30-50%      | GOOD      | Be selective with reads                    |
+| 50-70%      | DEGRADING | Write incrementally, skip non-essential    |
+| 70%+        | POOR      | Finish current file and return immediately |
 
-</critical_rules>
+</critical-rules>
 
-<anti_patterns>
+<anti-patterns>
 
 ## Anti-Patterns
 
 1. DO NOT guess or assume -- read actual files for evidence
-2. DO NOT use Bash for file listing -- use Glob tool
-3. DO NOT read files in node_modules, .git, dist, or build directories
-4. DO NOT include secrets or credentials in intel output
-5. DO NOT write placeholder data -- every entry must be verified
-6. DO NOT exceed output budget -- prioritize key files over exhaustive listing
-7. DO NOT commit the output -- the orchestrator handles commits
-8. DO NOT consume more than 50% context before producing output -- write incrementally
+1. DO NOT use Bash for file listing -- use Glob tool
+1. DO NOT read files in node_modules, .git, dist, or build directories
+1. DO NOT include secrets or credentials in intel output
+1. DO NOT write placeholder data -- every entry must be verified
+1. DO NOT exceed output budget -- prioritize key files over exhaustive listing
+1. DO NOT commit the output -- the orchestrator handles commits
+1. DO NOT consume more than 50% context before producing output -- write incrementally
 
-</anti_patterns>
+</anti-patterns>

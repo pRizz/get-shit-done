@@ -11,16 +11,17 @@ allowed-tools:
   - Task
   - AskUserQuestion
 ---
+
 <objective>
 Conduct a retroactive 6-pillar visual audit. Produces UI-REVIEW.md with
 graded assessment (1-4 per pillar). Works on any project.
 Output: {phase_num}-UI-REVIEW.md
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/ui-review.md
 @~/.claude/get-shit-done/references/ui-brand.md
-</execution_context>
+</execution-context>
 
 <context>
 Phase: $ARGUMENTS — optional, defaults to last completed phase.

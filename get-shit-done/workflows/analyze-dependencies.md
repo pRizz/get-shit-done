@@ -9,6 +9,7 @@ Analyze ROADMAP.md phases for dependency relationships before execution. Detect 
 Read `.planning/ROADMAP.md`. If it does not exist, error: "No ROADMAP.md found — run `/gsd-new-project` first."
 
 Extract all phases. For each phase capture:
+
 - Phase number and name
 - Scope/Goal description
 - Files listed in `Files` or `files_modified` fields (if present)
@@ -33,16 +34,20 @@ Group phases by their inferred file domain (database, API, frontend, auth, confi
 For each pair of phases (A, B), check for dependency signals:
 
 ### File Overlap Detection
+
 If phases A and B will both modify files in the same domain or the same specific files, one must run before the other. The phase that *provides* the foundation runs first.
 
 ### Semantic Dependency Detection
+
 Read each phase's scope/goal for these patterns:
+
 - Phase B mentions consuming, using, or calling something that Phase A creates/implements
 - Phase B references an "API", "schema", "model", "endpoint", or "interface" that Phase A builds
 - Phase B says "after X is complete", "once X is built", "using the X from Phase N"
 - Phase B extends or modifies code that Phase A establishes
 
 ### Data Flow Detection
+
 - Phase A creates data structures, schemas, or types → Phase B consumes or transforms them
 - Phase A seeds/migrates the database → Phase B reads from that database
 - Phase A exposes an API contract → Phase B implements the client for that contract
@@ -87,6 +92,7 @@ Ask the user: "Apply these `Depends on` suggestions to ROADMAP.md? (yes / no / e
 - **edit** — Present each suggestion individually with yes/no/skip per suggestion.
 
 When writing to ROADMAP.md:
+
 - Locate the phase entry and add or update the `Depends on:` field
 - Preserve all other phase content unchanged
 - Do not reorder phases

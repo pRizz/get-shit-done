@@ -2,18 +2,18 @@
 Initialize a new project through unified flow: questioning, research (optional), requirements, roadmap. This is the most leveraged moment in any project — deep questioning here means better plans, better execution, better outcomes. One workflow takes you from idea to ready-for-planning.
 </purpose>
 
-<required_reading>
+<required-reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
-</required_reading>
+</required-reading>
 
-<available_agent_types>
+<available-agent-types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
 - gsd-project-researcher — Researches project-level technical decisions
 - gsd-research-synthesizer — Synthesizes findings from parallel research agents
 - gsd-roadmapper — Creates phased execution roadmaps
-</available_agent_types>
+</available-agent-types>
 
-<auto_mode>
+<auto-mode>
 
 ## Auto Mode Detection
 
@@ -48,7 +48,7 @@ Usage:
 The document should describe what you want to build.
 ```
 
-</auto_mode>
+</auto-mode>
 
 <process>
 
@@ -72,6 +72,7 @@ New projects always treat `AGENTS.md` as the canonical root instruction file.
 `CLAUDE.md` is the compatibility alias for older Claude-first repos and runtimes.
 
 Set instruction file variables:
+
 ```bash
 INSTRUCTION_FILE="AGENTS.md"
 COMPAT_INSTRUCTION_FILE="CLAUDE.md"
@@ -79,6 +80,7 @@ INSTRUCTION_FILES_TO_COMMIT="$INSTRUCTION_FILE"
 ```
 
 Inspect any pre-existing instruction file state before reconciliation:
+
 ```bash
 INSTRUCTION_STATUS=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" instruction-files status --raw)
 if [[ "$INSTRUCTION_STATUS" == @file:* ]]; then INSTRUCTION_STATUS=$(cat "${INSTRUCTION_STATUS#@file:}"); fi
@@ -251,8 +253,8 @@ Wait for their response. This gives you the context needed to ask intelligent fo
 **Research-before-questions mode:** Check if `workflow.research_before_questions` is enabled in `.planning/config.json` (or the config from init context). When enabled, before asking follow-up questions about a topic area:
 
 1. Do a brief web search for best practices related to what the user described
-2. Mention key findings naturally as you ask questions (e.g., "Most projects like this use X — is that what you're thinking, or something different?")
-3. This makes questions more informed without changing the conversational flow
+1. Mention key findings naturally as you ask questions (e.g., "Most projects like this use X — is that what you're thinking, or something different?")
+1. This makes questions more informed without changing the conversational flow
 
 When disabled (default), ask questions directly as before.
 
@@ -330,8 +332,8 @@ All Active requirements are hypotheses until shipped and validated.
 Infer Validated requirements from existing code:
 
 1. Read `.planning/codebase/ARCHITECTURE.md` and `STACK.md`
-2. Identify what the codebase already does
-3. These become the initial Validated set
+1. Identify what the codebase already does
+1. These become the initial Validated set
 
 ```markdown
 ## Requirements
@@ -473,11 +475,11 @@ questions: [
 
 These spawn additional agents during planning/execution. They add tokens and time but improve quality.
 
-| Agent | When it runs | What it does |
-|-------|--------------|--------------|
-| **Researcher** | Before planning each phase | Investigates domain, finds patterns, surfaces gotchas |
-| **Plan Checker** | After plan is created | Verifies plan actually achieves the phase goal |
-| **Verifier** | After phase execution | Confirms must-haves were delivered |
+| Agent            | When it runs               | What it does                                          |
+| ---------------- | -------------------------- | ----------------------------------------------------- |
+| **Researcher**   | Before planning each phase | Investigates domain, finds patterns, surfaces gotchas |
+| **Plan Checker** | After plan is created      | Verifies plan actually achieves the phase goal        |
+| **Verifier**     | After phase execution      | Confirms must-haves were delivered                    |
 
 All recommended for important projects. Skip for quick experiments.
 
@@ -634,39 +636,39 @@ Display spawning indicator:
 Spawn 4 parallel gsd-project-researcher agents with path references:
 
 ```
-Task(prompt="<research_type>
+Task(prompt="<research-type>
 Project Research — Stack dimension for [domain].
-</research_type>
+</research-type>
 
-<milestone_context>
+<milestone-context>
 [greenfield OR subsequent]
 
 Greenfield: Research the standard stack for building [domain] from scratch.
 Subsequent: Research what's needed to add [target features] to an existing [domain] app. Don't re-research the existing system.
-</milestone_context>
+</milestone-context>
 
 <question>
 What's the standard 2025 stack for [domain]?
 </question>
 
-<files_to_read>
+<files-to-read>
 - {project_path} (Project context and goals)
-</files_to_read>
+</files-to-read>
 
 ${AGENT_SKILLS_RESEARCHER}
 
-<downstream_consumer>
+<downstream-consumer>
 Your STACK.md feeds into roadmap creation. Be prescriptive:
 - Specific libraries with versions
 - Clear rationale for each choice
 - What NOT to use and why
-</downstream_consumer>
+</downstream-consumer>
 
-<quality_gate>
+<quality-gate>
 - [ ] Versions are current (verify with Context7/official docs, not training data)
 - [ ] Rationale explains WHY, not just WHAT
 - [ ] Confidence levels assigned to each recommendation
-</quality_gate>
+</quality-gate>
 
 <output>
 Write to: .planning/research/STACK.md
@@ -674,39 +676,39 @@ Use template: ~/.claude/get-shit-done/templates/research-project/STACK.md
 </output>
 ", subagent_type="gsd-project-researcher", model="{researcher_model}", description="Stack research")
 
-Task(prompt="<research_type>
+Task(prompt="<research-type>
 Project Research — Features dimension for [domain].
-</research_type>
+</research-type>
 
-<milestone_context>
+<milestone-context>
 [greenfield OR subsequent]
 
 Greenfield: What features do [domain] products have? What's table stakes vs differentiating?
 Subsequent: How do [target features] typically work? What's expected behavior?
-</milestone_context>
+</milestone-context>
 
 <question>
 What features do [domain] products have? What's table stakes vs differentiating?
 </question>
 
-<files_to_read>
+<files-to-read>
 - {project_path} (Project context)
-</files_to_read>
+</files-to-read>
 
 ${AGENT_SKILLS_RESEARCHER}
 
-<downstream_consumer>
+<downstream-consumer>
 Your FEATURES.md feeds into requirements definition. Categorize clearly:
 - Table stakes (must have or users leave)
 - Differentiators (competitive advantage)
 - Anti-features (things to deliberately NOT build)
-</downstream_consumer>
+</downstream-consumer>
 
-<quality_gate>
+<quality-gate>
 - [ ] Categories are clear (table stakes vs differentiators vs anti-features)
 - [ ] Complexity noted for each feature
 - [ ] Dependencies between features identified
-</quality_gate>
+</quality-gate>
 
 <output>
 Write to: .planning/research/FEATURES.md
@@ -714,39 +716,39 @@ Use template: ~/.claude/get-shit-done/templates/research-project/FEATURES.md
 </output>
 ", subagent_type="gsd-project-researcher", model="{researcher_model}", description="Features research")
 
-Task(prompt="<research_type>
+Task(prompt="<research-type>
 Project Research — Architecture dimension for [domain].
-</research_type>
+</research-type>
 
-<milestone_context>
+<milestone-context>
 [greenfield OR subsequent]
 
 Greenfield: How are [domain] systems typically structured? What are major components?
 Subsequent: How do [target features] integrate with existing [domain] architecture?
-</milestone_context>
+</milestone-context>
 
 <question>
 How are [domain] systems typically structured? What are major components?
 </question>
 
-<files_to_read>
+<files-to-read>
 - {project_path} (Project context)
-</files_to_read>
+</files-to-read>
 
 ${AGENT_SKILLS_RESEARCHER}
 
-<downstream_consumer>
+<downstream-consumer>
 Your ARCHITECTURE.md informs phase structure in roadmap. Include:
 - Component boundaries (what talks to what)
 - Data flow (how information moves)
 - Suggested build order (dependencies between components)
-</downstream_consumer>
+</downstream-consumer>
 
-<quality_gate>
+<quality-gate>
 - [ ] Components clearly defined with boundaries
 - [ ] Data flow direction explicit
 - [ ] Build order implications noted
-</quality_gate>
+</quality-gate>
 
 <output>
 Write to: .planning/research/ARCHITECTURE.md
@@ -754,39 +756,39 @@ Use template: ~/.claude/get-shit-done/templates/research-project/ARCHITECTURE.md
 </output>
 ", subagent_type="gsd-project-researcher", model="{researcher_model}", description="Architecture research")
 
-Task(prompt="<research_type>
+Task(prompt="<research-type>
 Project Research — Pitfalls dimension for [domain].
-</research_type>
+</research-type>
 
-<milestone_context>
+<milestone-context>
 [greenfield OR subsequent]
 
 Greenfield: What do [domain] projects commonly get wrong? Critical mistakes?
 Subsequent: What are common mistakes when adding [target features] to [domain]?
-</milestone_context>
+</milestone-context>
 
 <question>
 What do [domain] projects commonly get wrong? Critical mistakes?
 </question>
 
-<files_to_read>
+<files-to-read>
 - {project_path} (Project context)
-</files_to_read>
+</files-to-read>
 
 ${AGENT_SKILLS_RESEARCHER}
 
-<downstream_consumer>
+<downstream-consumer>
 Your PITFALLS.md prevents mistakes in roadmap/planning. For each pitfall:
 - Warning signs (how to detect early)
 - Prevention strategy (how to avoid)
 - Which phase should address it
-</downstream_consumer>
+</downstream-consumer>
 
-<quality_gate>
+<quality-gate>
 - [ ] Pitfalls are specific to this domain (not generic advice)
 - [ ] Prevention strategies are actionable
 - [ ] Phase mapping included where relevant
-</quality_gate>
+</quality-gate>
 
 <output>
 Write to: .planning/research/PITFALLS.md
@@ -803,12 +805,12 @@ Task(prompt="
 Synthesize research outputs into SUMMARY.md.
 </task>
 
-<files_to_read>
+<files-to-read>
 - .planning/research/STACK.md
 - .planning/research/FEATURES.md
 - .planning/research/ARCHITECTURE.md
 - .planning/research/PITFALLS.md
-</files_to_read>
+</files-to-read>
 
 ${AGENT_SKILLS_SYNTHESIZER}
 
@@ -1008,18 +1010,18 @@ Spawn gsd-roadmapper agent with path references:
 
 ```
 Task(prompt="
-<planning_context>
+<planning-context>
 
-<files_to_read>
+<files-to-read>
 - .planning/PROJECT.md (Project context)
 - .planning/REQUIREMENTS.md (v1 Requirements)
 - .planning/research/SUMMARY.md (Research findings - if exists)
 - .planning/config.json (Granularity and mode settings)
-</files_to_read>
+</files-to-read>
 
 ${AGENT_SKILLS_ROADMAPPER}
 
-</planning_context>
+</planning-context>
 
 <instructions>
 Create roadmap:
@@ -1101,6 +1103,7 @@ Use AskUserQuestion:
 **If "Adjust phases":**
 
 - Get user's adjustment notes
+
 - Re-spawn roadmapper with revision context:
 
   ```
@@ -1109,9 +1112,9 @@ Use AskUserQuestion:
   User feedback on roadmap:
   [user's notes]
 
-  <files_to_read>
+  <files-to-read>
   - .planning/ROADMAP.md (Current roadmap to revise)
-  </files_to_read>
+  </files-to-read>
 
   ${AGENT_SKILLS_ROADMAPPER}
 
@@ -1122,6 +1125,7 @@ Use AskUserQuestion:
   ```
 
 - Present revised roadmap
+
 - Loop until user approves
 
 **If "Review full file":** Display raw `cat .planning/ROADMAP.md`, then re-ask.
@@ -1140,32 +1144,36 @@ INSTRUCTION_LINK_NOTE=""
 Handle each `INSTRUCTION_STATE` exactly as follows:
 
 **`none`**
+
 1. Run:
    ```bash
    INSTRUCTION_RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md --output "$INSTRUCTION_FILE")
    node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" instruction-files ensure-link --real "$INSTRUCTION_FILE" --link "$COMPAT_INSTRUCTION_FILE"
    ```
-2. If symlink creation fails: STOP with blocker text explaining that GSD will not create a duplicate regular file when the alias symlink cannot be created.
+1. If symlink creation fails: STOP with blocker text explaining that GSD will not create a duplicate regular file when the alias symlink cannot be created.
 
 **`agents_only`**
+
 1. Run:
    ```bash
    INSTRUCTION_RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md --output "$INSTRUCTION_FILE")
    node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" instruction-files ensure-link --real "$INSTRUCTION_FILE" --link "$COMPAT_INSTRUCTION_FILE"
    ```
-2. Same fail-closed rule as `none`.
+1. Same fail-closed rule as `none`.
 
 **`linked_ok`**
+
 1. Run:
    ```bash
    INSTRUCTION_RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md --output "$INSTRUCTION_FILE")
    ```
-2. Do NOT rewrite the existing healthy link direction.
-3. Set `INSTRUCTION_LINK_NOTE` from the final status so the summary says which file is real and which is the alias.
+1. Do NOT rewrite the existing healthy link direction.
+1. Set `INSTRUCTION_LINK_NOTE` from the final status so the summary says which file is real and which is the alias.
 
 **`claude_only`**
 
 If `--auto`:
+
 - Run:
   ```bash
   INSTRUCTION_RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md --output "$INSTRUCTION_FILE")
@@ -1173,6 +1181,7 @@ If `--auto`:
 - Set `INSTRUCTION_WARNING` to explain that `CLAUDE.md` already existed, `AGENTS.md` was created as the new canonical file, and GSD left both files as regular files because `--auto` does not rewrite ambiguous existing setups.
 
 If interactive:
+
 - Explain the benefits of a single-source-of-truth setup: one file to update, less rule drift, and both `AGENTS.md` and `CLAUDE.md` entrypoints remain available through a symlink.
 - Use AskUserQuestion:
   - header: `Instruction Files`
@@ -1201,6 +1210,7 @@ If interactive:
 **`dual_regular`** or **`broken_or_unexpected_link`**
 
 If `--auto`:
+
 - Run:
   ```bash
   INSTRUCTION_RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md --output "$INSTRUCTION_FILE")
@@ -1208,6 +1218,7 @@ If `--auto`:
 - Set `INSTRUCTION_WARNING` to explain that GSD refreshed `AGENTS.md` but left the existing conflicting file setup unchanged because `--auto` does not rewrite ambiguous instruction-file states.
 
 If interactive:
+
 - Explain the same single-source-of-truth benefits as above.
 - Use AskUserQuestion:
   - header: `Instruction Files`
@@ -1387,7 +1398,7 @@ PHASE1_HAS_UI=$(echo "$PHASE1_SECTION" | grep -qi "UI hint.*yes" && echo "true" 
 
 </output>
 
-<success_criteria>
+<success-criteria>
 
 - [ ] .planning/ directory created
 - [ ] Git repo initialized
@@ -1411,4 +1422,4 @@ PHASE1_HAS_UI=$(echo "$PHASE1_SECTION" | grep -qi "UI hint.*yes" && echo "true" 
 
 **Atomic commits:** Each phase commits its artifacts immediately. If context is lost, artifacts persist.
 
-</success_criteria>
+</success-criteria>

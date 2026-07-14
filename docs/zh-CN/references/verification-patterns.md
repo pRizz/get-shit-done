@@ -2,25 +2,27 @@
 
 如何验证不同类型的工件是真实实现，而非存根或占位符。
 
-<core_principle>
+<core-principle>
 **存在 ≠ 实现**
 
 文件存在并不意味着功能有效。验证必须检查：
+
 1. **存在** - 文件在预期路径
-2. **实质性** - 内容是真实实现，非占位符
-3. **已连接** - 已连接到系统的其他部分
-4. **功能性** - 调用时实际工作
+1. **实质性** - 内容是真实实现，非占位符
+1. **已连接** - 已连接到系统的其他部分
+1. **功能性** - 调用时实际工作
 
 级别 1-3 可以编程检查。级别 4 通常需要人工验证。
-</core_principle>
+</core-principle>
 
-<stub_detection>
+<stub-detection>
 
 ## 通用存根模式
 
 这些模式表明占位符代码，无论文件类型：
 
 **基于注释的存根：**
+
 ```bash
 # 存根注释的 Grep 模式
 grep -E "(TODO|FIXME|XXX|HACK|PLACEHOLDER)" "$file"
@@ -29,6 +31,7 @@ grep -E "// \.\.\.|/\* \.\.\. \*/|# \.\.\." "$file"
 ```
 
 **输出中的占位符文本：**
+
 ```bash
 # UI 占位符模式
 grep -E "placeholder|lorem ipsum|coming soon|under construction" "$file" -i
@@ -37,6 +40,7 @@ grep -E "\[.*\]|<.*>|\{.*\}" "$file"  # 模板括号未移除
 ```
 
 **空或琐碎实现：**
+
 ```bash
 # 什么都不做的函数
 grep -E "return null|return undefined|return \{\}|return \[\]" "$file"
@@ -45,6 +49,7 @@ grep -E "console\.(log|warn|error).*only" "$file"  # 仅日志函数
 ```
 
 **预期动态但硬编码的值：**
+
 ```bash
 # 硬编码 ID、计数或内容
 grep -E "id.*=.*['\"].*['\"]" "$file"  # 硬编码字符串 ID
@@ -52,19 +57,21 @@ grep -E "count.*=.*\d+|length.*=.*\d+" "$file"  # 硬编码计数
 grep -E "\\\$\d+\.\d{2}|\d+ items" "$file"  # 硬编码显示值
 ```
 
-</stub_detection>
+</stub-detection>
 
-<react_components>
+<react-components>
 
 ## React/Next.js 组件
 
 **存在检查：**
+
 ```bash
 # 文件存在且导出组件
 [ -f "$component_path" ] && grep -E "export (default |)function|export const.*=.*\(" "$component_path"
 ```
 
 **实质性检查：**
+
 ```bash
 # 返回实际 JSX，非占位符
 grep -E "return.*<" "$component_path" | grep -v "return.*null" | grep -v "placeholder" -i
@@ -77,6 +84,7 @@ grep -E "props\.|useState|useEffect|useContext|\{.*\}" "$component_path"
 ```
 
 **React 特有的存根模式：**
+
 ```javascript
 // 危险信号 - 这些是存根：
 return <div>Component</div>
@@ -93,6 +101,7 @@ onSubmit={(e) => e.preventDefault()}  // 仅阻止默认，什么都不做
 ```
 
 **连接检查：**
+
 ```bash
 # 组件导入它需要的东西
 grep -E "^import.*from" "$component_path"
@@ -106,18 +115,20 @@ grep -E "fetch\(|axios\.|useSWR|useQuery|getServerSideProps|getStaticProps" "$co
 ```
 
 **功能验证（需要人工）：**
+
 - 组件是否渲染可见内容？
 - 交互元素是否响应点击？
 - 数据是否加载并显示？
 - 错误状态是否适当显示？
 
-</react_components>
+</react-components>
 
-<api_routes>
+<api-routes>
 
 ## API 路由（Next.js App Router / Express 等）
 
 **存在检查：**
+
 ```bash
 # 路由文件存在
 [ -f "$route_path" ]
@@ -130,6 +141,7 @@ grep -E "\.(get|post|put|patch|delete)\(" "$route_path"
 ```
 
 **实质性检查：**
+
 ```bash
 # 有实际逻辑，不仅仅是 return 语句
 wc -l "$route_path"  # 超过 10-15 行表明真实实现
@@ -145,6 +157,7 @@ grep -E "Response\.json|res\.json|res\.send|return.*\{" "$route_path" | grep -v 
 ```
 
 **API 路由特有的存根模式：**
+
 ```typescript
 // 危险信号 - 这些是存根：
 export async function POST() {
@@ -167,6 +180,7 @@ export async function POST(req) {
 ```
 
 **连接检查：**
+
 ```bash
 # 导入数据库/服务客户端
 grep -E "^import.*prisma|^import.*db|^import.*client" "$route_path"
@@ -179,18 +193,20 @@ grep -E "schema\.parse|validate|zod|yup|joi" "$route_path"
 ```
 
 **功能验证（人工或自动化）：**
+
 - GET 是否从数据库返回真实数据？
 - POST 是否实际创建记录？
 - 错误响应是否有正确的状态码？
 - 认证检查是否实际执行？
 
-</api_routes>
+</api-routes>
 
-<database_schema>
+<database-schema>
 
 ## 数据库模式（Prisma / Drizzle / SQL）
 
 **存在检查：**
+
 ```bash
 # 模式文件存在
 [ -f "prisma/schema.prisma" ] || [ -f "drizzle/schema.ts" ] || [ -f "src/db/schema.sql" ]
@@ -200,6 +216,7 @@ grep -E "^model $model_name|CREATE TABLE $table_name|export const $table_name" "
 ```
 
 **实质性检查：**
+
 ```bash
 # 有预期字段（不仅仅是 id）
 grep -A 20 "model $model_name" "$schema_path" | grep -E "^\s+\w+\s+\w+"
@@ -212,6 +229,7 @@ grep -A 20 "model $model_name" "$schema_path" | grep -E "Int|DateTime|Boolean|Fl
 ```
 
 **模式特有的存根模式：**
+
 ```prisma
 // 危险信号 - 这些是存根：
 model User {
@@ -232,6 +250,7 @@ model Order {
 ```
 
 **连接检查：**
+
 ```bash
 # 迁移存在且已应用
 ls prisma/migrations/ 2>/dev/null | wc -l  # 应该 > 0
@@ -242,24 +261,27 @@ npx prisma migrate status 2>/dev/null | grep -v "pending"
 ```
 
 **功能验证：**
+
 ```bash
 # 可以查询表（自动化）
 npx prisma db execute --stdin <<< "SELECT COUNT(*) FROM $table_name"
 ```
 
-</database_schema>
+</database-schema>
 
-<hooks_utilities>
+<hooks-utilities>
 
 ## 自定义 Hooks 和工具
 
 **存在检查：**
+
 ```bash
 # 文件存在且导出函数
 [ -f "$hook_path" ] && grep -E "export (default )?(function|const)" "$hook_path"
 ```
 
 **实质性检查：**
+
 ```bash
 # Hook 使用 React hooks（对于自定义 hooks）
 grep -E "useState|useEffect|useCallback|useMemo|useRef|useContext" "$hook_path"
@@ -272,6 +294,7 @@ grep -E "return \{|return \[" "$hook_path"
 ```
 
 **Hooks 特有的存根模式：**
+
 ```typescript
 // 危险信号 - 这些是存根：
 export function useAuth() {
@@ -290,6 +313,7 @@ export function useUser() {
 ```
 
 **连接检查：**
+
 ```bash
 # Hook 实际在某处被导入
 grep -r "import.*$hook_name" src/ --include="*.tsx" --include="*.ts" | grep -v "$hook_path"
@@ -298,13 +322,14 @@ grep -r "import.*$hook_name" src/ --include="*.tsx" --include="*.ts" | grep -v "
 grep -r "$hook_name()" src/ --include="*.tsx" --include="*.ts" | grep -v "$hook_path"
 ```
 
-</hooks_utilities>
+</hooks-utilities>
 
-<environment_config>
+<environment-config>
 
 ## 环境变量和配置
 
 **存在检查：**
+
 ```bash
 # .env 文件存在
 [ -f ".env" ] || [ -f ".env.local" ]
@@ -314,6 +339,7 @@ grep -E "^$VAR_NAME=" .env .env.local 2>/dev/null
 ```
 
 **实质性检查：**
+
 ```bash
 # 变量有实际值（非占位符）
 grep -E "^$VAR_NAME=.+" .env .env.local 2>/dev/null | grep -v "your-.*-here|xxx|placeholder|TODO" -i
@@ -325,6 +351,7 @@ grep -E "^$VAR_NAME=.+" .env .env.local 2>/dev/null | grep -v "your-.*-here|xxx|
 ```
 
 **环境变量特有的存根模式：**
+
 ```bash
 # 危险信号 - 这些是存根：
 DATABASE_URL=your-database-url-here
@@ -334,6 +361,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3000  # 生产环境仍指向 localhost
 ```
 
 **连接检查：**
+
 ```bash
 # 变量实际在代码中使用
 grep -r "process\.env\.$VAR_NAME|env\.$VAR_NAME" src/ --include="*.ts" --include="*.tsx"
@@ -342,9 +370,9 @@ grep -r "process\.env\.$VAR_NAME|env\.$VAR_NAME" src/ --include="*.ts" --include
 grep -E "$VAR_NAME" src/env.ts src/env.mjs 2>/dev/null
 ```
 
-</environment_config>
+</environment-config>
 
-<wiring_verification>
+<wiring-verification>
 
 ## 连接验证模式
 
@@ -366,6 +394,7 @@ grep -E "await.*fetch|\.then\(|setData|setState" "$component_path"
 ```
 
 **危险信号：**
+
 ```typescript
 // Fetch 存在但响应被忽略：
 fetch('/api/messages')  // 无 await，无 .then，无赋值
@@ -393,6 +422,7 @@ grep -E "return.*json.*data|res\.json.*result" "$route_path"
 ```
 
 **危险信号：**
+
 ```typescript
 // 查询存在但结果未返回：
 await prisma.message.findMany()
@@ -419,6 +449,7 @@ grep -A 5 "onSubmit" "$component_path" | grep -v "only.*preventDefault" -i
 ```
 
 **危险信号：**
+
 ```typescript
 // 处理器仅阻止默认：
 onSubmit={(e) => e.preventDefault()}
@@ -448,6 +479,7 @@ grep -E "\{[a-zA-Z_]+\." "$component_path"  # 变量插值
 ```
 
 **危险信号：**
+
 ```tsx
 // 硬编码而非状态：
 return <div>
@@ -464,15 +496,16 @@ const [messages, setMessages] = useState([])
 return <div>{otherData.map(...)}</div>  // 使用不同数据
 ```
 
-</wiring_verification>
+</wiring-verification>
 
-<verification_checklist>
+<verification-checklist>
 
 ## 快速验证清单
 
 对于每种工件类型，运行此清单：
 
 ### 组件清单
+
 - [ ] 文件存在于预期路径
 - [ ] 导出函数/const 组件
 - [ ] 返回 JSX（非 null/空）
@@ -483,6 +516,7 @@ return <div>{otherData.map(...)}</div>  // 使用不同数据
 - [ ] 在应用某处被使用
 
 ### API 路由清单
+
 - [ ] 文件存在于预期路径
 - [ ] 导出 HTTP 方法处理器
 - [ ] 处理器超过 5 行
@@ -493,6 +527,7 @@ return <div>{otherData.map(...)}</div>  // 使用不同数据
 - [ ] 从前端调用
 
 ### 模式清单
+
 - [ ] 模型/表已定义
 - [ ] 有所有预期字段
 - [ ] 字段有适当类型
@@ -501,6 +536,7 @@ return <div>{otherData.map(...)}</div>  // 使用不同数据
 - [ ] 客户端已生成
 
 ### Hook/工具清单
+
 - [ ] 文件存在于预期路径
 - [ ] 导出函数
 - [ ] 有有意义的实现（非空返回）
@@ -508,14 +544,15 @@ return <div>{otherData.map(...)}</div>  // 使用不同数据
 - [ ] 返回值被消费
 
 ### 连接清单
+
 - [ ] 组件 → API: fetch/axios 调用存在且使用响应
 - [ ] API → 数据库: 查询存在且结果返回
 - [ ] 表单 → 处理器: onSubmit 调用 API/mutation
 - [ ] 状态 → 渲染: 状态变量出现在 JSX 中
 
-</verification_checklist>
+</verification-checklist>
 
-<automated_verification_script>
+<automated-verification-script>
 
 ## 自动化验证方法
 
@@ -554,15 +591,16 @@ check_substantive() {
 
 对每个必须有工件运行这些检查。汇总结果到 VERIFICATION.md。
 
-</automated_verification_script>
+</automated-verification-script>
 
-<human_verification_triggers>
+<human-verification-triggers>
 
 ## 何时需要人工验证
 
 有些事情无法编程验证。标记这些需要人工测试：
 
 **始终人工：**
+
 - 视觉外观（看起来对吗？）
 - 用户流程完成（能实际做那件事吗？）
 - 实时行为（WebSocket、SSE）
@@ -571,6 +609,7 @@ check_substantive() {
 - 性能感觉（感觉快吗？）
 
 **如不确定则人工：**
+
 - grep 无法追踪的复杂连接
 - 依赖状态的动态行为
 - 边缘情况和错误状态
@@ -578,6 +617,7 @@ check_substantive() {
 - 无障碍性
 
 **人工验证请求格式：**
+
 ```markdown
 ## 需要人工验证
 
@@ -592,21 +632,22 @@ check_substantive() {
 **检查：** 重连后能重试吗？
 ```
 
-</human_verification_triggers>
+</human-verification-triggers>
 
-<checkpoint_automation_reference>
+<checkpoint-automation-reference>
 
 ## 检查点前自动化
 
 关于自动化优先的检查点模式、服务器生命周期管理、CLI 安装处理和错误恢复协议，请参阅：
 
-**@~/.claude/get-shit-done/references/checkpoints.md** → `<automation_reference>` 部分
+**@~/.claude/get-shit-done/references/checkpoints.md** → `<automation-reference>` 部分
 
 关键原则：
+
 - Claude 在呈现检查点**之前**设置验证环境
 - 用户从不运行 CLI 命令（仅访问 URL）
 - 服务器生命周期：检查点前启动、处理端口冲突、持续运行
 - CLI 安装：安全处自动安装，否则检查点让用户选择
 - 错误处理：检查点前修复损坏环境，绝不呈现有失败设置的检查点
 
-</checkpoint_automation_reference>
+</checkpoint-automation-reference>

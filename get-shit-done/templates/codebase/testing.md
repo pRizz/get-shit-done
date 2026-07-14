@@ -4,11 +4,11 @@ Template for `.planning/codebase/TESTING.md` - captures test framework and patte
 
 **Purpose:** Document how tests are written and run. Guide for adding tests that match existing patterns.
 
----
+______________________________________________________________________
 
 ## File Template
 
-```markdown
+````markdown
 # Testing Patterns
 
 **Analysis Date:** [YYYY-MM-DD]
@@ -29,20 +29,23 @@ Template for `.planning/codebase/TESTING.md` - captures test framework and patte
 [e.g., "npm test -- --watch"]                     # Watch mode
 [e.g., "npm test -- path/to/file.test.ts"]       # Single file
 [e.g., "npm run test:coverage"]                   # Coverage report
-```
+````
 
 ## Test File Organization
 
 **Location:**
-- [Pattern: e.g., "*.test.ts alongside source files"]
-- [Alternative: e.g., "__tests__/ directory" or "separate tests/ tree"]
+
+- [Pattern: e.g., "\*.test.ts alongside source files"]
+- \[Alternative: e.g., "__tests__/ directory" or "separate tests/ tree"\]
 
 **Naming:**
+
 - [Unit tests: e.g., "module-name.test.ts"]
 - [Integration: e.g., "feature-name.integration.test.ts"]
 - [E2E: e.g., "user-flow.e2e.test.ts"]
 
 **Structure:**
+
 ```
 [Show actual directory pattern, e.g.:
 src/
@@ -58,6 +61,7 @@ src/
 ## Test Structure
 
 **Suite Organization:**
+
 ```typescript
 [Show actual pattern used, e.g.:
 
@@ -78,6 +82,7 @@ describe('ModuleName', () => {
 ```
 
 **Patterns:**
+
 - [Setup: e.g., "beforeEach for shared setup, avoid beforeAll"]
 - [Teardown: e.g., "afterEach to clean up, restore mocks"]
 - [Structure: e.g., "arrange/act/assert pattern required"]
@@ -85,10 +90,12 @@ describe('ModuleName', () => {
 ## Mocking
 
 **Framework:**
+
 - [Tool: e.g., "Jest built-in mocking", "Vitest vi", "Sinon"]
 - [Import mocking: e.g., "vi.mock() at top of file"]
 
 **Patterns:**
+
 ```typescript
 [Show actual mocking pattern, e.g.:
 
@@ -104,17 +111,20 @@ mockFetch.mockResolvedValue({ data: 'test' });
 ```
 
 **What to Mock:**
+
 - [e.g., "External APIs, file system, database"]
 - [e.g., "Time/dates (use vi.useFakeTimers)"]
 - [e.g., "Network calls (use mock fetch)"]
 
 **What NOT to Mock:**
+
 - [e.g., "Pure functions, utilities"]
 - [e.g., "Internal business logic"]
 
 ## Fixtures and Factories
 
 **Test Data:**
+
 ```typescript
 [Show pattern for creating test data, e.g.:
 
@@ -135,20 +145,24 @@ export const mockUsers = [/* ... */];
 ```
 
 **Location:**
+
 - [e.g., "tests/fixtures/ for shared fixtures"]
 - [e.g., "factory functions in test file or tests/factories/"]
 
 ## Coverage
 
 **Requirements:**
+
 - [Target: e.g., "80% line coverage", "no specific target"]
-- [Enforcement: e.g., "CI blocks <80%", "coverage for awareness only"]
+- [Enforcement: e.g., "CI blocks \<80%", "coverage for awareness only"]
 
 **Configuration:**
+
 - [Tool: e.g., "built-in coverage via --coverage flag"]
-- [Exclusions: e.g., "exclude *.test.ts, config files"]
+- [Exclusions: e.g., "exclude \*.test.ts, config files"]
 
 **View Coverage:**
+
 ```bash
 [e.g., "npm run test:coverage"]
 [e.g., "open coverage/index.html"]
@@ -157,16 +171,19 @@ export const mockUsers = [/* ... */];
 ## Test Types
 
 **Unit Tests:**
+
 - [Scope: e.g., "test single function/class in isolation"]
 - [Mocking: e.g., "mock all external dependencies"]
-- [Speed: e.g., "must run in <1s per test"]
+- [Speed: e.g., "must run in \<1s per test"]
 
 **Integration Tests:**
+
 - [Scope: e.g., "test multiple modules together"]
 - [Mocking: e.g., "mock external services, use real internal modules"]
 - [Setup: e.g., "use test database, seed data"]
 
 **E2E Tests:**
+
 - [Framework: e.g., "Playwright for E2E"]
 - [Scope: e.g., "test full user flows"]
 - [Location: e.g., "e2e/ directory separate from unit tests"]
@@ -174,6 +191,7 @@ export const mockUsers = [/* ... */];
 ## Common Patterns
 
 **Async Testing:**
+
 ```typescript
 [Show pattern, e.g.:
 
@@ -185,6 +203,7 @@ it('should handle async operation', async () => {
 ```
 
 **Error Testing:**
+
 ```typescript
 [Show pattern, e.g.:
 
@@ -200,16 +219,18 @@ it('should reject on failure', async () => {
 ```
 
 **Snapshot Testing:**
-- [Usage: e.g., "for React components only" or "not used"]
-- [Location: e.g., "__snapshots__/ directory"]
 
----
+- [Usage: e.g., "for React components only" or "not used"]
+- \[Location: e.g., "__snapshots__/ directory"\]
+
+______________________________________________________________________
 
 *Testing analysis: [date]*
 *Update when test patterns change*
-```
 
-<good_examples>
+````
+
+<good-examples>
 ```markdown
 # Testing Patterns
 
@@ -231,19 +252,22 @@ npm test                              # Run all tests
 npm test -- --watch                   # Watch mode
 npm test -- path/to/file.test.ts     # Single file
 npm run test:coverage                 # Coverage report
-```
+````
 
 ## Test File Organization
 
 **Location:**
-- *.test.ts alongside source files
+
+- \*.test.ts alongside source files
 - No separate tests/ directory
 
 **Naming:**
+
 - unit-name.test.ts for all tests
 - No distinction between unit/integration in filename
 
 **Structure:**
+
 ```
 src/
   lib/
@@ -260,6 +284,7 @@ src/
 ## Test Structure
 
 **Suite Organization:**
+
 ```typescript
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
@@ -288,6 +313,7 @@ describe('ModuleName', () => {
 ```
 
 **Patterns:**
+
 - Use beforeEach for per-test setup, avoid beforeAll
 - Use afterEach to restore mocks: vi.restoreAllMocks()
 - Explicit arrange/act/assert comments in complex tests
@@ -296,10 +322,12 @@ describe('ModuleName', () => {
 ## Mocking
 
 **Framework:**
+
 - Vitest built-in mocking (vi)
 - Module mocking via vi.mock() at top of test file
 
 **Patterns:**
+
 ```typescript
 import { vi } from 'vitest';
 import { externalFunction } from './external';
@@ -322,12 +350,14 @@ describe('test suite', () => {
 ```
 
 **What to Mock:**
+
 - File system operations (fs-extra)
 - Child process execution (child_process.exec)
 - External API calls
 - Environment variables (process.env)
 
 **What NOT to Mock:**
+
 - Internal pure functions
 - Simple utilities (string manipulation, array helpers)
 - TypeScript types
@@ -335,6 +365,7 @@ describe('test suite', () => {
 ## Fixtures and Factories
 
 **Test Data:**
+
 ```typescript
 // Factory functions in test file
 function createTestConfig(overrides?: Partial<Config>): Config {
@@ -354,6 +385,7 @@ Content here`;
 ```
 
 **Location:**
+
 - Factory functions: define in test file near usage
 - Shared fixtures: tests/fixtures/ (for multi-file test data)
 - Mock data: inline in test when simple, factory when complex
@@ -361,15 +393,18 @@ Content here`;
 ## Coverage
 
 **Requirements:**
+
 - No enforced coverage target
 - Coverage tracked for awareness
 - Focus on critical paths (parsers, service logic)
 
 **Configuration:**
+
 - Vitest coverage via c8 (built-in)
-- Excludes: *.test.ts, bin/install.ts, config files
+- Excludes: \*.test.ts, bin/install.ts, config files
 
 **View Coverage:**
+
 ```bash
 npm run test:coverage
 open coverage/index.html
@@ -378,23 +413,27 @@ open coverage/index.html
 ## Test Types
 
 **Unit Tests:**
+
 - Test single function in isolation
 - Mock all external dependencies (fs, child_process)
-- Fast: each test <100ms
+- Fast: each test \<100ms
 - Examples: parser.test.ts, validator.test.ts
 
 **Integration Tests:**
+
 - Test multiple modules together
 - Mock only external boundaries (file system, process)
 - Examples: install-service.test.ts (tests service + parser)
 
 **E2E Tests:**
+
 - Not currently used
 - CLI integration tested manually
 
 ## Common Patterns
 
 **Async Testing:**
+
 ```typescript
 it('should handle async operation', async () => {
   const result = await asyncFunction();
@@ -403,6 +442,7 @@ it('should handle async operation', async () => {
 ```
 
 **Error Testing:**
+
 ```typescript
 it('should throw on invalid input', () => {
   expect(() => parse(null)).toThrow('Cannot parse null');
@@ -415,6 +455,7 @@ it('should reject on file not found', async () => {
 ```
 
 **File System Mocking:**
+
 ```typescript
 import { vi } from 'vitest';
 import * as fs from 'fs-extra';
@@ -428,15 +469,17 @@ it('mocks file system', () => {
 ```
 
 **Snapshot Testing:**
+
 - Not used in this codebase
 - Prefer explicit assertions for clarity
 
----
+______________________________________________________________________
 
 *Testing analysis: 2025-01-20*
 *Update when test patterns change*
+
 ```
-</good_examples>
+</good-examples>
 
 <guidelines>
 **What belongs in TESTING.md:**
@@ -478,3 +521,4 @@ it('mocks file system', () => {
 - Note any test types (unit, integration, e2e)
 - Document commands for running tests
 </guidelines>
+```

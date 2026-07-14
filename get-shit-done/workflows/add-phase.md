@@ -2,9 +2,9 @@
 Add a new integer phase to the end of the current milestone in the roadmap. Automatically calculates next phase number, creates phase directory, and updates roadmap structure.
 </purpose>
 
-<required_reading>
+<required-reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
-</required_reading>
+</required-reading>
 
 <process>
 
@@ -34,10 +34,12 @@ if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
 Check `roadmap_exists` from init JSON. If false:
+
 ```
 ERROR: No roadmap found (.planning/ROADMAP.md)
 Run /gsd-new-project to initialize.
 ```
+
 Exit.
 </step>
 
@@ -49,6 +51,7 @@ RESULT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" phase add "${descr
 ```
 
 The CLI handles:
+
 - Finding the highest existing integer phase number
 - Calculating next phase number (max + 1)
 - Generating slug from description
@@ -62,7 +65,7 @@ Extract from result: `phase_number`, `padded`, `name`, `slug`, `directory`.
 Update STATE.md to reflect the new phase:
 
 1. Read `.planning/STATE.md`
-2. Under "## Accumulated Context" → "### Roadmap Evolution" add entry:
+1. Under "## Accumulated Context" → "### Roadmap Evolution" add entry:
    ```
    - Phase {N} added: {description}
    ```
@@ -99,14 +102,15 @@ Roadmap updated: .planning/ROADMAP.md
 
 ---
 ```
+
 </step>
 
 </process>
 
-<success_criteria>
+<success-criteria>
 - [ ] `gsd-tools phase add` executed successfully
 - [ ] Phase directory created
 - [ ] Roadmap updated with new phase entry
 - [ ] STATE.md updated with roadmap evolution note
 - [ ] User informed of next steps
-</success_criteria>
+</success-criteria>

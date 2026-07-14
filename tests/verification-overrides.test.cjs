@@ -213,17 +213,17 @@ describe('verification overrides reference (#1747)', () => {
       );
     });
 
-    test('required_reading block is between </role> and <project_context>', () => {
+    test('required_reading block is between </role> and <project-context>', () => {
       verifierContent = verifierContent || fs.readFileSync(verifierPath, 'utf-8');
       const roleEnd = verifierContent.indexOf('</role>');
-      const projectCtx = verifierContent.indexOf('<project_context>');
-      const reqReading = verifierContent.indexOf('<required_reading>');
+      const projectCtx = verifierContent.indexOf('<project-context>');
+      const reqReading = verifierContent.indexOf('<required-reading>');
       assert.ok(roleEnd > -1, '</role> tag should exist');
-      assert.ok(projectCtx > -1, '<project_context> tag should exist');
-      assert.ok(reqReading > -1, '<required_reading> tag should exist');
+      assert.ok(projectCtx > -1, '<project-context> tag should exist');
+      assert.ok(reqReading > -1, '<required-reading> tag should exist');
       assert.ok(
         reqReading > roleEnd && reqReading < projectCtx,
-        '<required_reading> should appear between </role> and <project_context>'
+        '<required-reading> should appear between </role> and <project-context>'
       );
     });
 

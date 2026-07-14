@@ -9,6 +9,7 @@ allowed-tools:
   - Grep
   - AskUserQuestion
 ---
+
 <objective>
 Analyze the phase dependency graph for the current milestone. For each phase pair, determine if there is a dependency relationship based on:
 - File overlap (phases that modify the same files must be ordered)
@@ -18,9 +19,9 @@ Analyze the phase dependency graph for the current milestone. For each phase pai
 Then suggest `Depends on` updates to ROADMAP.md.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/analyze-dependencies.md
-</execution_context>
+</execution-context>
 
 <context>
 No arguments required. Requires an active milestone with ROADMAP.md.

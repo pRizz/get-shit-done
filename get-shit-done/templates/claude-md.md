@@ -7,11 +7,12 @@ The `generate-claude-md` subcommand manages 6 sections (project, stack, conventi
 The profile section is managed exclusively by `generate-claude-profile`.
 When an instruction file already exists, content outside GSD markers is preserved verbatim; managed sections are refreshed in place and any missing managed sections append to the end.
 
----
+______________________________________________________________________
 
 ## Section Templates
 
 ### Project Section
+
 ```
 <!-- GSD:project-start source:PROJECT.md -->
 ## Project
@@ -21,11 +22,13 @@ When an instruction file already exists, content outside GSD markers is preserve
 ```
 
 **Fallback text:**
+
 ```
 Project not yet initialized. Run /gsd-new-project to set up.
 ```
 
 ### Stack Section
+
 ```
 <!-- GSD:stack-start source:STACK.md -->
 ## Technology Stack
@@ -35,11 +38,13 @@ Project not yet initialized. Run /gsd-new-project to set up.
 ```
 
 **Fallback text:**
+
 ```
 Technology stack not yet documented. Will populate after codebase mapping or first phase.
 ```
 
 ### Conventions Section
+
 ```
 <!-- GSD:conventions-start source:CONVENTIONS.md -->
 ## Conventions
@@ -49,11 +54,13 @@ Technology stack not yet documented. Will populate after codebase mapping or fir
 ```
 
 **Fallback text:**
+
 ```
 Conventions not yet established. Will populate as patterns emerge during development.
 ```
 
 ### Architecture Section
+
 ```
 <!-- GSD:architecture-start source:ARCHITECTURE.md -->
 ## Architecture
@@ -63,11 +70,13 @@ Conventions not yet established. Will populate as patterns emerge during develop
 ```
 
 **Fallback text:**
+
 ```
 Architecture not yet mapped. Follow existing patterns found in the codebase.
 ```
 
 ### Skills Section
+
 ```
 <!-- GSD:skills-start source:skills/ -->
 ## Project Skills
@@ -79,17 +88,20 @@ Architecture not yet mapped. Follow existing patterns found in the codebase.
 ```
 
 **Fallback text:**
+
 ```
 No project skills found. Add skills to any of: `.claude/skills/`, `.agents/skills/`, `.cursor/skills/`, or `.github/skills/` with a `SKILL.md` index file.
 ```
 
 **Discovery behavior:**
+
 - Scans `.claude/skills/`, `.agents/skills/`, `.cursor/skills/`, `.github/skills/` for subdirectories containing `SKILL.md`
 - Extracts `name` and `description` from YAML frontmatter (supports multi-line descriptions)
 - Skips GSD's own installed skills (directories starting with `gsd-`)
 - Deduplicates by skill name across directories
 
 ### Workflow Enforcement Section
+
 ```
 <!-- GSD:workflow-start source:GSD defaults -->
 ## GSD Workflow Enforcement
@@ -113,6 +125,7 @@ Do not make direct repo edits outside a GSD workflow unless the user explicitly 
 ```
 
 ### Profile Section (Placeholder Only)
+
 ```
 <!-- GSD:profile-start -->
 ## Developer Profile
@@ -126,17 +139,17 @@ Do not make direct repo edits outside a GSD workflow unless the user explicitly 
 by `generate-claude-profile`. The placeholder above is only used when creating a new
 CLAUDE.md file and no profile section exists yet.
 
----
+______________________________________________________________________
 
 ## Section Ordering
 
 1. **Project** — Identity and purpose (what this project is)
-2. **Stack** — Technology choices (what tools are used)
-3. **Conventions** — Code patterns and rules (how code is written)
-4. **Architecture** — System structure (how components fit together)
-5. **Skills** — Discovered project skills with name and description (what domain knowledge is available)
-6. **Workflow Enforcement** — Default GSD entry points for file-changing work
-7. **Profile** — Developer behavioral preferences (how to interact)
+1. **Stack** — Technology choices (what tools are used)
+1. **Conventions** — Code patterns and rules (how code is written)
+1. **Architecture** — System structure (how components fit together)
+1. **Skills** — Discovered project skills with name and description (what domain knowledge is available)
+1. **Workflow Enforcement** — Default GSD entry points for file-changing work
+1. **Profile** — Developer behavioral preferences (how to interact)
 
 ## Marker Format
 
@@ -148,6 +161,7 @@ CLAUDE.md file and no profile section exists yet.
 ## Fallback Behavior
 
 When a source file is missing, fallback text provides Claude-actionable guidance:
+
 - Guides Claude's behavior in the absence of data
 - Not placeholder ads or "missing" notices
 - Each fallback tells Claude what to do, not just what's absent

@@ -100,6 +100,8 @@
  *     --data '{json}'
  *   frontmatter validate <file>        Validate required fields
  *     --schema plan|summary|verification
+ *   mdformat init                       Create a safe .mdformat.toml if absent
+ *   mdformat migrate [path] [--check]  Migrate legacy GSD marker names
  *
  * Verification Suite:
  *   verify lifecycle <phase>           Check lifecycle provenance across phase artifacts
@@ -185,6 +187,7 @@ const workstream = require('./lib/workstream.cjs');
 const docs = require('./lib/docs.cjs');
 const learnings = require('./lib/learnings.cjs');
 const yoloRalph = require('./lib/yolo-ralph.cjs');
+const mdformat = require('./lib/mdformat.cjs');
 
 // ─── Arg parsing helpers ──────────────────────────────────────────────────────
 
@@ -571,6 +574,18 @@ async function runCommand(command, args, cwd, raw, defaultValue) {
         frontmatter.cmdFrontmatterValidate(cwd, file, parseNamedArgs(args, ['schema']).schema, raw);
       } else {
         error('Unknown frontmatter subcommand. Available: get, set, merge, validate');
+      }
+      break;
+    }
+
+    case 'mdformat': {
+      const subcommand = args[1];
+      if (subcommand === 'init') {
+        mdformat.cmdMdformatInit(cwd, raw);
+      } else if (subcommand === 'migrate') {
+        mdformat.cmdMdformatMigrate(cwd, args[2] && !args[2].startsWith('--') ? args[2] : null, args.includes('--check'), raw);
+      } else {
+        error('Unknown mdformat subcommand. Available: init, migrate');
       }
       break;
     }

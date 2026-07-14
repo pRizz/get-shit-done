@@ -4,7 +4,7 @@ Template for `.planning/codebase/INTEGRATIONS.md` - captures external service de
 
 **Purpose:** Document what external systems this codebase communicates with. Focused on "what lives outside our code that we depend on."
 
----
+______________________________________________________________________
 
 ## File Template
 
@@ -126,7 +126,7 @@ Template for `.planning/codebase/INTEGRATIONS.md` - captures external service de
 *Update when adding/removing external services*
 ```
 
-<good_examples>
+<good-examples>
 ```markdown
 # External Integrations
 
@@ -135,18 +135,21 @@ Template for `.planning/codebase/INTEGRATIONS.md` - captures external service de
 ## APIs & External Services
 
 **Payment Processing:**
+
 - Stripe - Subscription billing and one-time course payments
   - SDK/Client: stripe npm package v14.8
   - Auth: API key in STRIPE_SECRET_KEY env var
   - Endpoints used: checkout sessions, customer portal, webhooks
 
 **Email/SMS:**
+
 - SendGrid - Transactional emails (receipts, password resets)
   - SDK/Client: @sendgrid/mail v8.1
   - Auth: API key in SENDGRID_API_KEY env var
   - Templates: Managed in SendGrid dashboard (template IDs in code)
 
 **External APIs:**
+
 - OpenAI API - Course content generation
   - Integration method: REST API via openai npm package v4.x
   - Auth: Bearer token in OPENAI_API_KEY env var
@@ -155,29 +158,34 @@ Template for `.planning/codebase/INTEGRATIONS.md` - captures external service de
 ## Data Storage
 
 **Databases:**
+
 - PostgreSQL on Supabase - Primary data store
   - Connection: via DATABASE_URL env var
   - Client: Prisma ORM v5.8
   - Migrations: prisma migrate in prisma/migrations/
 
 **File Storage:**
+
 - Supabase Storage - User uploads (profile images, course materials)
   - SDK/Client: @supabase/supabase-js v2.x
   - Auth: Service role key in SUPABASE_SERVICE_ROLE_KEY
   - Buckets: avatars (public), course-materials (private)
 
 **Caching:**
+
 - None currently (all database queries, no Redis)
 
 ## Authentication & Identity
 
 **Auth Provider:**
+
 - Supabase Auth - Email/password + OAuth
   - Implementation: Supabase client SDK with server-side session management
   - Token storage: httpOnly cookies via @supabase/ssr
   - Session management: JWT refresh tokens handled by Supabase
 
 **OAuth Integrations:**
+
 - Google OAuth - Social sign-in
   - Credentials: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET (Supabase dashboard)
   - Scopes: email, profile
@@ -185,25 +193,30 @@ Template for `.planning/codebase/INTEGRATIONS.md` - captures external service de
 ## Monitoring & Observability
 
 **Error Tracking:**
+
 - Sentry - Server and client errors
   - DSN: SENTRY_DSN env var
   - Release tracking: Git commit SHA via SENTRY_RELEASE
 
 **Analytics:**
+
 - None (planned: Mixpanel)
 
 **Logs:**
+
 - Vercel logs - stdout/stderr only
   - Retention: 7 days on Pro plan
 
 ## CI/CD & Deployment
 
 **Hosting:**
+
 - Vercel - Next.js app hosting
   - Deployment: Automatic on main branch push
   - Environment vars: Configured in Vercel dashboard (synced to .env.example)
 
 **CI Pipeline:**
+
 - GitHub Actions - Tests and type checking
   - Workflows: .github/workflows/ci.yml
   - Secrets: None needed (public repo tests only)
@@ -211,35 +224,41 @@ Template for `.planning/codebase/INTEGRATIONS.md` - captures external service de
 ## Environment Configuration
 
 **Development:**
+
 - Required env vars: DATABASE_URL, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
 - Secrets location: .env.local (gitignored), team shared via 1Password vault
 - Mock/stub services: Stripe test mode, Supabase local dev project
 
 **Staging:**
+
 - Uses separate Supabase staging project
 - Stripe test mode
 - Same Vercel account, different environment
 
 **Production:**
+
 - Secrets management: Vercel environment variables
 - Database: Supabase production project with daily backups
 
 ## Webhooks & Callbacks
 
 **Incoming:**
+
 - Stripe - /api/webhooks/stripe
   - Verification: Signature validation via stripe.webhooks.constructEvent
   - Events: payment_intent.succeeded, customer.subscription.updated, customer.subscription.deleted
 
 **Outgoing:**
+
 - None
 
----
+______________________________________________________________________
 
 *Integration audit: 2025-01-20*
 *Update when adding/removing external services*
+
 ```
-</good_examples>
+</good-examples>
 
 <guidelines>
 **What belongs in INTEGRATIONS.md:**
@@ -278,3 +297,4 @@ Template for `.planning/codebase/INTEGRATIONS.md` - captures external service de
 **Security note:**
 Document WHERE secrets live (env vars, Vercel dashboard, 1Password), never WHAT the secrets are.
 </guidelines>
+```

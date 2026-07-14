@@ -6,20 +6,20 @@ You are a thinking partner, not an interviewer. Analyze the codebase deeply, sur
 believe based on evidence, and ask the user only to correct what's wrong.
 </purpose>
 
-<available_agent_types>
+<available-agent-types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
 - gsd-assumptions-analyzer — Analyzes codebase to surface implementation assumptions
-</available_agent_types>
+</available-agent-types>
 
-<downstream_awareness>
+<downstream-awareness>
 **CONTEXT.md feeds into:**
 
 1. **gsd-phase-researcher** — Reads CONTEXT.md to know WHAT to research
-2. **gsd-planner** — Reads CONTEXT.md to know WHAT decisions are locked
+1. **gsd-planner** — Reads CONTEXT.md to know WHAT decisions are locked
 
 **Your job:** Capture decisions clearly enough that downstream agents can act on them
 without asking the user again. Output is identical to discuss mode — same CONTEXT.md format.
-</downstream_awareness>
+</downstream-awareness>
 
 <philosophy>
 **Assumptions mode philosophy:**
@@ -32,9 +32,9 @@ by reading the code.
 - Every assumption must cite evidence (file paths, patterns found)
 - Every assumption must state consequences if wrong
 - Minimize user interactions: ~2-4 corrections vs ~15-20 questions
-</philosophy>
+  </philosophy>
 
-<scope_guardrail>
+<scope-guardrail>
 **CRITICAL: No scope creep.**
 
 The phase boundary comes from ROADMAP.md and is FIXED. Discussion clarifies HOW to implement
@@ -45,9 +45,9 @@ When user suggests scope creep:
 Want me to note it for the roadmap backlog? For now, let's focus on [phase domain]."
 
 Capture the idea in "Deferred Ideas". Don't lose it, don't act on it.
-</scope_guardrail>
+</scope-guardrail>
 
-<answer_validation>
+<answer-validation>
 **IMPORTANT: Answer validation** — After every AskUserQuestion call, check if the response
 is empty or whitespace-only. If so:
 1. Retry the question once with the same parameters
@@ -56,7 +56,7 @@ is empty or whitespace-only. If so:
 **Text mode (`workflow.text_mode: true` in config or `--text` flag):**
 When text mode is active, do not use AskUserQuestion at all. Present every question as a
 plain-text numbered list and ask the user to type their choice number.
-</answer_validation>
+</answer-validation>
 
 <process>
 
@@ -74,22 +74,25 @@ Parse JSON for: `commit_docs`, `phase_found`, `phase_dir`, `phase_number`, `phas
 `plan_count`, `roadmap_exists`, `planning_exists`.
 
 **If `phase_found` is false:**
+
 ```
 Phase [X] not found in roadmap.
 
 Use /gsd-progress to see available phases.
 ```
+
 Exit workflow.
 
 **If `phase_found` is true:** Continue to check_existing.
 
 **Auto mode** — If `--auto` is present in ARGUMENTS:
+
 - In `check_existing`: auto-select "Update it" (if context exists) or continue without prompting
 - In `present_assumptions`: skip confirmation gate, proceed directly to write CONTEXT.md
 - In `correct_assumptions`: auto-select recommended option for each correction
 - Log each auto-selected choice inline
 - After completion, auto-advance to plan-phase
-</step>
+  </step>
 
 <step name="check_existing">
 Check if CONTEXT.md already exists using `has_context` from init.
@@ -103,6 +106,7 @@ ls ${phase_dir}/*-CONTEXT.md 2>/dev/null || true
 **If `--auto`:** Auto-select "Update it". Log: `[auto] Context exists — updating with assumption-based analysis.`
 
 **Otherwise:** Use AskUserQuestion:
+
 - header: "Context"
 - question: "Phase [X] already has context. What do you want to do?"
 - options:
@@ -121,6 +125,7 @@ Check `has_plans` and `plan_count` from init. **If `has_plans` is true:**
 **If `--auto`:** Auto-select "Continue and replan after". Log: `[auto] Plans exist — continuing with assumption analysis, will replan after.`
 
 **Otherwise:** Use AskUserQuestion:
+
 - header: "Plans exist"
 - question: "Phase [X] already has {plan_count} plan(s) created without user context. Your decisions here won't affect existing plans unless you replan."
 - options:
@@ -139,6 +144,7 @@ If "Cancel": Exit workflow.
 Read project-level and prior phase context to avoid re-asking decided questions.
 
 **Step 1: Read project-level files**
+
 ```bash
 cat .planning/PROJECT.md 2>/dev/null || true
 cat .planning/REQUIREMENTS.md 2>/dev/null || true
@@ -146,21 +152,24 @@ cat .planning/STATE.md 2>/dev/null || true
 ```
 
 Extract from these:
+
 - **PROJECT.md** — Vision, principles, non-negotiables, user preferences
 - **REQUIREMENTS.md** — Acceptance criteria, constraints
 - **STATE.md** — Current progress, any flags
 
 **Step 2: Read all prior CONTEXT.md files**
+
 ```bash
 (find .planning/phases -name "*-CONTEXT.md" 2>/dev/null || true) | sort
 ```
 
 For each CONTEXT.md where phase number < current phase:
+
 - Read the `<decisions>` section — these are locked preferences
 - Read `<specifics>` — particular references or "I want it like X" moments
 - Note patterns (e.g., "user consistently prefers minimal UI")
 
-**Step 3: Build internal `<prior_decisions>` context**
+**Step 3: Build internal `<prior-decisions>` context**
 
 Structure the extracted information for use in assumption generation.
 
@@ -180,8 +189,8 @@ Parse JSON for: `todo_count`, `matches[]`.
 
 **If matches found:** Present matched todos, use AskUserQuestion (multiSelect) to fold relevant ones into scope.
 
-**For selected (folded) todos:** Store as `<folded_todos>` for CONTEXT.md `<decisions>` section.
-**For unselected:** Store as `<reviewed_todos>` for CONTEXT.md `<deferred>` section.
+**For selected (folded) todos:** Store as `<folded-todos>` for CONTEXT.md `<decisions>` section.
+**For unselected:** Store as `<reviewed-todos>` for CONTEXT.md `<deferred>` section.
 
 **Auto mode (`--auto`):** Fold all todos with score >= 0.4 automatically. Log the selection.
 </step>
@@ -195,8 +204,9 @@ cat .planning/METHODOLOGY.md 2>/dev/null || true
 ```
 
 **If METHODOLOGY.md exists:**
+
 - Parse each named lens: its diagnoses, recommendations, and triggering conditions
-- Store as internal `<active_lenses>` for use in deep_codebase_analysis and present_assumptions
+- Store as internal `<active-lenses>` for use in deep_codebase_analysis and present_assumptions
 - When spawning the gsd-assumptions-analyzer, pass the lens list so it can flag which lenses apply
 - When presenting assumptions, append a "Methodology" section showing which lenses were applied
   and what they flagged (if anything)
@@ -208,6 +218,7 @@ cat .planning/METHODOLOGY.md 2>/dev/null || true
 Lightweight scan of existing code to inform assumption generation.
 
 **Step 1: Check for existing codebase maps**
+
 ```bash
 ls .planning/codebase/*.md 2>/dev/null || true
 ```
@@ -224,7 +235,7 @@ grep -rl "{term1}\|{term2}" src/ app/ --include="*.ts" --include="*.tsx" 2>/dev/
 
 Read the 3-5 most relevant files.
 
-**Step 3: Build internal `<codebase_context>`**
+**Step 3: Build internal `<codebase-context>`**
 
 Identify reusable assets, established patterns, integration points, and creative options. Store internally for use in deep_codebase_analysis.
 </step>
@@ -240,11 +251,13 @@ PROFILE_PATH="$HOME/.claude/get-shit-done/USER-PROFILE.md"
 ```
 
 If file exists at PROFILE_PATH:
+
 - Priority 1: Read config.json > preferences.vendor_philosophy (project-level override)
 - Priority 2: Read USER-PROFILE.md Vendor Choices/Philosophy rating (global)
 - Priority 3: Default to "standard"
 
 Map to calibration tier:
+
 - conservative OR thorough-evaluator → full_maturity (more alternatives, detailed evidence)
 - opinionated → minimal_decisive (fewer alternatives, decisive recommendations)
 - pragmatic-fast OR any other value → standard
@@ -295,14 +308,16 @@ ${AGENT_SKILLS_ANALYZER}
 ```
 
 Parse the subagent's response. Extract:
+
 - `assumptions[]` — each with area, statement, evidence, consequence, confidence
 - `needs_research[]` — topics requiring external research (may be empty)
 
 **Initialize canonical refs accumulator:**
+
 - Source 1: Copy `Canonical refs:` from ROADMAP.md for this phase, expand to full paths
 - Source 2: Check REQUIREMENTS.md and PROJECT.md for specs/ADRs referenced
 - Source 3: Add any docs referenced in codebase scout results
-</step>
+  </step>
 
 <step name="external_research">
 **Skip if:** `needs_research` from deep_codebase_analysis is empty.
@@ -327,6 +342,7 @@ Use WebSearch for ecosystem/best-practice questions.
 ```
 
 Merge findings back into assumptions:
+
 - Update confidence levels where research resolves ambiguity
 - Add source attribution to affected assumptions
 - Store research findings for DISCUSSION-LOG.md
@@ -358,6 +374,7 @@ Based on codebase analysis, here's what I'd go with:
 ```
 
 **If `--auto`:**
+
 - If all assumptions are Confident or Likely: log assumptions, skip to write_context.
   Log: `[auto] All assumptions Confident/Likely — proceeding to context capture.`
 - If any assumptions are Unclear: log a warning, auto-select recommended alternative for
@@ -365,6 +382,7 @@ Based on codebase analysis, here's what I'd go with:
   Proceed to write_context.
 
 **Otherwise:** Use AskUserQuestion:
+
 - header: "Assumptions"
 - question: "These all look right?"
 - options:
@@ -382,6 +400,7 @@ Present a multiSelect where each option's label is the assumption statement and 
 is the "If wrong" consequence:
 
 Use AskUserQuestion (multiSelect):
+
 - header: "Corrections"
 - question: "Which assumptions need correcting?"
 - options: [one per assumption, label = assumption statement, description = "If wrong: {consequence}"]
@@ -389,11 +408,13 @@ Use AskUserQuestion (multiSelect):
 For each selected correction, ask ONE focused question:
 
 Use AskUserQuestion:
+
 - header: "{Area Name}"
 - question: "What should we do instead for: {assumption statement}?"
 - options: [2-3 concrete alternatives describing user-visible outcomes, recommended option first]
 
 Record each correction:
+
 - Original assumption
 - User's chosen alternative
 - Reason (if provided via "Other" free text)
@@ -409,6 +430,7 @@ Create phase directory if needed. Write CONTEXT.md using the standard 6-section 
 **File:** `${phase_dir}/${padded_phase}-CONTEXT.md`
 
 Map assumptions to CONTEXT.md sections:
+
 - Assumptions → `<decisions>` (each assumption becomes a locked decision: D-01, D-02, etc.)
 - Corrections → override the original assumption in `<decisions>`
 - Areas where all assumptions were Confident → marked as locked decisions
@@ -444,7 +466,7 @@ Map assumptions to CONTEXT.md sections:
 {If any todos were folded into scope}
 </decisions>
 
-<canonical_refs>
+<canonical-refs>
 ## Canonical References
 
 **Downstream agents MUST read these before planning or implementing.**
@@ -452,9 +474,9 @@ Map assumptions to CONTEXT.md sections:
 {Accumulated canonical refs from analyze step — full relative paths}
 
 [If no external specs: "No external specs — requirements fully captured in decisions above"]
-</canonical_refs>
+</canonical-refs>
 
-<code_context>
+<code-context>
 ## Existing Code Insights
 
 ### Reusable Assets
@@ -465,7 +487,7 @@ Map assumptions to CONTEXT.md sections:
 
 ### Integration Points
 {Where new code connects to existing system}
-</code_context>
+</code-context>
 
 <specifics>
 ## Specific Ideas
@@ -568,6 +590,7 @@ Commit STATE.md:
 ```bash
 node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs(state): record phase ${PHASE} context session" --files .planning/STATE.md
 ```
+
 </step>
 
 <step name="confirm_creation">
@@ -610,25 +633,27 @@ Created: .planning/phases/${PADDED_PHASE}-${SLUG}/${PADDED_PHASE}-CONTEXT.md
 
 ---
 ```
+
 </step>
 
 <step name="auto_advance">
 Check for auto-advance trigger:
 
 1. Parse `--auto` flag from $ARGUMENTS
-2. Sync chain flag:
+1. Sync chain flag:
    ```bash
    if [[ ! "$ARGUMENTS" =~ --auto ]]; then
      node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-set workflow._auto_chain_active false 2>/dev/null
    fi
    ```
-3. Read chain flag and user preference:
+1. Read chain flag and user preference:
    ```bash
    AUTO_CHAIN=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow._auto_chain_active 2>/dev/null || echo "false")
    AUTO_CFG=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.auto_advance 2>/dev/null || echo "false")
    ```
 
 **If `--auto` flag present AND `AUTO_CHAIN` is not true:**
+
 ```bash
 node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-set workflow._auto_chain_active true
 ```
@@ -636,6 +661,7 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-set workflow._auto_c
 **If `--auto` flag present OR `AUTO_CHAIN` is true OR `AUTO_CFG` is true:**
 
 Display banner:
+
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  GSD ► AUTO-ADVANCING TO PLAN
@@ -655,7 +681,7 @@ Route to confirm_creation step.
 
 </process>
 
-<success_criteria>
+<success-criteria>
 - Phase validated against roadmap
 - Prior context loaded (no re-asking decided questions)
 - Codebase deeply analyzed via Explore subagent (5-15 files read)
@@ -668,4 +694,4 @@ Route to confirm_creation step.
 - DISCUSSION-LOG.md records assumptions and corrections as audit trail
 - STATE.md updated with session info
 - User knows next steps
-</success_criteria>
+</success-criteria>

@@ -3,7 +3,7 @@
  *
  * Verifies that:
  *   1. gsd-planner.md stays under the 100K agent file threshold
- *   2. gsd-planner.md is under 45K chars (proving the three mode sections were extracted)
+ *   2. gsd-planner.md is under 50K chars (proving the three mode sections were extracted)
  *   3. The three reference files exist
  *   4. gsd-planner.md contains reference pointers to each extracted file
  *   5. Each reference file contains key content from the original mode section
@@ -20,7 +20,7 @@ const PROJECT_ROOT = path.join(__dirname, '..');
 // ─── Size thresholds ─────────────────────────────────────────────────────────
 
 const AGENT_FILE_SIZE_LIMIT = 100 * 1024;   // 100K — appropriate for version-controlled source
-const PLANNER_EXTRACTED_LIMIT = 45 * 1024;  // 45K — proves extraction happened
+const PLANNER_EXTRACTED_LIMIT = 50 * 1024;  // 50K — allows canonical Markdown spacing after extraction
 
 // ─── File paths ──────────────────────────────────────────────────────────────
 
@@ -46,13 +46,13 @@ describe('gsd-planner.md size constraints', () => {
     );
   });
 
-  test('planner is under 45K chars (proves mode sections were extracted)', () => {
+  test('planner is under 50K chars (proves mode sections were extracted)', () => {
     const raw = fs.readFileSync(PLANNER_PATH, 'utf-8');
     // Normalize CRLF → LF before measuring — Windows checkouts inflate length by ~1 char/line
     const content = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     assert.ok(
       content.length < PLANNER_EXTRACTED_LIMIT,
-      `gsd-planner.md is ${content.length} chars, expected < 45K after extracting mode sections`
+      `gsd-planner.md is ${content.length} chars, expected < 50K after extracting mode sections`
     );
   });
 });

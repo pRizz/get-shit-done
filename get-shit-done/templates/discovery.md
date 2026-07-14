@@ -6,34 +6,34 @@ Template for `.planning/phases/XX-name/DISCOVERY.md` - shallow research for libr
 
 For deep ecosystem research ("how do experts build this"), use `/gsd-research-phase` which produces RESEARCH.md.
 
----
+______________________________________________________________________
 
 ## File Template
 
-```markdown
+````markdown
 ---
 phase: XX-name
 type: discovery
 topic: [discovery-topic]
 ---
 
-<session_initialization>
+<session-initialization>
 Before beginning discovery, verify today's date:
 !`date +%Y-%m-%d`
 
 Use this date when searching for "current" or "latest" information.
 Example: If today is 2025-11-22, search for "2025" not "2024".
-</session_initialization>
+</session-initialization>
 
-<discovery_objective>
+<discovery-objective>
 Discover [topic] to inform [phase name] implementation.
 
 Purpose: [What decision/implementation this enables]
 Scope: [Boundaries]
 Output: DISCOVERY.md with recommendation
-</discovery_objective>
+</discovery-objective>
 
-<discovery_scope>
+<discovery-scope>
 <include>
 - [Question to answer]
 - [Area to investigate]
@@ -44,9 +44,9 @@ Output: DISCOVERY.md with recommendation
 - [Out of scope for this discovery]
 - [Defer to implementation phase]
 </exclude>
-</discovery_scope>
+</discovery-scope>
 
-<discovery_protocol>
+<discovery-protocol>
 
 **Source Priority:**
 1. **Context7 MCP** - For library/framework documentation (current, authoritative)
@@ -67,10 +67,10 @@ Before completing discovery, verify:
 - MEDIUM: WebSearch + Context7/official docs confirm
 - LOW: WebSearch only or training knowledge only (mark for validation)
 
-</discovery_protocol>
+</discovery-protocol>
 
 
-<output_structure>
+<output-structure>
 Create `.planning/phases/XX-name/DISCOVERY.md`:
 
 ```markdown
@@ -107,24 +107,25 @@ Create `.planning/phases/XX-name/DISCOVERY.md`:
 - [Primary authoritative sources used]
 </sources>
 
-<open_questions>
+<open-questions>
 [What couldn't be determined or needs validation during implementation]
-</open_questions>
+</open-questions>
 
-<validation_checkpoints>
+<validation-checkpoints>
 [If confidence is LOW or MEDIUM, list specific things to verify during implementation]
-</validation_checkpoints>
+</validation-checkpoints>
 </metadata>
-```
-</output_structure>
+````
 
-<success_criteria>
+</output-structure>
+
+<success-criteria>
 - All scope questions answered with authoritative sources
 - Quality checklist items completed
 - Clear primary recommendation
 - Low-confidence findings marked with validation checkpoints
 - Ready to inform PLAN.md creation
-</success_criteria>
+</success-criteria>
 
 <guidelines>
 **When to use discovery:**
@@ -134,13 +135,15 @@ Create `.planning/phases/XX-name/DISCOVERY.md`:
 - Single decision pending
 
 **When NOT to use:**
+
 - Established patterns (CRUD, auth with known library)
 - Implementation details (defer to execution)
 - Questions answerable from existing project context
 
 **When to use RESEARCH.md instead:**
+
 - Niche/complex domains (3D, games, audio, shaders)
 - Need ecosystem knowledge, not just library choice
 - "How do experts build this" questions
 - Use `/gsd-research-phase` for these
-</guidelines>
+  </guidelines>

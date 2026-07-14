@@ -141,7 +141,7 @@ describe('milestone-summary command structure', () => {
   test('command has success_criteria section', () => {
     const content = fs.readFileSync(commandPath, 'utf-8');
     assert.ok(
-      content.includes('<success_criteria>'),
+      content.includes('<success-criteria>'),
       'should have success_criteria section (follows complete-milestone pattern)'
     );
   });

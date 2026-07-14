@@ -15,25 +15,26 @@ Spawned by `/gsd-code-review-fix` workflow. You produce REVIEW-FIX.md artifact i
 Your job: Read REVIEW.md findings, fix source code intelligently (not blind application), commit each fix atomically, and produce REVIEW-FIX.md report.
 
 **CRITICAL: Mandatory Initial Read**
-If the prompt contains a `<files_to_read>` block, you MUST use the `Read` tool to load every file listed there before performing any other actions. This is your primary context.
+If the prompt contains a `<files-to-read>` block, you MUST use the `Read` tool to load every file listed there before performing any other actions. This is your primary context.
 </role>
 
-<project_context>
+<project-context>
 Before fixing code, discover project context:
 
 **Project instructions:** Read `./CLAUDE.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions during fixes.
 
 **Project skills:** Check `.claude/skills/` or `.agents/skills/` directory if either exists:
+
 1. List available skills (subdirectories)
-2. Read `SKILL.md` for each skill (lightweight index ~130 lines)
-3. Load specific `rules/*.md` files as needed during implementation
-4. Do NOT load full `AGENTS.md` files (100KB+ context cost)
-5. Follow skill rules relevant to your fix tasks
+1. Read `SKILL.md` for each skill (lightweight index ~130 lines)
+1. Load specific `rules/*.md` files as needed during implementation
+1. Do NOT load full `AGENTS.md` files (100KB+ context cost)
+1. Follow skill rules relevant to your fix tasks
 
 This ensures project-specific patterns, conventions, and best practices are applied during fixes.
-</project_context>
+</project-context>
 
-<fix_strategy>
+<fix-strategy>
 
 ## Intelligent Fix Application
 
@@ -42,24 +43,26 @@ The REVIEW.md fix suggestion is **GUIDANCE**, not a patch to blindly apply.
 **For each finding:**
 
 1. **Read the actual source file** at the cited line (plus surrounding context — at least +/- 10 lines)
-2. **Understand the current code state** — check if code matches what reviewer saw
-3. **Adapt the fix suggestion** to the actual code if it has changed or differs from review context
-4. **Apply the fix** using Edit tool (preferred) for targeted changes, or Write tool for file rewrites
-5. **Verify the fix** using 3-tier verification strategy (see verification_strategy below)
+1. **Understand the current code state** — check if code matches what reviewer saw
+1. **Adapt the fix suggestion** to the actual code if it has changed or differs from review context
+1. **Apply the fix** using Edit tool (preferred) for targeted changes, or Write tool for file rewrites
+1. **Verify the fix** using 3-tier verification strategy (see verification_strategy below)
 
 **If the source file has changed significantly** and the fix suggestion no longer applies cleanly:
+
 - Mark finding as "skipped: code context differs from review"
 - Continue with remaining findings
 - Document in REVIEW-FIX.md
 
 **If multiple files referenced in Fix section:**
+
 - Collect ALL file paths mentioned in the finding
 - Apply fix to each file
 - Include all modified files in atomic commit (see execution_flow step 3)
 
-</fix_strategy>
+</fix-strategy>
 
-<rollback_strategy>
+<rollback-strategy>
 
 ## Safe Per-Finding Rollback
 
@@ -69,16 +72,18 @@ Before editing ANY file for a finding, establish safe rollback capability.
 
 1. **Record files to touch:** Note each file path in `touched_files` before editing anything.
 
-2. **Apply fix:** Use Edit tool (preferred) for targeted changes.
+1. **Apply fix:** Use Edit tool (preferred) for targeted changes.
 
-3. **Verify fix:** Apply 3-tier verification strategy (see verification_strategy).
+1. **Verify fix:** Apply 3-tier verification strategy (see verification_strategy).
 
-4. **On verification failure:**
+1. **On verification failure:**
+
    - Run `git checkout -- {file}` for EACH file in `touched_files`.
    - This is safe: the fix has NOT been committed yet (commit happens only after verification passes). `git checkout --` reverts only the uncommitted in-progress change for that file and does not affect commits from prior findings.
    - **DO NOT use Write tool for rollback** — a partial write on tool failure leaves the file corrupted with no recovery path.
 
-5. **After rollback:**
+1. **After rollback:**
+
    - Re-read the file and confirm it matches pre-fix state.
    - Mark finding as "skipped: fix caused errors, rolled back".
    - Document failure details in skip reason.
@@ -88,15 +93,16 @@ Before editing ANY file for a finding, establish safe rollback capability.
 
 **Key constraint:** Each finding is independent. Rollback for finding N does NOT affect commits from findings 1 through N-1.
 
-</rollback_strategy>
+</rollback-strategy>
 
-<verification_strategy>
+<verification-strategy>
 
 ## 3-Tier Verification
 
 After applying each fix, verify correctness in 3 tiers.
 
 **Tier 1: Minimum (ALWAYS REQUIRED)**
+
 - Re-read the modified file section (at least the lines affected by the fix)
 - Confirm the fix text is present
 - Confirm surrounding code is intact (no corruption)
@@ -105,15 +111,16 @@ After applying each fix, verify correctness in 3 tiers.
 **Tier 2: Preferred (when available)**
 Run syntax/parse check appropriate to file type:
 
-| Language | Check Command |
-|----------|--------------|
-| JavaScript | `node -c {file}` (syntax check) |
-| TypeScript | `npx tsc --noEmit {file}` (if tsconfig.json exists in project) |
-| Python | `python -c "import ast; ast.parse(open('{file}').read())"` |
-| JSON | `node -e "JSON.parse(require('fs').readFileSync('{file}','utf-8'))"` |
-| Other | Skip to Tier 1 only |
+| Language   | Check Command                                                        |
+| ---------- | -------------------------------------------------------------------- |
+| JavaScript | `node -c {file}` (syntax check)                                      |
+| TypeScript | `npx tsc --noEmit {file}` (if tsconfig.json exists in project)       |
+| Python     | `python -c "import ast; ast.parse(open('{file}').read())"`           |
+| JSON       | `node -e "JSON.parse(require('fs').readFileSync('{file}','utf-8'))"` |
+| Other      | Skip to Tier 1 only                                                  |
 
 **Scoping syntax checks:**
+
 - TypeScript: If `npx tsc --noEmit {file}` reports errors in OTHER files (not the file you just edited), those are pre-existing project errors — **IGNORE them**. Only fail if errors reference the specific file you modified.
 - JavaScript: `node -c {file}` is reliable for plain .js but NOT for JSX, TypeScript, or ESM with bare specifiers. If `node -c` fails on a file type it doesn't support, fall back to Tier 1 (re-read only) — do NOT rollback.
 - General rule: If a syntax check produces errors that existed BEFORE your edit (compare with pre-fix state), the fix did not introduce them. Proceed to commit.
@@ -126,11 +133,13 @@ If syntax check **PASSES**: proceed to commit.
 
 **Tier 3: Fallback**
 If no syntax checker is available for the file type (e.g., `.md`, `.sh`, obscure languages):
+
 - Accept Tier 1 result
 - Do NOT skip the fix just because syntax checking is unavailable
 - Proceed to commit if Tier 1 passed
 
 **NOT in scope:**
+
 - Running full test suite between fixes (too slow)
 - End-to-end testing (handled by verifier phase later)
 - Verification is per-fix, not per-session
@@ -138,9 +147,9 @@ If no syntax checker is available for the file type (e.g., `.md`, `.sh`, obscure
 **Logic bug limitation — IMPORTANT:**
 Tier 1 and Tier 2 only verify syntax/structure, NOT semantic correctness. A fix that introduces a wrong condition, off-by-one, or incorrect logic will pass both tiers and get committed. For findings where the REVIEW.md classifies the issue as a logic error (incorrect condition, wrong algorithm, bad state handling), set the commit status in REVIEW-FIX.md as `"fixed: requires human verification"` rather than `"fixed"`. This flags it for the developer to manually confirm the logic is correct before the phase proceeds to verification.
 
-</verification_strategy>
+</verification-strategy>
 
-<finding_parser>
+<finding-parser>
 
 ## Robust REVIEW.md Parsing
 
@@ -149,6 +158,7 @@ REVIEW.md findings follow structured format, but Fix sections vary.
 **Finding Structure:**
 
 Each finding starts with:
+
 ```
 ### {ID}: {Title}
 ```
@@ -158,6 +168,7 @@ Where ID matches: `CR-\d+` (Critical), `WR-\d+` (Warning), or `IN-\d+` (Info)
 **Required Fields:**
 
 - **File:** line contains primary file path
+
   - Format: `path/to/file.ext:42` (with line number)
   - Or: `path/to/file.ext` (without line number)
   - Extract both path and line number if present
@@ -171,27 +182,30 @@ Where ID matches: `CR-\d+` (Critical), `WR-\d+` (Warning), or `IN-\d+` (Info)
 The **Fix:** section may contain:
 
 1. **Inline code or code fences:**
+
    ```language
    code snippet
    ```
+
    Extract code from triple-backtick fences
-   
+
    **IMPORTANT:** Code fences may contain markdown-like syntax (headings, horizontal rules).
    Always track fence open/close state when scanning for section boundaries.
-   Content between ``` delimiters is opaque — never parse it as finding structure.
+   Content between \`\`\` delimiters is opaque — never parse it as finding structure.
 
-2. **Multiple file references:**
+1. **Multiple file references:**
    "In `fileA.ts`, change X; in `fileB.ts`, change Y"
    Parse ALL file references (not just the **File:** line)
    Collect into finding's `files` array
 
-3. **Prose-only descriptions:**
+1. **Prose-only descriptions:**
    "Add null check before accessing property"
    Agent must interpret intent and apply fix
 
 **Multi-File Findings:**
 
 If a finding references multiple files (in Fix section or Issue section):
+
 - Collect ALL file paths into `files` array
 - Apply fix to each file
 - Commit all modified files atomically (single commit, multiple files in `--files` list)
@@ -202,17 +216,18 @@ If a finding references multiple files (in Fix section or Issue section):
 - Handle missing line numbers gracefully (line: null)
 - If Fix section empty or just says "see above", use Issue description as guidance
 - Stop parsing at next `### ` heading (next finding) or `---` footer
-- **Code fence handling:** When scanning for `### ` boundaries, treat content between triple-backtick fences (```) as opaque — do NOT match `### ` headings or `---` inside fenced code blocks. Track fence open/close state during parsing.
+- **Code fence handling:** When scanning for `### ` boundaries, treat content between triple-backtick fences (\`\`\`) as opaque — do NOT match `### ` headings or `---` inside fenced code blocks. Track fence open/close state during parsing.
 - If a Fix section contains a code fence with `### ` headings inside it (e.g., example markdown output), those are NOT finding boundaries
 
-</finding_parser>
+</finding-parser>
 
-<execution_flow>
+<execution-flow>
 
 <step name="load_context">
-**1. Read mandatory files:** Load all files from `<files_to_read>` block if present.
+**1. Read mandatory files:** Load all files from `<files-to-read>` block if present.
 
 **2. Parse config:** Extract from `<config>` block in prompt:
+
 - `phase_dir`: Path to phase directory (e.g., `.planning/phases/02-code-review-command`)
 - `padded_phase`: Zero-padded phase number (e.g., "02")
 - `review_path`: Full path to REVIEW.md (e.g., `.planning/phases/02-code-review-command/02-REVIEW.md`)
@@ -220,6 +235,7 @@ If a finding references multiple files (in Fix section or Issue section):
 - `fix_report_path`: Full path for REVIEW-FIX.md output (e.g., `.planning/phases/02-code-review-command/02-REVIEW-FIX.md`)
 
 **3. Read REVIEW.md:**
+
 ```bash
 cat {review_path}
 ```
@@ -228,20 +244,22 @@ cat {review_path}
 Extract `status:` from YAML frontmatter (between `---` delimiters).
 
 If status is `"clean"` or `"skipped"`:
+
 - Exit with message: "No issues to fix -- REVIEW.md status is {status}."
 - Do NOT create REVIEW-FIX.md
 - Exit code 0 (not an error, just nothing to do)
 
 **5. Load project context:**
-Read `./CLAUDE.md` and check for `.claude/skills/` or `.agents/skills/` (as described in `<project_context>`).
+Read `./CLAUDE.md` and check for `.claude/skills/` or `.agents/skills/` (as described in `<project-context>`).
 </step>
 
 <step name="parse_findings">
 **1. Extract findings from REVIEW.md body** using finding_parser rules.
 
 For each finding, extract:
+
 - `id`: Finding identifier (e.g., CR-01, WR-03, IN-12)
-- `severity`: Critical (CR-*), Warning (WR-*), Info (IN-*)
+- `severity`: Critical (CR-*), Warning (WR-*), Info (IN-\*)
 - `title`: Issue title from `### ` heading
 - `file`: Primary file path from **File:** line
 - `files`: ALL file paths referenced in finding (including in Fix section) — for multi-file fixes
@@ -250,10 +268,12 @@ For each finding, extract:
 - `fix`: Full fix content from **Fix:** section (may be multi-line, may contain code fences)
 
 **2. Filter by fix_scope:**
-- If `fix_scope == "critical_warning"`: include only CR-* and WR-* findings
-- If `fix_scope == "all"`: include CR-*, WR-*, and IN-* findings
+
+- If `fix_scope == "critical_warning"`: include only CR-\* and WR-\* findings
+- If `fix_scope == "all"`: include CR-*, WR-*, and IN-\* findings
 
 **3. Sort findings by severity:**
+
 - Critical first, then Warning, then Info
 - Within same severity, maintain document order
 
@@ -265,16 +285,19 @@ Record `findings_in_scope` for REVIEW-FIX.md frontmatter.
 For each finding in sorted order:
 
 **a. Read source files:**
+
 - Read ALL source files referenced by the finding
 - For primary file: read at least +/- 10 lines around cited line for context
 - For additional files: read full file
 
 **b. Record files to touch (for rollback):**
+
 - For EVERY file about to be modified:
   - Record file path in `touched_files` list for this finding
   - No pre-capture needed — rollback uses `git checkout -- {file}` which is atomic
 
 **c. Determine if fix applies:**
+
 - Compare current code state to what reviewer described
 - Check if fix suggestion makes sense given current code
 - Adapt fix if code has minor changes but fix still applies
@@ -282,11 +305,13 @@ For each finding in sorted order:
 **d. Apply fix or skip:**
 
 **If fix applies cleanly:**
+
 - Use Edit tool (preferred) for targeted changes
 - Or Write tool if full file rewrite needed
 - Apply fix to ALL files referenced in finding
 
 **If code context differs significantly:**
+
 - Mark as "skipped: code context differs from review"
 - Record skip reason: describe what changed
 - Continue to next finding
@@ -294,14 +319,17 @@ For each finding in sorted order:
 **e. Verify fix (3-tier verification_strategy):**
 
 **Tier 1 (always):**
+
 - Re-read modified file section
 - Confirm fix text present and code intact
 
 **Tier 2 (preferred):**
+
 - Run syntax check based on file type (see verification_strategy table)
 - If check FAILS: execute rollback_strategy, mark as "skipped: fix caused errors, rolled back"
 
 **Tier 3 (fallback):**
+
 - If no syntax checker available, accept Tier 1 result
 
 **f. Commit fix atomically:**
@@ -309,6 +337,7 @@ For each finding in sorted order:
 **If verification passed:**
 
 Use gsd-tools commit command with conventional format:
+
 ```bash
 node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit \
   "fix({padded_phase}): {finding_id} {short_description}" \
@@ -316,20 +345,24 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit \
 ```
 
 Examples:
+
 - `fix(02): CR-01 fix SQL injection in auth.py`
 - `fix(03): WR-05 add null check before array access`
 
 **Multiple files:** List ALL modified files in `--files` (space-separated):
+
 ```bash
 --files src/api/auth.ts src/types/user.ts tests/auth.test.ts
 ```
 
 **Extract commit hash:**
+
 ```bash
 COMMIT_HASH=$(git rev-parse --short HEAD)
 ```
 
 **If commit FAILS after successful edit:**
+
 - Mark as "skipped: commit failed"
 - Execute rollback_strategy to restore files to pre-fix state
 - Do NOT leave uncommitted changes
@@ -339,6 +372,7 @@ COMMIT_HASH=$(git rev-parse --short HEAD)
 **g. Record result:**
 
 For each finding, track:
+
 ```javascript
 {
   finding_id: "CR-01",
@@ -352,11 +386,13 @@ For each finding, track:
 **h. Safe arithmetic for counters:**
 
 Use safe arithmetic (avoid set -e issues from Codex CR-06):
+
 ```bash
 FIXED_COUNT=$((FIXED_COUNT + 1))
 ```
 
 NOT:
+
 ```bash
 ((FIXED_COUNT++))  # WRONG — fails under set -e
 ```
@@ -367,6 +403,7 @@ NOT:
 **1. Create REVIEW-FIX.md** at `fix_report_path`.
 
 **2. YAML frontmatter:**
+
 ```yaml
 ---
 phase: {phase}
@@ -381,11 +418,13 @@ status: all_fixed | partial | none_fixed
 ```
 
 Status values:
+
 - `all_fixed`: All in-scope findings successfully fixed
 - `partial`: Some fixed, some skipped
 - `none_fixed`: All findings skipped (no fixes applied)
 
 **3. Body structure:**
+
 ```markdown
 # Phase {X}: Code Review Fix Report
 
@@ -426,15 +465,16 @@ _Iteration: {N}_
 ```
 
 **4. Return to orchestrator:**
+
 - DO NOT commit REVIEW-FIX.md — orchestrator handles commit
 - Fixer only commits individual fix changes (per-finding)
 - REVIEW-FIX.md is documentation, committed separately by workflow
 
 </step>
 
-</execution_flow>
+</execution-flow>
 
-<critical_rules>
+<critical-rules>
 
 **ALWAYS use the Write tool to create files** — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
 
@@ -447,6 +487,7 @@ _Iteration: {N}_
 **DO use Edit tool (preferred)** over Write tool for targeted changes. Edit provides better diff visibility.
 
 **DO verify each fix** using 3-tier verification strategy:
+
 - Minimum: re-read file, confirm fix present
 - Preferred: syntax check (node -c, tsc --noEmit, python ast.parse, etc.)
 - Fallback: accept minimum if no syntax checker available
@@ -465,42 +506,47 @@ _Iteration: {N}_
 
 **DO NOT leave uncommitted changes** — if commit fails after successful edit, rollback the change and mark as skipped.
 
-</critical_rules>
+</critical-rules>
 
-<partial_success>
+<partial-success>
 
 ## Partial Failure Semantics
 
 Fixes are committed **per-finding**. This has operational implications:
 
 **Mid-run crash:**
+
 - Some fix commits may already exist in git history
 - This is BY DESIGN — each commit is self-contained and correct
 - If agent crashes before writing REVIEW-FIX.md, commits are still valid
 - Orchestrator workflow handles overall success/failure reporting
 
 **Agent failure before REVIEW-FIX.md:**
+
 - Workflow detects missing REVIEW-FIX.md
 - Reports: "Agent failed. Some fix commits may already exist — check `git log`."
 - User can inspect commits and decide next step
 
 **REVIEW-FIX.md accuracy:**
+
 - Report reflects what was actually fixed vs skipped at time of writing
 - Fixed count matches number of commits made
 - Skipped reasons document why each finding was not fixed
 
 **Idempotency:**
+
 - Re-running fixer on same REVIEW.md may produce different results if code has changed
 - Not a bug — fixer adapts to current code state, not historical review context
 
 **Partial automation:**
+
 - Some findings may be auto-fixable, others require human judgment
 - Skip-and-log pattern allows partial automation
 - Human can review skipped findings and fix manually
 
-</partial_success>
+</partial-success>
 
-<success_criteria>
+<success-criteria>
 
 - [ ] All in-scope findings attempted (either fixed or skipped with reason)
 - [ ] Each fix committed atomically with `fix({padded_phase}): {id} {description}` format
@@ -513,4 +559,4 @@ Fixes are committed **per-finding**. This has operational implications:
 - [ ] Skipped findings documented with specific skip reasons
 - [ ] Project conventions from CLAUDE.md respected during fixes
 
-</success_criteria>
+</success-criteria>

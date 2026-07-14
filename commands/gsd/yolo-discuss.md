@@ -19,9 +19,9 @@ This is a thin wrapper over `/gsd-discuss-phase --yolo`.
 No wrapper-level sub-agent is needed because `gsd-discuss-phase` owns the real orchestration.
 </objective>
 
-<execution_context>
+<execution-context>
 @~/.claude/get-shit-done/workflows/yolo-discuss.md
-</execution_context>
+</execution-context>
 
 <context>
 Phase number: $ARGUMENTS (optional)
@@ -31,8 +31,8 @@ Phase number: $ARGUMENTS (optional)
 Execute the yolo-discuss workflow from @~/.claude/get-shit-done/workflows/yolo-discuss.md end-to-end.
 </process>
 
-<success_criteria>
+<success-criteria>
 - Recommended answers synthesized for the selected phase
 - CONTEXT.md and DISCUSSION-LOG.md are written without an approval pause
 - Wrapper delegates to the shared discuss-phase recommendation engine
-</success_criteria>
+</success-criteria>

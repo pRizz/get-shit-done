@@ -1,9 +1,9 @@
 # Plano: Materializar Configuração no `new-project` (pt-BR)
 
-Data original: 2026-03-23  
+Data original: 2026-03-23\
 Fonte canônica: `docs/superpowers/plans/2026-03-18-materialize-new-project-config.md`
 
----
+______________________________________________________________________
 
 ## Contexto
 
@@ -31,9 +31,9 @@ Não inclui:
 ## Estratégia de implementação
 
 1. Capturar decisões de setup em estrutura intermediária
-2. Normalizar valores (tipos/enum/padrões)
-3. Aplicar merge controlado no config existente
-4. Persistir arquivo final e registrar resumo no estado
+1. Normalizar valores (tipos/enum/padrões)
+1. Aplicar merge controlado no config existente
+1. Persistir arquivo final e registrar resumo no estado
 
 ## Critérios de aceitação
 
@@ -43,9 +43,9 @@ Não inclui:
 
 ## Riscos e mitigação
 
-- **Risco:** configuração parcial em caso de falha no meio  
+- **Risco:** configuração parcial em caso de falha no meio\
   **Mitigação:** escrita atômica (arquivo temporário + replace)
-- **Risco:** inconsistência com defaults implícitos  
+- **Risco:** inconsistência com defaults implícitos\
   **Mitigação:** normalização centralizada com fallback explícito
 
 ## Verificação
@@ -54,7 +54,7 @@ Não inclui:
 - teste de reexecução com config pré-existente
 - teste de compatibilidade com comandos dependentes de config
 
----
+______________________________________________________________________
 
 > [!NOTE]
 > Esta versão em Português é uma tradução operacional do plano para consulta rápida. O documento original permanece como referência técnica canônica.

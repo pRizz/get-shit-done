@@ -4,11 +4,11 @@ Drive milestone phases autonomously — all remaining phases, a range via `--fro
 
 </purpose>
 
-<required_reading>
+<required-reading>
 
 Read all files referenced by the invoking prompt's execution_context before starting.
 
-</required_reading>
+</required-reading>
 
 <process>
 
@@ -275,12 +275,12 @@ All implementation choices are at Claude's discretion — discuss phase was skip
 
 </decisions>
 
-<code_context>
+<code-context>
 ## Existing Code Insights
 
 Codebase context will be gathered during plan-phase research.
 
-</code_context>
+</code-context>
 
 <specifics>
 ## Specific Ideas
@@ -298,6 +298,7 @@ None — discuss phase skipped.
 ```
 
 Set:
+
 ```bash
 PHASE_LIFECYCLE_MODE="skipped-via-config"
 ```
@@ -350,6 +351,7 @@ done
 ```
 
 If lifecycle validation is still invalid when the deadline expires: go to `handle_blocker` with:
+
 - `Discuss did not produce CONTEXT.md through the formal workflow. Stopping.`
 - Include the validator reasons in the blocker body.
 
@@ -431,6 +433,7 @@ done
 ```
 
 If lifecycle validation is still invalid when the deadline expires: go to `handle_blocker` with:
+
 - `Plan did not produce executable PLAN.md through the formal workflow. Stopping.`
 - Include the validator reasons in the blocker body.
 
@@ -457,6 +460,7 @@ PRE_EXECUTE_LIFECYCLE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" ver
 ```
 
 If `valid` is `false`: go to `handle_blocker` with:
+
 - `Plan did not produce executable PLAN.md through the formal workflow. Stopping.`
 - If validator mentions `direct-fallback`: `Fallback/manual artifacts detected in strict autonomous mode. Refusing to continue.`
 
@@ -469,9 +473,11 @@ Skill(skill="gsd-execute-phase", args="${PHASE_NUM} --no-transition")
 Auto-invoke code review and fix chain. Autonomous mode chains both review and fix (unlike execute-phase/quick which only suggest fix).
 
 **Config gate:**
+
 ```bash
 CODE_REVIEW_ENABLED=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.code_review 2>/dev/null || echo "true")
 ```
+
 If `"false"`: display "Code review skipped (workflow.code_review=false)" and proceed to 3d.
 
 ```
@@ -479,6 +485,7 @@ Skill(skill="gsd:code-review", args="${PHASE_NUM}")
 ```
 
 Parse status from REVIEW.md frontmatter. If "clean" or "skipped": proceed to 3d. If findings found: auto-invoke:
+
 ```
 Skill(skill="gsd:code-review-fix", args="${PHASE_NUM} --auto")
 ```
@@ -514,10 +521,12 @@ POST_VERIFY_LIFECYCLE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" ver
 ```
 
 If `valid` is `false`: go to `handle_blocker` with:
+
 - `Verification artifacts are stale or non-compliant for Phase ${PHASE_NUM}. Refusing to continue.`
 - Include the validator reasons in the blocker body.
 
 Set:
+
 ```bash
 CLEAN_PASS=""
 ```
@@ -525,11 +534,13 @@ CLEAN_PASS=""
 **If `passed`:**
 
 Display:
+
 ```
 Phase ${PHASE_NUM} ✅ ${PHASE_NAME} — Verification passed
 ```
 
 Set:
+
 ```bash
 CLEAN_PASS="true"
 ```
@@ -541,6 +552,7 @@ Proceed to 3d.5 (UI review), then `push_after_phase` if enabled, then iterate.
 **If `PUSH_AFTER_PHASE` is set:** stop immediately. Strict push mode requires `status: passed` before any git finalization or next-phase continuation.
 
 Display:
+
 ```
 Phase ${PHASE_NUM} halted: verification status is human_needed.
 Push-after-phase mode stops at the first phase that does not pass cleanly.
@@ -554,10 +566,12 @@ Exit the autonomous workflow cleanly.
 Read the human_verification section from VERIFICATION.md to get the count and items requiring manual testing.
 
 Display the items, then ask user via AskUserQuestion:
+
 - **question:** "Phase ${PHASE_NUM} has items needing manual verification. Validate now or continue to next phase?"
 - **options:** "Validate now" / "Continue without validation"
 
 On **"Validate now"**: Present the specific items from VERIFICATION.md's human_verification section. After user reviews, ask:
+
 - **question:** "Validation result?"
 - **options:** "All good — continue" / "Found issues"
 
@@ -572,6 +586,7 @@ On **"Continue without validation"**: Display `Phase ${PHASE_NUM} ⏭ Human vali
 **If `PUSH_AFTER_PHASE` is set:** stop immediately. Strict push mode requires `status: passed` before any git finalization or next-phase continuation.
 
 Display:
+
 ```
 Phase ${PHASE_NUM} halted: verification status is gaps_found.
 Push-after-phase mode stops at the first phase that does not pass cleanly.
@@ -583,12 +598,14 @@ Resume by addressing gaps manually:
 Exit the autonomous workflow cleanly.
 
 Read gap summary from VERIFICATION.md (score and missing items). Display:
+
 ```
 ⚠ Phase ${PHASE_NUM}: ${PHASE_NAME} — Gaps Found
 Score: {N}/{M} must-haves verified
 ```
 
 Ask user via AskUserQuestion:
+
 - **question:** "Gaps found in phase ${PHASE_NUM}. How to proceed?"
 - **options:** "Run gap closure" / "Continue without fixing" / "Stop autonomous mode"
 
@@ -601,11 +618,13 @@ Skill(skill="gsd-plan-phase", args="${PHASE_NUM} --gaps")
 Verify gap plans were created — re-run `init phase-op ${PHASE_NUM}` and check `has_plans`. If no new gap plans → go to handle_blocker: "Gap closure planning for phase ${PHASE_NUM} did not produce plans."
 
 Re-execute:
+
 ```
 Skill(skill="gsd-execute-phase", args="${PHASE_NUM} --no-transition")
 ```
 
 Re-read verification status:
+
 ```bash
 VERIFY_STATUS=$(grep "^status:" "${PHASE_DIR}"/*-VERIFICATION.md 2>/dev/null | head -1 | cut -d: -f2 | tr -d ' ')
 ```
@@ -613,6 +632,7 @@ VERIFY_STATUS=$(grep "^status:" "${PHASE_DIR}"/*-VERIFICATION.md 2>/dev/null | h
 If `passed` or `human_needed`: Route normally (continue or ask user as above).
 
 If still `gaps_found` after this retry: Display "Gaps persist after closure attempt." and ask via AskUserQuestion:
+
 - **question:** "Gap closure did not fully resolve issues. How to proceed?"
 - **options:** "Continue anyway" / "Stop autonomous mode"
 
@@ -670,6 +690,7 @@ STRICT_LIFECYCLE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" verify l
 ```
 
 If `valid` is `false`: go to `handle_blocker` with:
+
 - `Lifecycle provenance is missing or invalid. Refusing to push.`
 - If validator mentions `direct-fallback`: `Fallback/manual artifacts detected in strict autonomous mode. Refusing to continue.`
 - Include the validator reasons in the blocker body.
@@ -711,6 +732,7 @@ git push --set-upstream origin "${CURRENT_BRANCH}"
 ```
 
 Display:
+
 ```
 Phase ${PHASE_NUM} ⬆ Pushed ${CURRENT_BRANCH} after clean verification.
 ```
@@ -733,7 +755,7 @@ PHASE_STATE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init phase-op
 
 Parse from JSON: `phase_dir`, `phase_slug`, `padded_phase`, `phase_name`.
 
----
+______________________________________________________________________
 
 ### Sub-step 1: Load prior context
 
@@ -748,6 +770,7 @@ cat .planning/STATE.md 2>/dev/null || true
 ```
 
 Extract from these:
+
 - **PROJECT.md** — Vision, principles, non-negotiables, user preferences
 - **REQUIREMENTS.md** — Acceptance criteria, constraints, must-haves vs nice-to-haves
 - **STATE.md** — Current progress, decisions logged so far
@@ -759,6 +782,7 @@ Extract from these:
 ```
 
 For each CONTEXT.md where phase number < current phase:
+
 - Read the `<decisions>` section — these are locked preferences
 - Read `<specifics>` — particular references or "I want it like X" moments
 - Note patterns (e.g., "user consistently prefers minimal UI", "user rejected verbose output")
@@ -766,7 +790,7 @@ For each CONTEXT.md where phase number < current phase:
 **Build internal prior_decisions context** (do not write to file):
 
 ```
-<prior_decisions>
+<prior-decisions>
 ## Project-Level
 - [Key principle or constraint from PROJECT.md]
 - [Requirement affecting this phase from REQUIREMENTS.md]
@@ -775,12 +799,12 @@ For each CONTEXT.md where phase number < current phase:
 ### Phase N: [Name]
 - [Decision relevant to current phase]
 - [Preference that establishes a pattern]
-</prior_decisions>
+</prior-decisions>
 ```
 
 If no prior context exists, continue without — expected for early phases.
 
----
+______________________________________________________________________
 
 ### Sub-step 2: Scout Codebase
 
@@ -806,11 +830,12 @@ ls src/components/ src/hooks/ src/lib/ src/utils/ 2>/dev/null || true
 Read the 3-5 most relevant files to understand existing patterns.
 
 **Build internal codebase_context** (do not write to file):
+
 - **Reusable assets** — existing components, hooks, utilities usable in this phase
 - **Established patterns** — how the codebase does state management, styling, data fetching
 - **Integration points** — where new code connects (routes, nav, providers)
 
----
+______________________________________________________________________
 
 ### Sub-step 3: Analyze Phase and Generate Proposals
 
@@ -825,9 +850,10 @@ Extract `goal`, `requirements`, `success_criteria` from the JSON response.
 **Infrastructure detection — check FIRST before generating grey areas:**
 
 A phase is pure infrastructure when ALL of these are true:
+
 1. Goal keywords match: "scaffolding", "plumbing", "setup", "configuration", "migration", "refactor", "rename", "restructure", "upgrade", "infrastructure"
-2. AND success criteria are all technical: "file exists", "test passes", "config valid", "command runs"
-3. AND no user-facing behavior is described (no "users can", "displays", "shows", "presents")
+1. AND success criteria are all technical: "file exists", "test passes", "config valid", "command runs"
+1. AND no user-facing behavior is described (no "users can", "displays", "shows", "presents")
 
 **If infrastructure-only:** Skip Sub-step 4. Jump directly to Sub-step 5 with minimal CONTEXT.md. Display:
 
@@ -836,15 +862,17 @@ Phase ${PHASE_NUM}: Infrastructure phase — skipping discuss, writing minimal c
 ```
 
 Use these defaults for the CONTEXT.md:
+
 - `<domain>`: Phase boundary from ROADMAP goal
 - `<decisions>`: Single "### Claude's Discretion" subsection — "All implementation choices are at Claude's discretion — pure infrastructure phase"
-- `<code_context>`: Whatever the codebase scout found
+- `<code-context>`: Whatever the codebase scout found
 - `<specifics>`: "No specific requirements — infrastructure phase"
 - `<deferred>`: "None"
 
 **If NOT infrastructure — generate grey area proposals:**
 
 Determine domain type from the phase goal:
+
 - Something users **SEE** → visual: layout, interactions, states, density
 - Something users **CALL** → interface: contracts, responses, errors, auth
 - Something users **RUN** → execution: invocation, output, behavior modes, flags
@@ -854,11 +882,12 @@ Determine domain type from the phase goal:
 Check prior_decisions — skip grey areas already decided in prior phases.
 
 Generate **3-4 grey areas** with **~4 questions each**. For each question:
+
 - **Pre-select a recommended answer** based on: prior decisions (consistency), codebase patterns (reuse), domain conventions (standard approaches), ROADMAP success criteria
 - Generate **1-2 alternatives** per question
 - **Annotate** with prior decision context ("You decided X in Phase N") and code context ("Component Y exists with Z variants") where relevant
 
----
+______________________________________________________________________
 
 ### Sub-step 4: Present Proposals Per Area
 
@@ -878,6 +907,7 @@ Display a table:
 ```
 
 Then prompt the user via **AskUserQuestion**:
+
 - **header:** "Area {M}/{N}"
 - **question:** "Accept these answers for {Area Name}?"
 - **options:** Build dynamically — always "Accept all" first, then "Change Q1" through "Change QN" for each question (up to 4), then "Discuss deeper" last. Cap at 6 explicit options max (AskUserQuestion adds "Other" automatically).
@@ -885,6 +915,7 @@ Then prompt the user via **AskUserQuestion**:
 **On "Accept all":** Record all recommended answers for this area. Move to next area.
 
 **On "Change QN":** Use AskUserQuestion with the alternatives for that specific question:
+
 - **header:** "{Area Name}"
 - **question:** "Q{N}: {question text}"
 - **options:** List the 1-2 alternatives plus "You decide" (maps to Claude's Discretion)
@@ -892,6 +923,7 @@ Then prompt the user via **AskUserQuestion**:
 Record the user's choice. Re-display the updated table with the change reflected. Re-present the full acceptance prompt so the user can make additional changes or accept.
 
 **On "Discuss deeper":** Switch to interactive mode for this area only — ask questions one at a time using AskUserQuestion with 2-3 concrete options per question plus "You decide". After 4 questions, prompt:
+
 - **header:** "{Area Name}"
 - **question:** "More questions about {area name}, or move to next?"
 - **options:** "More questions" / "Next area"
@@ -911,7 +943,7 @@ Back to {current area}: {return to current question}"
 
 Track deferred ideas internally for inclusion in CONTEXT.md.
 
----
+______________________________________________________________________
 
 ### Sub-step 5: Write CONTEXT.md
 
@@ -960,7 +992,7 @@ generated_at: $(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" current-tim
 
 </decisions>
 
-<code_context>
+<code-context>
 ## Existing Code Insights
 
 ### Reusable Assets
@@ -972,7 +1004,7 @@ generated_at: $(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" current-tim
 ### Integration Points
 - {From codebase scout — where new code connects}
 
-</code_context>
+</code-context>
 
 <specifics>
 ## Specific Ideas
@@ -1036,6 +1068,7 @@ ROADMAP=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" roadmap analyze)
 ```
 
 Re-filter incomplete phases using the same logic as discover_phases:
+
 - Keep phases where `disk_status !== "complete"` OR `roadmap_complete === false`
 - Apply `--from N` filter if originally provided
 - Apply `--to N` filter if originally provided
@@ -1052,9 +1085,10 @@ Check for blockers in the Blockers/Concerns section. If blockers are found, go t
 If incomplete phases remain: proceed to next phase, loop back to execute_phase.
 
 **Interactive mode overlap:** When `INTERACTIVE` is set, the iterate step enables pipeline parallelism:
+
 1. After discuss completes for Phase N, dispatch plan+execute as background agents
-2. Immediately start discuss for Phase N+1 (the next incomplete phase) while Phase N builds
-3. Before starting plan for Phase N+1, wait for Phase N's execute agent to complete and handle its post-execution routing (verification, gap closure, etc.)
+1. Immediately start discuss for Phase N+1 (the next incomplete phase) while Phase N builds
+1. Before starting plan for Phase N+1, wait for Phase N's execute agent to complete and handle its post-execution routing (verification, gap closure, etc.)
 
 This means the user is always answering discuss questions (lightweight, interactive) while the heavy work (planning, code generation) runs in the background. The main context only accumulates discuss conversations — plan and execute contexts are isolated in their agents.
 
@@ -1115,6 +1149,7 @@ Go to handle_blocker: "Audit did not produce results — audit file missing or m
 **If `passed`:**
 
 Display:
+
 ```
 Audit ✅ passed — proceeding to complete milestone
 ```
@@ -1124,11 +1159,13 @@ Proceed to 5b (no user pause — per CTRL-01).
 **If `gaps_found`:**
 
 Read the gaps summary from the audit file. Display:
+
 ```
 ⚠ Audit: Gaps Found
 ```
 
 Ask user via AskUserQuestion:
+
 - **question:** "Milestone audit found gaps. How to proceed?"
 - **options:** "Continue anyway — accept gaps" / "Stop — fix gaps manually"
 
@@ -1139,11 +1176,13 @@ On **"Stop"**: Go to handle_blocker with "User stopped — audit gaps remain. Ru
 **If `tech_debt`:**
 
 Read the tech debt summary from the audit file. Display:
+
 ```
 ⚠ Audit: Tech Debt Identified
 ```
 
 Show the summary, then ask user via AskUserQuestion:
+
 - **question:** "Milestone audit found tech debt. How to proceed?"
 - **options:** "Continue with tech debt" / "Stop — address debt first"
 
@@ -1198,6 +1237,7 @@ Display final completion banner:
 **If `PUSH_AFTER_PHASE` is set:** strict git mode stops immediately on the first blocker or inconclusive phase outcome. Do NOT offer retry/skip choices.
 
 Display:
+
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  GSD ► AUTONOMOUS ▸ STOPPED
@@ -1216,9 +1256,10 @@ When any phase operation fails or a blocker is detected, present 3 options via A
 **Prompt:** "Phase {N} ({Name}) encountered an issue: {description}"
 
 **Options:**
+
 1. **"Fix and retry"** — Re-run the failed step (discuss, plan, or execute) for this phase
-2. **"Skip this phase"** — Mark phase as skipped, continue to the next incomplete phase
-3. **"Stop autonomous mode"** — Display summary of progress so far and exit cleanly
+1. **"Skip this phase"** — Mark phase as skipped, continue to the next incomplete phase
+1. **"Stop autonomous mode"** — Display summary of progress so far and exit cleanly
 
 **On "Fix and retry":** Loop back to the failed step within execute_phase. If the same step fails again after retry, re-present these options.
 
@@ -1242,7 +1283,7 @@ When any phase operation fails or a blocker is detected, present 3 options via A
 
 </process>
 
-<success_criteria>
+<success-criteria>
 - [ ] All incomplete phases executed in order (discuss variant → ui-phase → plan → execute → ui-review each)
 - [ ] Default mode uses smart discuss with per-area acceptance prompts
 - [ ] `--yolo` routes through `gsd-discuss-phase --yolo` for non-interactive recommended picks
@@ -1300,4 +1341,4 @@ When any phase operation fails or a blocker is detected, present 3 options via A
 - [ ] `--interactive` waits for background agents before post-execution routing
 - [ ] `--interactive` compatible with `--only`, `--from`, and `--to` flags
 - [ ] `--interactive` and `--yolo` are mutually exclusive
-</success_criteria>
+</success-criteria>

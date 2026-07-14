@@ -668,8 +668,8 @@ describe('validatePromptStructure', () => {
       '<process>',
       '<step name="one">Do this</step>',
       '</process>',
-      '<success_criteria>Works</success_criteria>',
-      '<critical_rules>No shortcuts</critical_rules>',
+      '<success-criteria>Works</success-criteria>',
+      '<critical-rules>No shortcuts</critical-rules>',
     ].join('\n');
     const result = validatePromptStructure(text, 'workflow');
     assert.ok(result.valid, `Expected valid but got violations: ${result.violations.join(', ')}`);
@@ -679,8 +679,8 @@ describe('validatePromptStructure', () => {
   test('accepts known valid tags in agent files', () => {
     const text = [
       '<purpose>Act as a planner</purpose>',
-      '<required_reading>PLAN.md</required_reading>',
-      '<available_agent_types>gsd-executor</available_agent_types>',
+      '<required-reading>PLAN.md</required-reading>',
+      '<available-agent-types>gsd-executor</available-agent-types>',
     ].join('\n');
     const result = validatePromptStructure(text, 'agent');
     assert.ok(result.valid);

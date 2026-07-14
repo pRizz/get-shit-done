@@ -7,6 +7,7 @@
 Instead, please report them via email to: **security@gsd.build** (or DM @glittercowboy on Discord/Twitter if email bounces)
 
 Include:
+
 - Description of the vulnerability
 - Steps to reproduce
 - Potential impact
@@ -24,6 +25,7 @@ Include:
 ## Scope
 
 Security issues in the GSD codebase that could:
+
 - Execute arbitrary code on user machines
 - Expose sensitive data (API keys, credentials)
 - Compromise the integrity of generated plans/code

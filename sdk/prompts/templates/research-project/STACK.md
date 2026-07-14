@@ -4,7 +4,7 @@ Template for `.planning/research/STACK.md` — recommended technologies for the 
 
 <template>
 
-```markdown
+````markdown
 # Stack Research
 
 **Domain:** [domain type]
@@ -47,36 +47,38 @@ npm install [packages]
 
 # Dev dependencies
 npm install -D [packages]
-```
+````
 
 ## Alternatives Considered
 
-| Recommended | Alternative | When to Use Alternative |
-|-------------|-------------|-------------------------|
+| Recommended  | Alternative    | When to Use Alternative                  |
+| ------------ | -------------- | ---------------------------------------- |
 | [our choice] | [other option] | [conditions where alternative is better] |
 | [our choice] | [other option] | [conditions where alternative is better] |
 
 ## What NOT to Use
 
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
+| Avoid        | Why                | Use Instead               |
+| ------------ | ------------------ | ------------------------- |
 | [technology] | [specific problem] | [recommended alternative] |
 | [technology] | [specific problem] | [recommended alternative] |
 
 ## Stack Patterns by Variant
 
-**If [condition]:**
+**If \[condition\]:**
+
 - Use [variation]
 - Because [reason]
 
-**If [condition]:**
+**If \[condition\]:**
+
 - Use [variation]
 - Because [reason]
 
 ## Version Compatibility
 
-| Package A | Compatible With | Notes |
-|-----------|-----------------|-------|
+| Package A         | Compatible With   | Notes                 |
+| ----------------- | ----------------- | --------------------- |
 | [package@version] | [package@version] | [compatibility notes] |
 
 ## Sources
@@ -85,9 +87,11 @@ npm install -D [packages]
 - [Official docs URL] — [what was verified]
 - [Other source] — [confidence level]
 
----
+______________________________________________________________________
+
 *Stack research for: [domain]*
 *Researched: [date]*
+
 ```
 
 </template>
@@ -118,3 +122,4 @@ npm install -D [packages]
 - Critical for avoiding debugging time later
 
 </guidelines>
+```
